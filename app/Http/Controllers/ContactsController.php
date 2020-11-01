@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Contact;
+use Illuminate\Http\Request;
+
+class ContactsController extends Controller
+{
+    public function contacts(Request $request)
+    {
+        $customer_id = isset($request->customer_id) ? trim($request->customer_id) : null;
+
+        $contacts = Contact::whereRaw("1 = 1")->orderBy('last_name', 'asc')->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    public function getContactById(Request $request)
+    {
+        $contact_id = $request->contact_id;
+        $customer_id = $request->customer_id;
+
+        $contact = Contact::where('id', $contact_id)->orderBy('last_name', 'asc')->first();
+        $contacts = Contact::where('customer_id', $customer_id)->orderBy('last_name', 'asc')->get();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    public function getContactsByCustomerId(Request $request)
+    {
+        $customer_id = $request->customer_id;
+        $contacts = Contact::where('customer_id', $customer_id)->orderBy('last_name', 'asc')->get();
+        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'contact' => null]);
+    }
+
+    public function saveContact(Request $request)
+    {
+        $contact_id = isset($request->contact_id) ? $request->contact_id : 0;
+        $customer_id = $request->customer_id;
+        $prefix = isset($request->prefix) ? $request->prefix : '';
+        $first_name = isset($request->first_name) ? $request->first_name : '';
+        $middle_name = isset($request->middle_name) ? $request->middle_name : '';
+        $last_name = isset($request->last_name) ? $request->last_name : '';
+        $suffix = isset($request->suffix) ? $request->suffix : '';
+        $title = isset($request->title) ? $request->title : '';
+        $department = isset($request->department) ? $request->department : '';
+        $email_work = isset($request->email_work) ? $request->email_work : '';
+        $email_personal = isset($request->email_personal) ? $request->email_personal : '';
+        $email_other = isset($request->email_other) ? $request->email_other : '';
+        $phone_work = isset($request->phone_work) ? $request->phone_work : '';
+        $phone_work_fax = isset($request->phone_work_fax) ? $request->phone_work_fax : '';
+        $phone_mobile = isset($request->phone_mobile) ? $request->phone_mobile : '';
+        $phone_direct = isset($request->phone_direct) ? $request->phone_direct : '';
+        $phone_other = isset($request->phone_other) ? $request->phone_other : '';
+        $phone_ext = isset($request->phone_ext) ? $request->phone_ext : '';
+        $country = isset($request->country) ? $request->country : '';
+        $address1 = isset($request->address1) ? $request->address1 : '';
+        $address2 = isset($request->address2) ? $request->address2 : '';
+        $city = isset($request->city) ? $request->city : '';
+        $state = isset($request->state) ? $request->state : '';
+        $zip_code = isset($request->zip_code) ? $request->zip_code : '';
+        $birthday = isset($request->birthday) ? $request->birthday : '';
+        $website = isset($request->website) ? $request->website : '';
+        $notes = isset($request->notes) ? $request->notes : '';
+        $is_primary = isset($request->is_primary) ? $request->is_primary : 0;
+        $automatic_emails_to = isset($request->automatic_emails_to) ? $request->automatic_emails_to : '';
+        $automatic_emails_cc = isset($request->automatic_emails_cc) ? $request->automatic_emails_cc : '';
+        $automatic_emails_bcc = isset($request->automatic_emails_bcc) ? $request->automatic_emails_bcc : '';
+        $automatic_emails_booked_load = isset($request->automatic_emails_booked_load) ? $request->automatic_emails_booked_load : 0;
+        $automatic_emails_check_calls = isset($request->automatic_emails_check_calls) ? $request->automatic_emails_check_calls : 0;
+        $automatic_emails_carrier_arrival_shipper = isset($request->automatic_emails_carrier_arrival_shipper) ? $request->automatic_emails_carrier_arrival_shipper : 0;
+        $automatic_emails_carrier_arrival_consignee = isset($request->automatic_emails_carrier_arrival_consignee) ? $request->automatic_emails_carrier_arrival_consignee : 0;
+        $automatic_emails_loaded = isset($request->automatic_emails_loaded) ? $request->automatic_emails_loaded : 0;
+        $automatic_emails_empty = isset($request->automatic_emails_empty) ? $request->automatic_emails_empty : 0;
+
+        $contact = Contact::updateOrCreate([
+            'id' => $contact_id
+        ],
+            [
+                'customer_id' => $customer_id,
+                'prefix' => $prefix,
+                'first_name' => $first_name,
+                'middle_name' => $middle_name,
+                'last_name' => $last_name,
+                'suffix' => $suffix,
+                'title' => $title,
+                'department' => $department,
+                'email_work' => $email_work,
+                'email_personal' => $email_personal,
+                'email_other' => $email_other,
+                'phone_work' => $phone_work,
+                'phone_work_fax' => $phone_work_fax,
+                'phone_mobile' => $phone_mobile,
+                'phone_direct' => $phone_direct,
+                'phone_other' => $phone_other,
+                'phone_ext' => $phone_ext,
+                'country' => $country,
+                'address1' => $address1,
+                'address2' => $address2,
+                'city' => $city,
+                'state' => $state,
+                'zip_code' => $zip_code,
+                'birthday' => $birthday,
+                'website' => $website,
+                'notes' => $notes,
+                'is_primary' => $is_primary,
+                'automatic_emails_to' => $automatic_emails_to,
+                'automatic_emails_cc' => $automatic_emails_cc,
+                'automatic_emails_bcc' => $automatic_emails_bcc,
+                'automatic_emails_booked_load' => $automatic_emails_booked_load,
+                'automatic_emails_check_calls' => $automatic_emails_check_calls,
+                'automatic_emails_carrier_arrival_shipper' => $automatic_emails_carrier_arrival_shipper,
+                'automatic_emails_carrier_arrival_consignee' => $automatic_emails_carrier_arrival_consignee,
+                'automatic_emails_loaded' => $automatic_emails_loaded,
+                'automatic_emails_empty' => $automatic_emails_empty
+            ]);
+
+        $contacts = Contact::where('customer_id', $customer_id)->orderBy('last_name', 'asc')->get();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $contact_id = $_POST['contact_id'];
+        $fileData = $_FILES['avatar'];
+        $path = $fileData['name'];
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        $contact = Contact::where('id', $contact_id)->first();
+        $cur_avatar = $contact->avatar;
+        $new_avatar = uniqid() . '.' . $extension;
+
+        if ($cur_avatar){
+            unlink(public_path('avatars/' . $cur_avatar));
+        }
+
+        Contact::where('id', $contact_id)->update([
+            'avatar' => $new_avatar
+        ]);
+
+        $contact = Contact::where('id', $contact_id)->first();
+
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+
+        return response()->json(['result' => 'OK', 'contact' => $contact]);
+    }
+
+    public function removeAvatar(Request $request){
+        $contact_id = $request->contact_id;
+
+        $contact = Contact::where('id', $contact_id)->first();
+
+        unlink(public_path('avatars/' . $contact->avatar));
+
+        Contact::where('id', $contact_id)->update([
+            'avatar' => null
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function deleteContact(Request $request){
+        $contact_id = $request->contact_id;
+        
+        $contact = Contact::where('id', $contact_id)->first();
+
+        Contact::where('id', $contact_id)->delete();
+        $contacts = Contact::where('customer_id', $contact->customer_id)->orderBy('last_name', 'asc')->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+}
