@@ -48,6 +48,24 @@ class CustomersController extends Controller
         $contact_phone = isset($request->contact_phone) ? trim($request->contact_phone) : '';
         $contact_phone_ext = isset($request->contact_phone_ext) ? trim($request->contact_phone_ext) : '';
         $email = isset($request->email) ? trim($request->email) : '';
+        $mailing_code = isset($request->mailing_code) ? trim($request->mailing_code) : '';
+        $mailing_code_number = 0;
+        $mailing_old_code = isset($request->mailing_old_code) ? trim($request->mailing_old_code) : '';
+        $mailing_name = isset($request->mailing_name) ? trim($request->mailing_name) : '';
+        $mailing_address1 = isset($request->mailing_address1) ? trim($request->mailing_address1) : '';
+        $mailing_address2 = isset($request->mailing_address2) ? trim($request->mailing_address2) : '';
+        $mailing_city = isset($request->mailing_city) ? trim($request->mailing_city) : '';
+        $mailing_state = isset($request->mailing_state) ? trim($request->mailing_state) : '';
+        $mailing_zip = isset($request->mailing_zip) ? trim($request->mailing_zip) : '';
+        $mailing_contact_name = isset($request->mailing_contact_name) ? trim($request->mailing_contact_name) : '';
+        $mailing_contact_phone = isset($request->mailing_contact_phone) ? trim($request->mailing_contact_phone) : '';
+        $mailing_contact_phone_ext = isset($request->mailing_contact_phone_ext) ? trim($request->mailing_contact_phone_ext) : '';
+        $mailing_email = isset($request->mailing_email) ? trim($request->mailing_email) : '';
+        $mailing_bill_to = isset($request->mailing_bill_to) ? trim($request->mailing_bill_to) : '';
+        $mailing_division = isset($request->mailing_division) ? trim($request->mailing_division) : '';
+        $mailing_agent_code = isset($request->mailing_agent_code) ? trim($request->mailing_agent_code) : '';
+        $mailing_salesman = isset($request->mailing_salesman) ? trim($request->mailing_salesman) : '';
+        $mailing_fid = isset($request->mailing_fid) ? trim($request->mailing_fid) : '';
 
         $curCustomer = Customer::where('id', $id)->first();
 
@@ -89,7 +107,24 @@ class CustomersController extends Controller
             'contact_name' => $contact_name,
             'contact_phone' => $contact_phone,
             'ext' => $contact_phone_ext,
-            'email' => $email
+            'email' => $email,
+            'mailing_code' => $code,
+            'mailing_code_number' => $code_number,
+            'mailing_name' => $mailing_name,
+            'mailing_address1' => $mailing_address1,
+            'mailing_address2' => $mailing_address2,
+            'mailing_city' => $mailing_city,
+            'mailing_state' => $mailing_state,
+            'mailing_zip' => $mailing_zip,
+            'mailing_contact_name' => $mailing_contact_name,
+            'mailing_contact_phone' => $mailing_contact_phone,
+            'mailing_ext' => $mailing_contact_phone_ext,
+            'mailing_email' => $mailing_email,
+            'mailing_bill_to' => $mailing_bill_to,
+            'mailing_division' => $mailing_division,
+            'mailing_agent_code' => $mailing_agent_code,
+            'mailing_salesman' => $mailing_salesman,
+            'mailing_fid' => $mailing_fid
         ]);
 
         return response()->json(['result' => 'OK', 'customer' => $customer]);

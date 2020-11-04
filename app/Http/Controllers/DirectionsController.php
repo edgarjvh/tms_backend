@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class DirectionsController extends Controller
 {
-    public function notes(Request $request){
+    public function directions(Request $request){
         $directions = Direction::whereRaw("1 = 1")->get();
 
         return response()->json(['result' => 'OK', 'directions' => $directions]);

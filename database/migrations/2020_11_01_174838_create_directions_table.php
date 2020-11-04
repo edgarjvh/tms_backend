@@ -15,6 +15,10 @@ class CreateDirectionsTable extends Migration
     {
         Schema::create('directions', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->bigInteger('user_id')->nullable(true);
+            $table->text('direction')->nullable(false);
+            $table->string('user')->nullable(true);
+            $table->timestamp('date_time')->nullable(true);
             $table->timestamps();
         });
     }
