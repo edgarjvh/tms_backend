@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Contact;
 use App\Customer;
+use App\Direction;
+use App\Note;
 use Illuminate\Http\Request;
 
 class CustomersController extends Controller
@@ -122,49 +125,25 @@ class CustomersController extends Controller
                 }
             }
         }else{
+
+            // verificamos si existe un customer con el codigo
             $codeExist = Customer::where('id', '<>', $id)
-                ->where('code', $curCustomer->code)
+                ->where('code', $code)
                 ->orderBy('id', 'asc')->get();
 
             if (count($codeExist) > 0){
                 $code_number = $codeExist[count($codeExist) - 1]->code_number + 1;
             }
+        }
 
-            if ($mailing_bill_to === ''){
-                if(($curCustomer->mailing_code . ($curCustomer->mailing_code_number === 0 ? "" : $curCustomer->mailing_code_number)) === $mailing_code){
-                    $mailing_code_number = $curCustomer->mailing_code_number;
-                }else{
-                    $mailing_codeExist = Customer::where('id', '<>', $id)
-                        ->where('mailing_code', $curCustomer->mailing_code)
-                        ->orderBy('id', 'asc')->get();
+        $with_contact = true;
 
-                    if (count($mailing_codeExist) > 0){
-                        $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
-                    }
-                }
-            }else{
-                if ($curCustomer->code === $curCustomer->mailing_code){
-                    $mailing_codeExist = Customer::where('id', '<>', $id)
-                        ->where('mailing_code', $curCustomer->mailing_code)
-                        ->orderBy('id', 'asc')->get();
-
-                    if (count($mailing_codeExist) > 0){
-                        $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
-                    }
-                }else{
-                    if(($curCustomer->mailing_code . ($curCustomer->mailing_code_number === 0 ? "" : $curCustomer->mailing_code_number)) === $mailing_code){
-                        $mailing_code_number = $curCustomer->mailing_code_number;
-                    }else{
-                        $mailing_codeExist = Customer::where('id', '<>', $id)
-                            ->where('mailing_code', $curCustomer->mailing_code)
-                            ->orderBy('id', 'asc')->get();
-
-                        if (count($mailing_codeExist) > 0){
-                            $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
-                        }
-                    }
-                }
-            }
+        if (trim($contact_name) === '' || (trim($contact_phone) === '' && trim($email) === '')){
+            $contact_name = '';
+            $contact_phone = '';
+            $contact_phone_ext = '';
+            $email = '';
+            $with_contact = false;
         }
 
         $customer = Customer::updateOrCreate([
@@ -202,6 +181,44 @@ class CustomersController extends Controller
             'mailing_fid' => $mailing_fid
         ]);
 
+        if ($with_contact){
+            $contacts = Contact::where('customer_id', $customer->id)->get();
+
+            $contact_name_splitted = explode(" ", $contact_name);
+            $contact_first = $contact_name_splitted[0];
+            $contact_last = '';
+
+            if (count($contact_name_splitted) > 0){
+                for ($i = 1; $i < count($contact_name_splitted); $i++){
+                    $contact_last .= $contact_name_splitted[$i] . " ";
+                }
+            }
+
+            $contact_last = trim($contact_last);
+
+            if (count($contacts) === 0){
+                $contact = new Contact();
+                $contact->customer_id = $customer->id;
+                $contact->first_name = $contact_first;
+                $contact->last_name = $contact_last;
+                $contact->phone_work = $contact_phone;
+                $contact->phone_ext = $contact_phone_ext;
+                $contact->email_work = $email;
+                $contact->is_primary = 1;
+                $contact->save();
+            }
+        }
+
         return response()->json(['result' => 'OK', 'customer' => $customer]);
+    }
+
+    public function getCustomerPayload(Request $request){
+        $customer_id = $request->customer_id;
+
+        $contacts = Contact::where('customer_id', $customer_id)->orderBy('last_name', 'asc')->get();
+        $notes = Note::where('customer_id', $customer_id)->get();
+        $directions = Direction::where('customer_id', $customer_id)->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'notes' => $notes, 'directions' => $directions]);
     }
 }

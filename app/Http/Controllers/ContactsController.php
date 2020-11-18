@@ -7,6 +7,34 @@ use Illuminate\Http\Request;
 
 class ContactsController extends Controller
 {
+    public function getContacts(Request $request){
+
+        $first_name = isset($request->first_name) ? trim($request->first_name) : '';
+        $last_name = isset($request->last_name) ? trim($request->last_name) : '';
+        $address1 = isset($request->address1) ? trim($request->address1) : '';
+        $address2 = isset($request->address2) ? trim($request->address2) : '';
+        $city = isset($request->city) ? trim($request->city) : '';
+        $state = isset($request->state) ? trim($request->state) : '';
+        $phone = isset($request->phone) ? trim($request->phone) : '';
+        $email = isset($request->email) ? trim($request->email) : '';
+
+        $contacts = Contact::whereRaw("1 = 1")
+            ->whereRaw("LOWER(first_name) like '%$first_name%'")
+            ->whereRaw("LOWER(last_name) like '%$last_name%'")
+            ->whereRaw("LOWER(address1) like '%$address1%'")
+            ->whereRaw("LOWER(address2) like '%$address2%'")
+            ->whereRaw("LOWER(city) like '%$city%'")
+            ->whereRaw("LOWER(state) like '%$state%'")
+            ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
+            ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
+            ->orderBy('last_name', 'ASC')
+            ->with('customer')
+            ->has('customer')
+            ->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
     public function contacts(Request $request)
     {
         $customer_id = isset($request->customer_id) ? trim($request->customer_id) : null;

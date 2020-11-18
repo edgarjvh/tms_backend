@@ -6,7 +6,9 @@ Route::get('/', function () {
 
 Route::post('/customers', 'CustomersController@customers')->name('customers')->middleware('cors');
 Route::post('/saveCustomer', 'CustomersController@saveCustomer')->middleware('cors');
+Route::post('/getCustomerPayload', 'CustomersController@getCustomerPayload')->middleware('cors');
 Route::post('/carriers', 'CarriersController@carriers')->name('carriers')->middleware('cors');
+Route::post('/getContacts', 'ContactsController@getContacts')->middleware('cors');
 Route::post('/contacts', 'ContactsController@contacts')->name('contacts')->middleware('cors');
 Route::post('/getContactById', 'ContactsController@getContactById')->middleware('cors');
 Route::post('/getContactsByCustomerId', 'ContactsController@getContactsByCustomerId')->middleware('cors');

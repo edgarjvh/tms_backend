@@ -8,23 +8,30 @@ use Illuminate\Http\Request;
 class DirectionsController extends Controller
 {
     public function directions(Request $request){
-        $directions = Direction::whereRaw("1 = 1")->get();
+        $customer_id = $request->customer_id;
+
+        $directions = Direction::where('customer_id', $customer_id)->get();
 
         return response()->json(['result' => 'OK', 'directions' => $directions]);
     }
 
     public function saveDirection(Request $request){
+        $direction_id = $request->direction_id;
+        $customer_id = $request->customer_id;
         $direction_text = $request->direction;
         $direction_user = $request->user;
         $direction_datetime = $request->datetime;
 
-        $direction = new Direction();
-        $direction->direction = $direction_text;
-        $direction->user = $direction_user;
-        $direction->date_time = $direction_datetime;
-        $direction->save();
+        $direction = Direction::updateOrCreate([
+            'id' => $direction_id
+        ],[
+           'customer_id' => $customer_id,
+           'direction' => $direction_text,
+           'user' => $direction_user,
+           'date_time' => $direction_datetime
+        ]);
 
-        $directions = Direction::whereRaw("1 = 1")->get();
+        $directions = Direction::where('customer_id', $customer_id)->get();
 
         return response()->json(['result' => 'OK', 'direction' => $direction, 'directions' => $directions]);
     }
