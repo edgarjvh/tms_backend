@@ -204,6 +204,11 @@ class CustomersController extends Controller
                 $contact->phone_work = $contact_phone;
                 $contact->phone_ext = $contact_phone_ext;
                 $contact->email_work = $email;
+                $contact->address1 = $address1;
+                $contact->address1 = $address2;
+                $contact->city = $city;
+                $contact->state = $state;
+                $contact->zip_code = $zip;
                 $contact->is_primary = 1;
                 $contact->save();
             }

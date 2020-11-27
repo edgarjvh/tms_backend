@@ -35,4 +35,15 @@ class DirectionsController extends Controller
 
         return response()->json(['result' => 'OK', 'direction' => $direction, 'directions' => $directions]);
     }
+
+    public function deleteDirection(Request $request){
+        $direction_id = $request->direction_id;
+        $customer_id = $request->customer_id;
+
+        Direction::where('id', $direction_id)->delete();
+
+        $directions = Direction::where('customer_id', $customer_id)->get();
+
+        return response()->json(['result' => 'OK', 'directions' => $directions]);
+    }
 }
