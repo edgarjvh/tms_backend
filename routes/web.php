@@ -14,6 +14,7 @@ Route::post('/saveCarrier', 'CarriersController@saveCarrier')->middleware('cors'
 Route::post('/getCarrierPayload', 'CarriersController@getCarrierPayload')->middleware('cors');
 
 Route::post('/getContacts', 'ContactsController@getContacts')->middleware('cors');
+Route::post('/getContactsByEmail', 'ContactsController@getContactsByEmail')->middleware('cors');
 Route::post('/contacts', 'ContactsController@contacts')->name('contacts')->middleware('cors');
 Route::post('/getContactById', 'ContactsController@getContactById')->middleware('cors');
 Route::post('/getContactsByCustomerId', 'ContactsController@getContactsByCustomerId')->middleware('cors');
@@ -21,6 +22,9 @@ Route::post('/saveContact', 'ContactsController@saveContact')->middleware('cors'
 Route::post('/deleteContact', 'ContactsController@deleteContact')->middleware('cors');
 Route::post('/uploadAvatar', 'ContactsController@uploadAvatar')->middleware('cors');
 Route::post('/removeAvatar', 'ContactsController@removeAvatar')->middleware('cors');
+
+Route::post('/getAutomaticEmails', 'AutomaticEmailsController@getAutomaticEmails')->middleware('cors');
+Route::post('/saveAutomaticEmails', 'AutomaticEmailsController@saveAutomaticEmails')->middleware('cors');
 
 Route::post('/getCarrierContacts', 'ContactsController@getCarrierContacts')->middleware('cors');
 Route::post('/carrierContacts', 'ContactsController@carrierContacts')->name('contacts')->middleware('cors');
@@ -43,3 +47,5 @@ Route::post('/deleteDirection', 'DirectionsController@deleteDirection')->middlew
 
 Route::post('/getDriversByCarrierId', 'DriversController@getDriversByCarrierId')->middleware('cors');
 Route::post('/saveCarrierDriver', 'DriversController@saveCarrierDriver')->middleware('cors');
+
+Route::post('/saveCustomerHours', 'HoursController@saveCustomerHours')->middleware('cors');

@@ -38,6 +38,17 @@ class ContactsController extends Controller
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 
+    public function getContactsByEmail(Request $request){
+        $email = isset($request->email) ? trim($request->email) : '';
+
+        $contacts = Contact::whereRaw("1 = 1")
+            ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
+            ->orderBy('last_name', 'ASC')
+            ->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
     public function contacts(Request $request)
     {
         $customer_id = isset($request->customer_id) ? trim($request->customer_id) : null;

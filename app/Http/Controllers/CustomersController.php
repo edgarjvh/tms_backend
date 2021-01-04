@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\AutomaticEmail;
 use App\Contact;
 use App\Customer;
+use App\CustomerHour;
 use App\Direction;
 use App\Note;
 use Illuminate\Http\Request;
@@ -205,7 +207,7 @@ class CustomersController extends Controller
                 $contact->phone_ext = $contact_phone_ext;
                 $contact->email_work = $email;
                 $contact->address1 = $address1;
-                $contact->address1 = $address2;
+                $contact->address2 = $address2;
                 $contact->city = $city;
                 $contact->state = $state;
                 $contact->zip_code = $zip;
@@ -223,7 +225,16 @@ class CustomersController extends Controller
         $contacts = Contact::where('customer_id', $customer_id)->orderBy('last_name', 'asc')->get();
         $notes = Note::where('customer_id', $customer_id)->get();
         $directions = Direction::where('customer_id', $customer_id)->get();
+        $customer_hours = CustomerHour::where('customer_id', $customer_id)->first();
+        $automatic_emails = AutomaticEmail::where('customer_id', $customer_id)->first();
 
-        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'notes' => $notes, 'directions' => $directions]);
+        return response()->json([
+            'result' => 'OK',
+            'contacts' => $contacts,
+            'notes' => $notes,
+            'directions' => $directions,
+            'customer_hours' => $customer_hours,
+            'automatic_emails' => $automatic_emails
+        ]);
     }
 }
