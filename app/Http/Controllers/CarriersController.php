@@ -7,6 +7,7 @@ use App\Carrier;
 use App\CarrierContact;
 use App\CarrierDriver;
 use App\CarrierNote;
+use App\Insurance;
 use Illuminate\Http\Request;
 
 class CarriersController extends Controller
@@ -49,6 +50,10 @@ class CarriersController extends Controller
         $state = isset($request->state) ? trim($request->state) : '';
         $zip = isset($request->zip) ? trim($request->zip) : '';
         $email = isset($request->email) ? trim($request->email) : '';
+        $mc_number = isset($request->mc_number) ? trim($request->mc_number) : '';
+        $dot_number = isset($request->dot_number) ? trim($request->dot_number) : '';
+        $scac = isset($request->scac) ? trim($request->scac) : '';
+        $fid = isset($request->fid) ? trim($request->fid) : '';
         $mailing_code = isset($request->mailing_code) ? trim($request->mailing_code) : '';
         $mailing_code_number = 0;
         $mailing_old_code = isset($request->mailing_old_code) ? trim($request->mailing_old_code) : '';
@@ -59,6 +64,17 @@ class CarriersController extends Controller
         $mailing_state = isset($request->mailing_state) ? trim($request->mailing_state) : '';
         $mailing_zip = isset($request->mailing_zip) ? trim($request->mailing_zip) : '';
         $mailing_email = isset($request->mailing_email) ? trim($request->mailing_email) : '';
+        $factoring_code = isset($request->factoring_code) ? trim($request->factoring_code) : '';
+        $factoring_code_number = 0;
+        $factoring_old_code = isset($request->factoring_old_code) ? trim($request->factoring_old_code) : '';
+        $factoring_name = isset($request->factoring_name) ? trim($request->factoring_name) : '';
+        $factoring_address1 = isset($request->factoring_address1) ? trim($request->factoring_address1) : '';
+        $factoring_address2 = isset($request->factoring_address2) ? trim($request->factoring_address2) : '';
+        $factoring_city = isset($request->factoring_city) ? trim($request->factoring_city) : '';
+        $factoring_state = isset($request->factoring_state) ? trim($request->factoring_state) : '';
+        $factoring_zip = isset($request->factoring_zip) ? trim($request->factoring_zip) : '';
+        $factoring_email = isset($request->factoring_email) ? trim($request->factoring_email) : '';
+        
         $mailing_bill_to = '';
 
         $curCarrier = Carrier::where('id', $id)->first();
@@ -114,6 +130,30 @@ class CarriersController extends Controller
                         }
                     }
                 }
+
+                if ($curCarrier->code === $curCarrier->factoring_code){
+                    $factoring_codeExist = Carrier::where('id', '<>', $id)
+                        ->where('factoring_code', $curCarrier->factoring_code)
+                        ->orderBy('id', 'asc')->get();
+
+                    if (count($factoring_codeExist) > 0){
+                        $factoring_code_number = $factoring_codeExist[count($factoring_codeExist) - 1]->factoring_code_number + 1;
+                    }else{
+                        $factoring_code_number = $curCarrier->code_number + 1;
+                    }
+                }else{
+                    if(($curCarrier->factoring_code . ($curCarrier->factoring_code_number === 0 ? "" : $curCarrier->factoring_code_number)) === $factoring_code){
+                        $factoring_code_number = $curCarrier->factoring_code_number;
+                    }else{
+                        $factoring_codeExist = Carrier::where('id', '<>', $id)
+                            ->where('factoring_code', $curCarrier->factoring_code)
+                            ->orderBy('id', 'asc')->get();
+
+                        if (count($factoring_codeExist) > 0){
+                            $factoring_code_number = $factoring_codeExist[count($factoring_codeExist) - 1]->factoring_code_number + 1;
+                        }
+                    }
+                }
             }
         }else{
 
@@ -140,6 +180,10 @@ class CarriersController extends Controller
                 'state' => $state,
                 'zip' => $zip,
                 'email' => $email,
+                'mc_number' => $mc_number,
+                'dot_number' => $dot_number,
+                'scac' => $scac,
+                'fid' => $fid,
                 'mailing_code' => $mailing_code,
                 'mailing_code_number' => $mailing_code_number,
                 'mailing_name' => $mailing_name,
@@ -148,7 +192,16 @@ class CarriersController extends Controller
                 'mailing_city' => $mailing_city,
                 'mailing_state' => $mailing_state,
                 'mailing_zip' => $mailing_zip,
-                'mailing_email' => $mailing_email
+                'mailing_email' => $mailing_email,
+                'factoring_code' => $factoring_code,
+                'factoring_code_number' => $factoring_code_number,
+                'factoring_name' => $factoring_name,
+                'factoring_address1' => $factoring_address1,
+                'factoring_address2' => $factoring_address2,
+                'factoring_city' => $factoring_city,
+                'factoring_state' => $factoring_state,
+                'factoring_zip' => $factoring_zip,
+                'factoring_email' => $factoring_email
             ]);
 
         return response()->json(['result' => 'OK', 'carrier' => $carrier]);
@@ -160,7 +213,8 @@ class CarriersController extends Controller
         $contacts = CarrierContact::where('carrier_id', $carrier_id)->orderBy('last_name', 'asc')->get();
         $notes = CarrierNote::where('carrier_id', $carrier_id)->get();
         $drivers = CarrierDriver::where('carrier_id', $carrier_id)->get();
+        $insurances = Insurance::where('carrier_id', $carrier_id)->with('insuranceType')->get();
 
-        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'notes' => $notes, 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'notes' => $notes, 'drivers' => $drivers, 'insurances' => $insurances]);
     }
 }

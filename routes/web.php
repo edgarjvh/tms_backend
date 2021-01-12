@@ -15,6 +15,7 @@ Route::post('/getCarrierPayload', 'CarriersController@getCarrierPayload')->middl
 
 Route::post('/getContacts', 'ContactsController@getContacts')->middleware('cors');
 Route::post('/getContactsByEmail', 'ContactsController@getContactsByEmail')->middleware('cors');
+Route::post('/getContactsByEmailOrName', 'ContactsController@getContactsByEmailOrName')->middleware('cors');
 Route::post('/contacts', 'ContactsController@contacts')->name('contacts')->middleware('cors');
 Route::post('/getContactById', 'ContactsController@getContactById')->middleware('cors');
 Route::post('/getContactsByCustomerId', 'ContactsController@getContactsByCustomerId')->middleware('cors');
@@ -49,3 +50,10 @@ Route::post('/getDriversByCarrierId', 'DriversController@getDriversByCarrierId')
 Route::post('/saveCarrierDriver', 'DriversController@saveCarrierDriver')->middleware('cors');
 
 Route::post('/saveCustomerHours', 'HoursController@saveCustomerHours')->middleware('cors');
+
+Route::post('/getInsuranceTypes', 'InsuranceTypesController@getInsuranceTypes')->middleware('cors');
+Route::post('/saveInsuranceType', 'InsuranceTypesController@saveInsuranceType')->middleware('cors');
+Route::post('/deleteInsuranceType', 'InsuranceTypesController@deleteInsuranceType')->middleware('cors');
+
+Route::post('/saveInsurance', 'InsurancesController@saveInsurance')->middleware('cors');
+Route::post('/deleteInsurance', 'InsurancesController@deleteInsurance')->middleware('cors');

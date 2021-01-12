@@ -213,6 +213,8 @@ class CustomersController extends Controller
                 $contact->zip_code = $zip;
                 $contact->is_primary = 1;
                 $contact->save();
+
+
             }
         }
 
