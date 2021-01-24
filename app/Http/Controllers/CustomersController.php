@@ -9,6 +9,7 @@ use App\CustomerHour;
 use App\Direction;
 use App\Note;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CustomersController extends Controller
 {
@@ -74,66 +75,53 @@ class CustomersController extends Controller
 
         $curCustomer = Customer::where('id', $id)->first();
 
+        error_log('1');
         if ($curCustomer){
+            error_log('2');
             // si es el mismo codigo y numero
             if(($curCustomer->code . ($curCustomer->code_number === 0 ? "" : $curCustomer->code_number)) === $code){
+                error_log('3');
                 $code_number = $curCustomer->code_number;
             }else{
+                error_log('4');
                 // verificamos si hay otro registro con el mismo codigo
                 $codeExist = Customer::where('id', '<>', $id)
                     ->where('code', $curCustomer->code)
                     ->orderBy('id', 'asc')->get();
 
                 if (count($codeExist) > 0){
+                    error_log('5');
                     $code_number = $codeExist[count($codeExist) - 1]->code_number + 1;
                 }
             }
 
-            if ($mailing_bill_to === ''){
-                if(($curCustomer->mailing_code . ($curCustomer->mailing_code_number === 0 ? "" : $curCustomer->mailing_code_number)) === $mailing_code){
-                    $mailing_code_number = $curCustomer->mailing_code_number;
+            if ($mailing_code !== ''){
+                error_log('6');
+                if ($curCustomer->code === $mailing_code){
+                    error_log('7');
+                    $mailing_code_number = $curCustomer->code_number;
                 }else{
+                    error_log('8');
                     $mailing_codeExist = Customer::where('id', '<>', $id)
-                        ->where('mailing_code', $curCustomer->mailing_code)
-                        ->orderBy('id', 'asc')->get();
+                        ->where('mailing_code', $mailing_code)
+                        ->orderBy('mailing_code_number', 'asc')->get();
 
                     if (count($mailing_codeExist) > 0){
+                        error_log('9');
                         $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
-                    }
-                }
-            }else{
-                if ($curCustomer->code === $curCustomer->mailing_code){
-                    $mailing_codeExist = Customer::where('id', '<>', $id)
-                        ->where('mailing_code', $curCustomer->mailing_code)
-                        ->orderBy('id', 'asc')->get();
-
-                    if (count($mailing_codeExist) > 0){
-                        $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
-                    }else{
-                        $mailing_code_number = $curCustomer->code_number + 1;
-                    }
-                }else{
-                    if(($curCustomer->mailing_code . ($curCustomer->mailing_code_number === 0 ? "" : $curCustomer->mailing_code_number)) === $mailing_code){
-                        $mailing_code_number = $curCustomer->mailing_code_number;
-                    }else{
-                        $mailing_codeExist = Customer::where('id', '<>', $id)
-                            ->where('mailing_code', $curCustomer->mailing_code)
-                            ->orderBy('id', 'asc')->get();
-
-                        if (count($mailing_codeExist) > 0){
-                            $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
-                        }
                     }
                 }
             }
-        }else{
 
+        }else{
+            error_log('10');
             // verificamos si existe un customer con el codigo
             $codeExist = Customer::where('id', '<>', $id)
                 ->where('code', $code)
                 ->orderBy('id', 'asc')->get();
 
             if (count($codeExist) > 0){
+                error_log('11');
                 $code_number = $codeExist[count($codeExist) - 1]->code_number + 1;
             }
         }
@@ -176,7 +164,7 @@ class CustomersController extends Controller
             'mailing_contact_phone' => $mailing_contact_phone,
             'mailing_ext' => $mailing_contact_phone_ext,
             'mailing_email' => $mailing_email,
-            'mailing_bill_to' => $mailing_bill_to,
+            'mailing_bill_to' => $mailing_bill_to !== '' ? $mailing_code : '',
             'mailing_division' => $mailing_division,
             'mailing_agent_code' => $mailing_agent_code,
             'mailing_salesman' => $mailing_salesman,
@@ -214,7 +202,9 @@ class CustomersController extends Controller
                 $contact->is_primary = 1;
                 $contact->save();
 
-
+                Customer::where('id', $customer->id)->update([
+                    'primary_contact_id' => $contact->id
+                ]);
             }
         }
 

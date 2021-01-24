@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class InsurancesController extends Controller
 {
+    public function getInsurances(){
+        $insurances = Insurance::orderBy('company', 'ASC')->get();
+        return response()->json(['result' => 'OK', 'insurances' => $insurances]);
+    }
+
     public function saveInsurance(Request $request){
         $carrier_id = isset($request->carrier_id) ? $request->carrier_id : 0;
         $insurance_id = isset($request->insurance_id) ? $request->insurance_id : 0;
@@ -30,8 +35,9 @@ class InsurancesController extends Controller
         ]);
 
         $insurances = Insurance::where('carrier_id', $carrier_id)->with('insuranceType')->get();
+        $companies = Insurance::orderBy('company', 'ASC')->get(['id', 'company']);
 
-        return response()->json(['result' => 'OK', 'insurance' => $insurance, 'insurances' => $insurances]);
+        return response()->json(['result' => 'OK', 'insurance' => $insurance, 'insurances' => $insurances, 'companies' => $companies]);
     }
 
     public function deleteInsurance(Request $request){

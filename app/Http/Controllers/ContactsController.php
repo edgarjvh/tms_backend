@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Carrier;
 use App\Contact;
 use App\CarrierContact;
 use App\Customer;
@@ -51,11 +52,12 @@ class ContactsController extends Controller
     }
 
     public function getContactsByEmailOrName(Request $request){
+        $customer_id = isset($request->customer_id) ? trim($request->customer_id) : '';
         $email = isset($request->email) ? trim($request->email) : '';
 
-        $contacts = Contact::whereRaw("1 = 1")
-            ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-            ->orWhereRaw("(LOWER(first_name) like '%$email%' or LOWER(last_name) like '%$email%')")
+        error_log("customer_id = $customer_id");
+
+        $contacts = Contact::whereRaw("((LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%') OR (LOWER(first_name) like '%$email%' or LOWER(last_name) like '%$email%'))")
             ->orderBy('last_name', 'ASC')
             ->get();
 
@@ -389,6 +391,8 @@ class ContactsController extends Controller
         $automatic_emails_loaded = isset($request->automatic_emails_loaded) ? $request->automatic_emails_loaded : ($curContact ? $curContact->automatic_emails_loaded : 0);
         $automatic_emails_empty = isset($request->automatic_emails_empty) ? $request->automatic_emails_empty : ($curContact ? $curContact->automatic_emails_empty : 0);
 
+        $is_primary = (int) $is_primary;
+
         $contact = CarrierContact::updateOrCreate([
             'id' => $contact_id
         ],
@@ -431,6 +435,12 @@ class ContactsController extends Controller
                 'automatic_emails_loaded' => $automatic_emails_loaded,
                 'automatic_emails_empty' => $automatic_emails_empty
             ]);
+
+        if ($is_primary === 1){
+            Carrier::where('id', $carrier_id)->update([
+                'primary_contact_id' => $contact->id
+            ]);
+        }
 
         $newContact = CarrierContact::where('id', $contact->id)
             ->with('carrier')

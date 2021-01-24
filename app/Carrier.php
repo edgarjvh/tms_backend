@@ -15,4 +15,8 @@ class Carrier extends Model
     public function drivers(){
         return $this->hasMany(CarrierDriver::class);
     }
+
+    public function factoring_company(){
+        return $this->belongsTo(FactoringCompany::class);
+    }
 }

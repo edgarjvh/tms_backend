@@ -53,9 +53,23 @@ class DriversController extends Controller
         $drivers = CarrierDriver::where('carrier_id', $carrier_id)
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'asc')
             ->get();
 
         return response()->json(['result' => 'OK', 'driver' => $newDriver, 'drivers' => $drivers]);
+    }
+
+    public function deleteCarrierDriver(Request $request){
+        $driver_id = $request->driver_id;
+        $carrier_id = $request->carrier_id;
+
+        $driver = CarrierDriver::where('id', $driver_id)->delete();
+        $drivers = CarrierDriver::where('carrier_id', $carrier_id)
+            ->with('carrier')
+            ->has('carrier')
+            ->orderBy('first_name', 'asc')
+            ->get();
+
+        return response()->json(['result' => 'OK', 'driver' => $driver, 'drivers' => $drivers]);
     }
 }

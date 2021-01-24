@@ -48,6 +48,7 @@ Route::post('/deleteDirection', 'DirectionsController@deleteDirection')->middlew
 
 Route::post('/getDriversByCarrierId', 'DriversController@getDriversByCarrierId')->middleware('cors');
 Route::post('/saveCarrierDriver', 'DriversController@saveCarrierDriver')->middleware('cors');
+Route::post('/deleteCarrierDriver', 'DriversController@deleteCarrierDriver')->middleware('cors');
 
 Route::post('/saveCustomerHours', 'HoursController@saveCustomerHours')->middleware('cors');
 
@@ -55,5 +56,13 @@ Route::post('/getInsuranceTypes', 'InsuranceTypesController@getInsuranceTypes')-
 Route::post('/saveInsuranceType', 'InsuranceTypesController@saveInsuranceType')->middleware('cors');
 Route::post('/deleteInsuranceType', 'InsuranceTypesController@deleteInsuranceType')->middleware('cors');
 
+Route::post('/getInsurances', 'InsurancesController@getInsurances')->middleware('cors');
 Route::post('/saveInsurance', 'InsurancesController@saveInsurance')->middleware('cors');
 Route::post('/deleteInsurance', 'InsurancesController@deleteInsurance')->middleware('cors');
+
+Route::post('/getEquipments', 'EquipmentsController@getEquipments')->middleware('cors');
+
+Route::post('/getCarrierDropdownItems', 'MiscController@getCarrierDropdownItems')->middleware('cors');
+
+Route::post('/getFactoringCompanies', 'FactoringCompaniesController@getFactoringCompanies')->middleware('cors');
+Route::post('/saveFactoringCompany', 'FactoringCompaniesController@saveFactoringCompany')->middleware('cors');

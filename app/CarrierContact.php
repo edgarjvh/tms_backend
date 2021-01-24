@@ -9,6 +9,6 @@ class CarrierContact extends Model
     protected $guarded = [];
 
     public function carrier(){
-        return $this->belongsTo(Carrier::class);
+        return $this->belongsTo(Carrier::class)->with('factoring_company');
     }
 }

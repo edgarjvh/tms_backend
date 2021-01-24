@@ -32,6 +32,7 @@ class CarriersController extends Controller
             ->whereRaw("state like '%$state%'")
             ->whereRaw("zip like '%$zip%'")
             ->whereRaw("email like '%$email%'")
+            ->with('factoring_company')
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')->get();
 
@@ -49,6 +50,9 @@ class CarriersController extends Controller
         $city = isset($request->city) ? trim($request->city) : '';
         $state = isset($request->state) ? trim($request->state) : '';
         $zip = isset($request->zip) ? trim($request->zip) : '';
+        $contact_name = isset($request->contact_name) ? trim($request->contact_name) : '';
+        $contact_phone = isset($request->contact_phone) ? trim($request->contact_phone) : '';
+        $ext = isset($request->ext) ? trim($request->ext) : '';
         $email = isset($request->email) ? trim($request->email) : '';
         $mc_number = isset($request->mc_number) ? trim($request->mc_number) : '';
         $dot_number = isset($request->dot_number) ? trim($request->dot_number) : '';
@@ -63,8 +67,12 @@ class CarriersController extends Controller
         $mailing_city = isset($request->mailing_city) ? trim($request->mailing_city) : '';
         $mailing_state = isset($request->mailing_state) ? trim($request->mailing_state) : '';
         $mailing_zip = isset($request->mailing_zip) ? trim($request->mailing_zip) : '';
+        $mailing_contact_name = isset($request->mailing_contact_name) ? trim($request->mailing_contact_name) : '';
+        $mailing_contact_phone = isset($request->mailing_contact_phone) ? trim($request->mailing_contact_phone) : '';
+        $mailing_ext = isset($request->mailing_ext) ? trim($request->mailing_ext) : '';
         $mailing_email = isset($request->mailing_email) ? trim($request->mailing_email) : '';
         $factoring_code = isset($request->factoring_code) ? trim($request->factoring_code) : '';
+        $factoring_company_id = isset($request->factoring_company_id) ? $request->factoring_company_id === 0 ? null : $request->factoring_company_id : null;
         $factoring_code_number = 0;
         $factoring_old_code = isset($request->factoring_old_code) ? trim($request->factoring_old_code) : '';
         $factoring_name = isset($request->factoring_name) ? trim($request->factoring_name) : '';
@@ -73,6 +81,9 @@ class CarriersController extends Controller
         $factoring_city = isset($request->factoring_city) ? trim($request->factoring_city) : '';
         $factoring_state = isset($request->factoring_state) ? trim($request->factoring_state) : '';
         $factoring_zip = isset($request->factoring_zip) ? trim($request->factoring_zip) : '';
+        $factoring_contact_name = isset($request->factoring_contact_name) ? trim($request->factoring_contact_name) : '';
+        $factoring_contact_phone = isset($request->factoring_contact_phone) ? trim($request->factoring_contact_phone) : '';
+        $factoring_ext = isset($request->factoring_ext) ? trim($request->factoring_ext) : '';
         $factoring_email = isset($request->factoring_email) ? trim($request->factoring_email) : '';
         
         $mailing_bill_to = '';
@@ -167,6 +178,16 @@ class CarriersController extends Controller
             }
         }
 
+        $with_contact = true;
+
+        if (trim($contact_name) === '' || (trim($contact_phone) === '' || trim($email) === '')){
+            $contact_name = '';
+            $contact_phone = '';
+            $ext = '';
+            $email = '';
+            $with_contact = false;
+        }
+
         $carrier = Carrier::updateOrCreate([
             'id' => $id
         ],
@@ -179,6 +200,9 @@ class CarriersController extends Controller
                 'city' => $city,
                 'state' => $state,
                 'zip' => $zip,
+                'contact_name' => $contact_name,
+                'contact_phone' => $contact_phone,
+                'ext' => $ext,
                 'email' => $email,
                 'mc_number' => $mc_number,
                 'dot_number' => $dot_number,
@@ -192,17 +216,49 @@ class CarriersController extends Controller
                 'mailing_city' => $mailing_city,
                 'mailing_state' => $mailing_state,
                 'mailing_zip' => $mailing_zip,
+                'mailing_contact_name' => $mailing_contact_name,
+                'mailing_contact_phone' => $mailing_contact_phone,
+                'mailing_ext' => $mailing_ext,
                 'mailing_email' => $mailing_email,
-                'factoring_code' => $factoring_code,
-                'factoring_code_number' => $factoring_code_number,
-                'factoring_name' => $factoring_name,
-                'factoring_address1' => $factoring_address1,
-                'factoring_address2' => $factoring_address2,
-                'factoring_city' => $factoring_city,
-                'factoring_state' => $factoring_state,
-                'factoring_zip' => $factoring_zip,
-                'factoring_email' => $factoring_email
+                'factoring_company_id' => $factoring_company_id
             ]);
+
+        if ($with_contact){
+            $contacts = CarrierContact::where('carrier_id', $carrier->id)->get();
+
+            $contact_name_splitted = explode(" ", $contact_name);
+            $contact_first = $contact_name_splitted[0];
+            $contact_last = '';
+
+            if (count($contact_name_splitted) > 0){
+                for ($i = 1; $i < count($contact_name_splitted); $i++){
+                    $contact_last .= $contact_name_splitted[$i] . " ";
+                }
+            }
+
+            $contact_last = trim($contact_last);
+
+            if (count($contacts) === 0){
+                $contact = new CarrierContact();
+                $contact->carrier_id = $carrier->id;
+                $contact->first_name = $contact_first;
+                $contact->last_name = $contact_last;
+                $contact->phone_work = $contact_phone;
+                $contact->phone_ext = $ext;
+                $contact->email_work = $email;
+                $contact->address1 = $address1;
+                $contact->address2 = $address2;
+                $contact->city = $city;
+                $contact->state = $state;
+                $contact->zip_code = $zip;
+                $contact->is_primary = 1;
+                $contact->save();
+
+                Carrier::where('id', $carrier->id)->update([
+                    'primary_contact_id' => $contact->id
+                ]);
+            }
+        }
 
         return response()->json(['result' => 'OK', 'carrier' => $carrier]);
     }
@@ -212,8 +268,8 @@ class CarriersController extends Controller
 
         $contacts = CarrierContact::where('carrier_id', $carrier_id)->orderBy('last_name', 'asc')->get();
         $notes = CarrierNote::where('carrier_id', $carrier_id)->get();
-        $drivers = CarrierDriver::where('carrier_id', $carrier_id)->get();
-        $insurances = Insurance::where('carrier_id', $carrier_id)->with('insuranceType')->get();
+        $drivers = CarrierDriver::where('carrier_id', $carrier_id)->orderBy('first_name', 'ASC')->get();
+        $insurances = Insurance::where('carrier_id', $carrier_id)->with('insuranceType')->has('insuranceType')->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts, 'notes' => $notes, 'drivers' => $drivers, 'insurances' => $insurances]);
     }

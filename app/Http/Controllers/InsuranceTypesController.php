@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Insurance;
 use App\InsuranceType;
 use Illuminate\Http\Request;
 
 class InsuranceTypesController extends Controller
 {
     public function getInsuranceTypes(){
-        $types = InsuranceType::whereRaw("1 = 1")->get();
-
-        return response()->json(['result' => 'OK', 'types' => $types]);
+        $types = InsuranceType::whereRaw("1 = 1")->orderBy('name', 'ASC')->get();
+        $companies = Insurance::orderBy('company', 'ASC')->get(['id', 'company']);
+        return response()->json(['result' => 'OK', 'types' => $types, 'companies' => $companies]);
     }
 
     public function saveInsuranceType(Request $request){
