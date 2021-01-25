@@ -66,3 +66,7 @@ Route::post('/getCarrierDropdownItems', 'MiscController@getCarrierDropdownItems'
 
 Route::post('/getFactoringCompanies', 'FactoringCompaniesController@getFactoringCompanies')->middleware('cors');
 Route::post('/saveFactoringCompany', 'FactoringCompaniesController@saveFactoringCompany')->middleware('cors');
+
+Route::post('/saveDocument', 'CustomerDocumentsController@saveDocument')->middleware('cors');
+Route::post('/getDocumentsByCustomer', 'CustomerDocumentsController@getDocumentsByCustomer')->middleware('cors');
+Route::post('/deleteCustomerDocument', 'CustomerDocumentsController@deleteCustomerDocument')->middleware('cors');
