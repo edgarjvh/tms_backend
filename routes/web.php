@@ -7,6 +7,7 @@ Route::get('/', function () {
 });
 
 Route::post('/customers', 'CustomersController@customers')->name('customers')->middleware('cors');
+Route::post('/getFullCustomers', 'CustomersController@getFullCustomers')->name('customers')->middleware('cors');
 Route::post('/saveCustomer', 'CustomersController@saveCustomer')->middleware('cors');
 Route::post('/getCustomerPayload', 'CustomersController@getCustomerPayload')->middleware('cors');
 Route::post('/carriers', 'CarriersController@carriers')->name('carriers')->middleware('cors');
@@ -70,3 +71,12 @@ Route::post('/saveFactoringCompany', 'FactoringCompaniesController@saveFactoring
 Route::post('/saveDocument', 'CustomerDocumentsController@saveDocument')->middleware('cors');
 Route::post('/getDocumentsByCustomer', 'CustomerDocumentsController@getDocumentsByCustomer')->middleware('cors');
 Route::post('/deleteCustomerDocument', 'CustomerDocumentsController@deleteCustomerDocument')->middleware('cors');
+Route::post('/getNotesByDocument', 'CustomerDocumentsController@getNotesByDocument')->middleware('cors');
+Route::post('/saveCustomerDocumentNote', 'CustomerDocumentsController@saveCustomerDocumentNote')->middleware('cors');
+
+Route::post('/getDispatchNotes', 'DispatchNotesController@getDispatchNotes')->middleware('cors');
+Route::post('/getInternalNotes', 'DispatchNotesController@getInternalNotes')->middleware('cors');
+Route::post('/saveInternalNotes', 'DispatchNotesController@saveInternalNotes')->middleware('cors');
+Route::post('/getNotesForCarrier', 'DispatchNotesController@getNotesForCarrier')->middleware('cors');
+Route::post('/saveNotesForCarrier', 'DispatchNotesController@saveNotesForCarrier')->middleware('cors');
+Route::post('/deleteNotesForCarrier', 'DispatchNotesController@deleteNotesForCarrier')->middleware('cors');

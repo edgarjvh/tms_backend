@@ -3,19 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\CustomerDocument;
+use App\CustomerDocumentNote;
 use Illuminate\Http\Request;
 
 class CustomerDocumentsController extends Controller
 {
     public function getDocuments(Request $request){
-        $documents = CustomerDocument::all();
+        $documents = CustomerDocument::with('notes')->all();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
     public function getDocumentsByCustomer(Request $request){
         $customer_id = $request->customer_id;
-        $documents = CustomerDocument::where('customer_id', $customer_id)->get();
+        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -46,7 +47,7 @@ class CustomerDocumentsController extends Controller
             'tags' => $tags
         ]);
 
-        $documents = CustomerDocument::where('customer_id', $customer_id)->get();
+        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('customer-documents/' . $doc_id));
 
@@ -62,8 +63,37 @@ class CustomerDocumentsController extends Controller
 
         unlink(public_path('customer-documents/' . $doc_id));
 
-        $documents = CustomerDocument::where('customer_id', $customer_id)->get();
+        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
+    }
+
+    public function getNotesByDocument(Request $request){
+        $doc_id = $request->doc_id;
+
+        $documentNotes = CustomerDocumentNote::where('customer_document_id', $doc_id)->get();
+
+        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
+    }
+
+    public function saveCustomerDocumentNote(Request $request){
+        $note_id = $request->note_id;
+        $doc_id = $request->doc_id;
+        $user = $request->user;
+        $date_time = $request->date_time;
+        $note = $request->note;
+
+        $documentNote = CustomerDocumentNote::updateOrCreate([
+            'id' => $note_id
+        ], [
+            'customer_document_id' => $doc_id,
+            'note' => $note,
+            'user' => $user,
+            'date_time' => $date_time
+        ]);
+
+        $documentNotes = CustomerDocumentNote::where('customer_document_id', $doc_id)->get();
+
+        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'documentNotes' => $documentNotes]);
     }
 }

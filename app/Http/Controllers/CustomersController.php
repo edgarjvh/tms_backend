@@ -229,4 +229,10 @@ class CustomersController extends Controller
             'automatic_emails' => $automatic_emails
         ]);
     }
+
+    public function getFullCustomers(Request $request){
+        $customers = Customer::with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])->get();
+
+        return response()->json(['result' => 'OK', 'customers' => $customers]);
+    }
 }
