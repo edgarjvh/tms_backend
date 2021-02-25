@@ -41,6 +41,34 @@ class CustomersController extends Controller
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
 
+    public function customerSearch(Request $request)
+    {
+        // error_log($request->search[0]['data']);
+        $name = isset($request->search[0]['data']) ? trim($request->search[0]['data']) : '';
+        $city = isset($request->search[1]['data']) ? trim($request->search[1]['data']) : '';
+        $state = isset($request->search[2]['data']) ? trim($request->search[2]['data']) : '';
+        $zip = isset($request->search[3]['data']) ? trim($request->search[3]['data']) : '';
+        $contact_name = isset($request->search[4]['data']) ? trim($request->search[4]['data']) : '';
+        $contact_phone = isset($request->search[5]['data']) ? trim($request->search[5]['data']) : '';
+        $email = isset($request->search[6]['data']) ? trim($request->search[6]['data']) : '';
+
+        $customers = Customer::whereRaw("1 = 1")
+            // ->whereRaw("code like '%$code%'")
+            ->whereRaw("LOWER(name) like '%$name%'")
+            ->whereRaw("LOWER(city) like '%$city%'")
+            ->whereRaw("LOWER(state) like '%$state%'")
+            ->whereRaw("zip like '%$zip%'")
+            ->whereRaw("LOWER(contact_name) like '%$contact_name%'")
+            ->whereRaw("contact_phone like '%$contact_phone%'")
+            ->whereRaw("LOWER(email) like '%$email%'")
+            ->orderBy('code', 'ASC')
+            ->orderBy('code_number', 'ASC')
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])
+            ->get();
+
+        return response()->json(['result' => 'OK', 'customers' => $customers]);
+    }
+
     public function saveCustomer(Request $request){
         $id = isset($request->id) ? trim($request->id) : '';
         $code = isset($request->code) ? trim($request->code) : '';

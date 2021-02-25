@@ -58,6 +58,52 @@ class ContactsController extends Controller
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 
+    public function customerContactsSearch(Request $request){
+
+        $customer_id = isset($request->search[0]['data']) ? trim($request->search[0]['data']) : 0;
+        $first_name = isset($request->search[1]['data']) ? trim($request->search[1]['data']) : '';
+        $last_name = isset($request->search[2]['data']) ? trim($request->search[2]['data']) : '';
+        $address1 = isset($request->search[3]['data']) ? trim($request->search[3]['data']) : '';
+        $address2 = isset($request->search[4]['data']) ? trim($request->search[4]['data']) : '';
+        $city = isset($request->search[5]['data']) ? trim($request->search[5]['data']) : '';
+        $state = isset($request->search[6]['data']) ? trim($request->search[6]['data']) : '';
+        $phone = isset($request->search[7]['data']) ? trim($request->search[7]['data']) : '';
+        $email = isset($request->search[8]['data']) ? trim($request->search[8]['data']) : '';
+
+        if ($customer_id == 0){
+            $contacts = Contact::whereRaw("1 = 1")
+                ->whereRaw("LOWER(first_name) like '%$first_name%'")
+                ->whereRaw("LOWER(last_name) like '%$last_name%'")
+                ->whereRaw("LOWER(address1) like '%$address1%'")
+                ->whereRaw("LOWER(address2) like '%$address2%'")
+                ->whereRaw("LOWER(city) like '%$city%'")
+                ->whereRaw("LOWER(state) like '%$state%'")
+                ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
+                ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
+                ->orderBy('last_name', 'ASC')
+                ->with('customer')
+                ->has('customer')
+                ->get();
+        }else{
+            $contacts = Contact::whereRaw("1 = 1")
+                ->whereRaw("customer_id = $customer_id")
+                ->whereRaw("LOWER(first_name) like '%$first_name%'")
+                ->whereRaw("LOWER(last_name) like '%$last_name%'")
+                ->whereRaw("LOWER(address1) like '%$address1%'")
+                ->whereRaw("LOWER(address2) like '%$address2%'")
+                ->whereRaw("LOWER(city) like '%$city%'")
+                ->whereRaw("LOWER(state) like '%$state%'")
+                ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
+                ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
+                ->orderBy('last_name', 'ASC')
+                ->with('customer')
+                ->has('customer')
+                ->get();
+        }
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
     public function getContactsByEmail(Request $request){
         $email = isset($request->email) ? trim($request->email) : '';
 

@@ -7,6 +7,7 @@ Route::get('/', function () {
 });
 
 Route::post('/customers', 'CustomersController@customers')->name('customers')->middleware('cors');
+Route::post('/customerSearch', 'CustomersController@customerSearch')->middleware('cors');
 Route::post('/getFullCustomers', 'CustomersController@getFullCustomers')->name('customers')->middleware('cors');
 Route::post('/saveCustomer', 'CustomersController@saveCustomer')->middleware('cors');
 Route::post('/getCustomerPayload', 'CustomersController@getCustomerPayload')->middleware('cors');
@@ -15,6 +16,7 @@ Route::post('/saveCarrier', 'CarriersController@saveCarrier')->middleware('cors'
 Route::post('/getCarrierPayload', 'CarriersController@getCarrierPayload')->middleware('cors');
 
 Route::post('/getContacts', 'ContactsController@getContacts')->middleware('cors');
+Route::post('/customerContactsSearch', 'ContactsController@customerContactsSearch')->middleware('cors');
 Route::post('/getContactsByEmail', 'ContactsController@getContactsByEmail')->middleware('cors');
 Route::post('/getContactsByEmailOrName', 'ContactsController@getContactsByEmailOrName')->middleware('cors');
 Route::post('/contacts', 'ContactsController@contacts')->name('contacts')->middleware('cors');
