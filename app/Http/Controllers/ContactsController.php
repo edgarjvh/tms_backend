@@ -173,7 +173,7 @@ class ContactsController extends Controller
 
     public function saveContact(Request $request)
     {
-        $contact_id = isset($request->contact_id) ? $request->contact_id : 0;
+        $contact_id = isset($request->contact_id) ? $request->contact_id : (isset($request->id) ? $request->id : 0);
         $curContact = Contact::where('id', $contact_id)->first();
         $customer_id = $request->customer_id;
 
@@ -282,6 +282,7 @@ class ContactsController extends Controller
     public function uploadAvatar(Request $request)
     {
         $contact_id = $_POST['contact_id'];
+        $customer_id = $request->customer_id;
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
@@ -303,27 +304,45 @@ class ContactsController extends Controller
             ->has('customer')
             ->first();
 
+        $contacts = Contact::where('customer_id', $customer_id)
+            ->with('customer')
+            ->has('customer')
+            ->orderBy('last_name', 'asc')
+            ->get();
+
         move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
 
-        return response()->json(['result' => 'OK', 'contact' => $contact]);
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
 
     public function removeAvatar(Request $request){
-        $contact_id = $request->contact_id;
+        $contact_id = isset($request->contact_id) ? $request->contact_id : (isset($request->id) ? $request->id : 0);
+        $customer_id = $request->customer_id;
 
         $contact = Contact::where('id', $contact_id)->first();
 
         unlink(public_path('avatars/' . $contact->avatar));
 
         Contact::where('id', $contact_id)->update([
-            'avatar' => null
+            'avatar' => ''
         ]);
 
-        return response()->json(['result' => 'OK']);
+        $contact = Contact::where('id', $contact_id)
+            ->with('customer')
+            ->has('customer')
+            ->first();
+
+        $contacts = Contact::where('customer_id', $customer_id)
+            ->with('customer')
+            ->has('customer')
+            ->orderBy('last_name', 'asc')
+            ->get();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
 
     public function deleteContact(Request $request){
-        $contact_id = $request->contact_id;
+        $contact_id = isset($request->contact_id) ? $request->contact_id : (isset($request->id) ? $request->id : 0);
         
         $contact = Contact::where('id', $contact_id)->first();
 
