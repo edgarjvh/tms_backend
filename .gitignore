@@ -2,4 +2,4 @@
 /.env
 /tms-backend.zip
 /public/customer-documents/*
-/public/avatars/*
+/public/avatars/

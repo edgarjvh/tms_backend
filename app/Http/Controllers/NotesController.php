@@ -35,20 +35,20 @@ class NotesController extends Controller
 
     public function saveCustomerNote(Request $request) {
         $customer_id = $request->customer_id;
-        $note_text = $request->note;
+        $note_text = $request->text;
         $note_user = $request->user;
         $note_datetime = $request->date_time;
 
         $note = new Note();
         $note->customer_id = $customer_id;
-        $note->note = $note_text;
+        $note->text = $note_text;
         $note->user = $note_user;
         $note->date_time = $note_datetime;
         $note->save();
 
         $notes = Note::where('customer_id', $customer_id)->get();
 
-        return response()->json(['result' => 'OK', 'note' => $note, 'notes' => $notes]);
+        return response()->json(['result' => 'OK', 'note' => $note, 'data' => $notes]);
     }
 
     public function carrierNotes(Request $request){

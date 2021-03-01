@@ -5,9 +5,18 @@ namespace App\Http\Controllers;
 use App\CustomerDocument;
 use App\CustomerDocumentNote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerDocumentsController extends Controller
 {
+    public function getFile($filename){
+        $file = Storage::disk('local_public');
+        dd($file);
+        $file = File::get($file);
+        return response()->download($file);
+//        return response()->json(['result' => 'OK', 'documents' => $file]);
+    }
+
     public function getDocuments(Request $request){
         $documents = CustomerDocument::with('notes')->all();
 
@@ -78,22 +87,24 @@ class CustomerDocumentsController extends Controller
 
     public function saveCustomerDocumentNote(Request $request){
         $note_id = $request->note_id;
+        $customer_id = $request->customer_id;
         $doc_id = $request->doc_id;
         $user = $request->user;
         $date_time = $request->date_time;
-        $note = $request->note;
+        $note = $request->text;
 
         $documentNote = CustomerDocumentNote::updateOrCreate([
             'id' => $note_id
         ], [
             'customer_document_id' => $doc_id,
-            'note' => $note,
+            'text' => $note,
             'user' => $user,
             'date_time' => $date_time
         ]);
 
         $documentNotes = CustomerDocumentNote::where('customer_document_id', $doc_id)->get();
+        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
 
-        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'documentNotes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }
 }

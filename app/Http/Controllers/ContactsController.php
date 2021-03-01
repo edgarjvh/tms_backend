@@ -7,12 +7,11 @@ use App\Contact;
 use App\CarrierContact;
 use App\Customer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Symfony\Component\Console\Output\ConsoleOutput;
 
 class ContactsController extends Controller
 {
-    public function getContacts(Request $request){
+    public function getContacts(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         $customer_id = isset($request->customer_id) ? trim($request->customer_id) : 0;
         $first_name = isset($request->first_name) ? trim($request->first_name) : '';
@@ -58,7 +57,8 @@ class ContactsController extends Controller
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 
-    public function customerContactsSearch(Request $request){
+    public function customerContactsSearch(Request $request): \Illuminate\Http\JsonResponse
+    {
 
         $customer_id = isset($request->search[0]['data']) ? trim($request->search[0]['data']) : 0;
         $first_name = isset($request->search[1]['data']) ? trim($request->search[1]['data']) : '';
@@ -98,6 +98,52 @@ class ContactsController extends Controller
                 ->orderBy('last_name', 'ASC')
                 ->with('customer')
                 ->has('customer')
+                ->get();
+        }
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    public function carrierContactsSearch(Request $request){
+
+        $carrier_id = isset($request->search[0]['data']) ? trim($request->search[0]['data']) : 0;
+        $first_name = isset($request->search[1]['data']) ? trim($request->search[1]['data']) : '';
+        $last_name = isset($request->search[2]['data']) ? trim($request->search[2]['data']) : '';
+        $address1 = isset($request->search[3]['data']) ? trim($request->search[3]['data']) : '';
+        $address2 = isset($request->search[4]['data']) ? trim($request->search[4]['data']) : '';
+        $city = isset($request->search[5]['data']) ? trim($request->search[5]['data']) : '';
+        $state = isset($request->search[6]['data']) ? trim($request->search[6]['data']) : '';
+        $phone = isset($request->search[7]['data']) ? trim($request->search[7]['data']) : '';
+        $email = isset($request->search[8]['data']) ? trim($request->search[8]['data']) : '';
+
+        if ($carrier_id == 0){
+            $contacts = CarrierContact::whereRaw("1 = 1")
+                ->whereRaw("LOWER(first_name) like '%$first_name%'")
+                ->whereRaw("LOWER(last_name) like '%$last_name%'")
+                ->whereRaw("LOWER(address1) like '%$address1%'")
+                ->whereRaw("LOWER(address2) like '%$address2%'")
+                ->whereRaw("LOWER(city) like '%$city%'")
+                ->whereRaw("LOWER(state) like '%$state%'")
+                ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
+                ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
+                ->orderBy('last_name', 'ASC')
+                ->with('carrier')
+                ->has('carrier')
+                ->get();
+        }else{
+            $contacts = CarrierContact::whereRaw("1 = 1")
+                ->whereRaw("carrier_id = $carrier_id")
+                ->whereRaw("LOWER(first_name) like '%$first_name%'")
+                ->whereRaw("LOWER(last_name) like '%$last_name%'")
+                ->whereRaw("LOWER(address1) like '%$address1%'")
+                ->whereRaw("LOWER(address2) like '%$address2%'")
+                ->whereRaw("LOWER(city) like '%$city%'")
+                ->whereRaw("LOWER(state) like '%$state%'")
+                ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
+                ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
+                ->orderBy('last_name', 'ASC')
+                ->with('carrier')
+                ->has('carrier')
                 ->get();
         }
 
@@ -433,7 +479,7 @@ class ContactsController extends Controller
 
     public function saveCarrierContact(Request $request)
     {
-        $contact_id = isset($request->contact_id) ? $request->contact_id : 0;
+        $contact_id = isset($request->contact_id) ? $request->contact_id : (isset($request->id) ? $request->id : 0);
         $curContact = CarrierContact::where('id', $contact_id)->first();
         $carrier_id = $request->carrier_id;
 
@@ -583,7 +629,7 @@ class ContactsController extends Controller
     }
 
     public function deleteCarrierContact(Request $request){
-        $contact_id = $request->contact_id;
+        $contact_id = $request->id;
 
         $contact = CarrierContact::where('id', $contact_id)->first();
 

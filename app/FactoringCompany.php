@@ -10,6 +10,6 @@ class FactoringCompany extends Model
     protected $table = 'factoring_companies';
 
     public function carriers(){
-        return $this->hasMany(Carrier::class);
+        return $this->belongsTo(Carrier::class);
     }
 }

@@ -39,7 +39,7 @@ class DirectionsController extends Controller
     public function saveCustomerDirection(Request $request){
         $id = $request->id;
         $customer_id = $request->customer_id;
-        $direction_text = $request->direction;
+        $direction_text = $request->text;
         $direction_user = $request->user;
         $direction_datetime = $request->date_time;
 
@@ -47,14 +47,14 @@ class DirectionsController extends Controller
             'id' => $id
         ],[
            'customer_id' => $customer_id,
-           'direction' => $direction_text,
+           'text' => $direction_text,
            'user' => $direction_user,
            'date_time' => $direction_datetime
         ]);
 
         $directions = Direction::where('customer_id', $customer_id)->get();
 
-        return response()->json(['result' => 'OK', 'direction' => $direction, 'directions' => $directions]);
+        return response()->json(['result' => 'OK', 'direction' => $direction, 'data' => $directions]);
     }
 
     public function deleteDirection(Request $request){

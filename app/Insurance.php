@@ -8,7 +8,11 @@ class Insurance extends Model
 {
     protected $guarded = [];
 
-    public function insuranceType(){
+    public function insurance_type(){
         return $this->belongsTo(InsuranceType::class);
+    }
+
+    public function carrier(){
+        return $this->belongsTo(Carrier::class);
     }
 }

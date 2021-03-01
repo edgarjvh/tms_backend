@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\View\View;
-
 Route::get('/', function () {
     return view('welcome');
 });
@@ -12,11 +10,15 @@ Route::post('/getFullCustomers', 'CustomersController@getFullCustomers')->name('
 Route::post('/saveCustomer', 'CustomersController@saveCustomer')->middleware('cors');
 Route::post('/getCustomerPayload', 'CustomersController@getCustomerPayload')->middleware('cors');
 Route::post('/carriers', 'CarriersController@carriers')->name('carriers')->middleware('cors');
+Route::post('/carrierSearch', 'CarriersController@carrierSearch')->middleware('cors');
+Route::post('/getFullCarriers', 'CarriersController@getFullCarriers')->middleware('cors');
 Route::post('/saveCarrier', 'CarriersController@saveCarrier')->middleware('cors');
 Route::post('/getCarrierPayload', 'CarriersController@getCarrierPayload')->middleware('cors');
+Route::post('/getCarrierPopupItems', 'CarriersController@getCarrierPopupItems')->middleware('cors');
 
 Route::post('/getContacts', 'ContactsController@getContacts')->middleware('cors');
 Route::post('/customerContactsSearch', 'ContactsController@customerContactsSearch')->middleware('cors');
+Route::post('/carrierContactsSearch', 'ContactsController@carrierContactsSearch')->middleware('cors');
 Route::post('/getContactsByEmail', 'ContactsController@getContactsByEmail')->middleware('cors');
 Route::post('/getContactsByEmailOrName', 'ContactsController@getContactsByEmailOrName')->middleware('cors');
 Route::post('/contacts', 'ContactsController@contacts')->name('contacts')->middleware('cors');
@@ -72,6 +74,9 @@ Route::post('/getCarrierDropdownItems', 'MiscController@getCarrierDropdownItems'
 
 Route::post('/getFactoringCompanies', 'FactoringCompaniesController@getFactoringCompanies')->middleware('cors');
 Route::post('/saveFactoringCompany', 'FactoringCompaniesController@saveFactoringCompany')->middleware('cors');
+Route::post('/saveCarrierFactoringCompany', 'FactoringCompaniesController@saveCarrierFactoringCompany')->middleware('cors');
+Route::post('/deleteCarrierFactoringCompany', 'FactoringCompaniesController@deleteCarrierFactoringCompany')->middleware('cors');
+Route::post('/factoringCompanySearch', 'FactoringCompaniesController@factoringCompanySearch')->middleware('cors');
 
 Route::post('/saveDocument', 'CustomerDocumentsController@saveDocument')->middleware('cors');
 Route::post('/getDocumentsByCustomer', 'CustomerDocumentsController@getDocumentsByCustomer')->middleware('cors');
@@ -85,3 +90,8 @@ Route::post('/saveInternalNotes', 'DispatchNotesController@saveInternalNotes')->
 Route::post('/getNotesForCarrier', 'DispatchNotesController@getNotesForCarrier')->middleware('cors');
 Route::post('/saveNotesForCarrier', 'DispatchNotesController@saveNotesForCarrier')->middleware('cors');
 Route::post('/deleteNotesForCarrier', 'DispatchNotesController@deleteNotesForCarrier')->middleware('cors');
+
+Route::post('/saveCarrierMailingAddress', 'CarrierMailingAddressesController@saveCarrierMailingAddress')->middleware('cors');
+Route::post('/deleteCarrierMailingAddress', 'CarrierMailingAddressesController@deleteCarrierMailingAddress')->middleware('cors');
+
+Route::get('/getFile/{filename}', 'CustomerDocumentsController@getFile')->middleware('cors');

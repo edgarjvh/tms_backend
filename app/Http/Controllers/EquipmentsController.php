@@ -7,8 +7,13 @@ use Illuminate\Http\Request;
 
 class EquipmentsController extends Controller
 {
-    public function getEquipments(){
-        $equipments = Equipment::orderBy('name', 'ASC')->get();
+    public function getEquipments(Request $request)
+    {
+        $name = isset($request->name) ? $request->name : '';
+
+        $equipments = Equipment::whereRaw("1 = 1")
+            ->whereRaw("LOWER(name) like '%$name%'")
+            ->orderBy('name', 'ASC')->get();
 
         return response()->json(['result' => 'OK', 'equipments' => $equipments]);
     }

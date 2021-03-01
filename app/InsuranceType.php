@@ -9,6 +9,6 @@ class InsuranceType extends Model
     protected $guarded = [];
 
     public function insurance(){
-        return $this->hasOne(Insurance::class);
+        return $this->hasMany(Insurance::class);
     }
 }

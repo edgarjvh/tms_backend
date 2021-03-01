@@ -11,4 +11,8 @@ class CarrierDriver extends Model
     public function carrier(){
         return $this->belongsTo(Carrier::class);
     }
+
+    public function equipment(){
+        return $this->belongsTo(Equipment::class);
+    }
 }
