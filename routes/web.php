@@ -67,6 +67,7 @@ Route::post('/deleteInsuranceType', 'InsuranceTypesController@deleteInsuranceTyp
 Route::post('/getInsurances', 'InsurancesController@getInsurances')->middleware('cors');
 Route::post('/saveInsurance', 'InsurancesController@saveInsurance')->middleware('cors');
 Route::post('/deleteInsurance', 'InsurancesController@deleteInsurance')->middleware('cors');
+Route::post('/getInsuranceCompanies', 'InsurancesController@getInsuranceCompanies')->middleware('cors');
 
 Route::post('/getEquipments', 'EquipmentsController@getEquipments')->middleware('cors');
 
@@ -83,6 +84,12 @@ Route::post('/getDocumentsByCustomer', 'CustomerDocumentsController@getDocuments
 Route::post('/deleteCustomerDocument', 'CustomerDocumentsController@deleteCustomerDocument')->middleware('cors');
 Route::post('/getNotesByDocument', 'CustomerDocumentsController@getNotesByDocument')->middleware('cors');
 Route::post('/saveCustomerDocumentNote', 'CustomerDocumentsController@saveCustomerDocumentNote')->middleware('cors');
+
+Route::post('/saveCarrierDocument', 'CarrierDocumentsController@saveDocument')->middleware('cors');
+Route::post('/getDocumentsByCarrier', 'CarrierDocumentsController@getDocumentsByCarrier')->middleware('cors');
+Route::post('/deleteCarrierDocument', 'CarrierDocumentsController@deleteCarrierDocument')->middleware('cors');
+Route::post('/getNotesByDocument', 'CarrierDocumentsController@getNotesByDocument')->middleware('cors');
+Route::post('/saveCarrierDocumentNote', 'CarrierDocumentsController@saveCarrierDocumentNote')->middleware('cors');
 
 Route::post('/getDispatchNotes', 'DispatchNotesController@getDispatchNotes')->middleware('cors');
 Route::post('/getInternalNotes', 'DispatchNotesController@getInternalNotes')->middleware('cors');

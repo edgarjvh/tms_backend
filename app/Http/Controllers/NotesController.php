@@ -60,19 +60,19 @@ class NotesController extends Controller
 
     public function saveCarrierNote(Request $request){
         $carrier_id = $request->carrier_id;
-        $note_text = $request->note;
+        $note_text = $request->text;
         $note_user = $request->user;
-        $note_datetime = $request->datetime;
+        $note_datetime = $request->date_time;
 
         $note = new CarrierNote();
         $note->carrier_id = $carrier_id;
-        $note->note = $note_text;
+        $note->text = $note_text;
         $note->user = $note_user;
         $note->date_time = $note_datetime;
         $note->save();
 
         $notes = CarrierNote::where('carrier_id', $carrier_id)->get();
 
-        return response()->json(['result' => 'OK', 'note' => $note, 'notes' => $notes]);
+        return response()->json(['result' => 'OK', 'note' => $note, 'data' => $notes]);
     }
 }
