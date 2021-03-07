@@ -232,7 +232,7 @@ class CarriersController extends Controller
         $contacts = CarrierContact::where('carrier_id', $carrier_id)->orderBy('last_name', 'asc')->get();
         $notes = CarrierNote::where('carrier_id', $carrier_id)->get();
         $drivers = CarrierDriver::where('carrier_id', $carrier_id)->orderBy('first_name', 'ASC')->get();
-        $insurances = Insurance::where('carrier_id', $carrier_id)->with('insuranceType')->has('insuranceType')->get();
+        $insurances = Insurance::where('carrier_id', $carrier_id)->with('insurance_type')->has('insurance_type')->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts, 'notes' => $notes, 'drivers' => $drivers, 'insurances' => $insurances]);
     }
