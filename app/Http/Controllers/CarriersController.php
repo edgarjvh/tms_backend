@@ -74,6 +74,7 @@ class CarriersController extends Controller
     public function saveCarrier(Request $request)
     {
         $id = isset($request->id) ? trim($request->id) : '';
+        $factoring_company_id = isset($request->factoring_company_id) ? $request->factoring_company_id : 0;
         $code = isset($request->code) ? trim($request->code) : '';
         $code_number = 0;
         $old_code = isset($request->old_code) ? trim($request->old_code) : '';
@@ -162,6 +163,7 @@ class CarriersController extends Controller
             'id' => $id
         ],
             [
+                'factoring_company_id' => $factoring_company_id,
                 'code' => $code,
                 'code_number' => $code_number,
                 'name' => $name,

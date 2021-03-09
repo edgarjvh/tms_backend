@@ -8,27 +8,39 @@ class Carrier extends Model
 {
     protected $guarded = [];
 
-    public function contacts(){
+    public function contacts()
+    {
         return $this->hasMany(CarrierContact::class);
     }
 
-    public function drivers(){
+    public function drivers()
+    {
         return $this->hasMany(CarrierDriver::class)->with(['equipment']);
     }
 
-    public function factoring_company(){
-        return $this->hasOne(FactoringCompany::class);
+    public function factoring_company()
+    {
+        return $this->belongsTo(FactoringCompany::class)->with([
+            'carriers',
+            'contacts',
+            'invoices',
+            'mailing_address',
+            'notes'
+        ]);
     }
 
-    public function mailing_address(){
+    public function mailing_address()
+    {
         return $this->hasOne(CarrierMailingAddress::class);
     }
 
-    public function notes(){
+    public function notes()
+    {
         return $this->hasMany(CarrierNote::class);
     }
 
-    public function insurances(){
+    public function insurances()
+    {
         return $this->hasMany(Insurance::class)->with(['insurance_type']);
     }
 }

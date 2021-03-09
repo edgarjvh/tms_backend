@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\CustomerDocument;
-use App\CustomerDocumentNote;
+use App\FactoringCompanyDocument;
+use App\FactoringCompanyDocumentNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class CustomerDocumentsController extends Controller
+class FactoringCompanyDocumentsController extends Controller
 {
     public function getFile($filename){
         $file = Storage::disk('local_public');
@@ -16,21 +16,21 @@ class CustomerDocumentsController extends Controller
 //        return response()->json(['result' => 'OK', 'documents' => $file]);
     }
 
-    public function getDocuments(Request $request){
-        $documents = CustomerDocument::with('notes')->all();
+    public function getFactoringCompanyDocuments(Request $request){
+        $documents = FactoringCompanyDocument::with('notes')->all();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
-    public function getDocumentsByCustomer(Request $request){
-        $customer_id = $request->customer_id;
-        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
+    public function getDocumentsByFactoringCompany(Request $request){
+        $factoring_company_id = $request->factoring_company_id;
+        $documents = CustomerDocument::where('factoring_company_id', $factoring_company_id)->with('notes')->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
-    public function saveDocument(Request $request){
-        $customer_id = $request->customer_id;
+    public function saveFactoringCompanyDocument(Request $request){
+        $factoring_company_id = $request->factoring_company_id;
         $date_entered = isset($request->date_entered) ? $request->date_entered : '';
         $title = isset($request->title) ? $request->title : '';
         $subject = isset($request->subject) ? $request->subject : '';
@@ -41,10 +41,10 @@ class CustomerDocumentsController extends Controller
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
         $doc_id = uniqid() . '.' . $doc_extension;
 
-        $document = CustomerDocument::updateOrCreate([
+        $document = FactoringCompanyDocument::updateOrCreate([
             'id' => 0
         ], [
-            'customer_id' => $customer_id,
+            'factoring_company_id' => $factoring_company_id,
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
@@ -55,54 +55,54 @@ class CustomerDocumentsController extends Controller
             'tags' => $tags
         ]);
 
-        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
+        $documents = FactoringCompanyDocument::where('factoring_company_id', $factoring_company_id)->with('notes')->get();
 
-        move_uploaded_file($fileData['tmp_name'], public_path('customer-documents/' . $doc_id));
+        move_uploaded_file($fileData['tmp_name'], public_path('factoring-company-documents/' . $doc_id));
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents]);
 //        {"name":"generated.pdf","type":"application\/pdf","tmp_name":"C:\\xampp\\tmp\\php1753.tmp","error":0,"size":13213}
     }
 
-    public function deleteCustomerDocument(Request $request){
+    public function deleteFactoringCompanyDocument(Request $request){
         $doc_id = $request->doc_id;
-        $customer_id = $request->customer_id;
+        $factoring_company_id = $request->factoring_company_id;
 
-        $document = CustomerDocument::where('doc_id', $doc_id)->delete();
+        $document = FactoringCompanyDocument::where('doc_id', $doc_id)->delete();
 
-        unlink(public_path('customer-documents/' . $doc_id));
+        unlink(public_path('factoring_company-documents/' . $doc_id));
 
-        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
+        $documents = FactoringCompanyDocument::where('factoring_company_id', $factoring_company_id)->with('notes')->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
-    public function getNotesByDocument(Request $request){
+    public function getNotesByFactoringCompanyDocument(Request $request){
         $doc_id = $request->doc_id;
 
-        $documentNotes = CustomerDocumentNote::where('customer_document_id', $doc_id)->get();
+        $documentNotes = FactoringCompanyDocumentNote::where('factoring_company_document_id', $doc_id)->get();
 
         return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
 
-    public function saveCustomerDocumentNote(Request $request){
+    public function saveFactoringCompanyDocumentNote(Request $request){
         $note_id = $request->note_id;
-        $customer_id = $request->customer_id;
+        $factoring_company_id = $request->factoring_company_id;
         $doc_id = $request->doc_id;
         $user = $request->user;
         $date_time = $request->date_time;
         $note = $request->text;
 
-        $documentNote = CustomerDocumentNote::updateOrCreate([
+        $documentNote = FactoringCompanyDocumentNote::updateOrCreate([
             'id' => $note_id
         ], [
-            'customer_document_id' => $doc_id,
+            'factoring_company_document_id' => $doc_id,
             'text' => $note,
             'user' => $user,
             'date_time' => $date_time
         ]);
 
-        $documentNotes = CustomerDocumentNote::where('customer_document_id', $doc_id)->get();
-        $documents = CustomerDocument::where('customer_id', $customer_id)->with('notes')->get();
+        $documentNotes = FactoringCompanyDocumentNote::where('factoring_company_document_id', $doc_id)->get();
+        $documents = FactoringCompanyDocument::where('factoring_company_id', $factoring_company_id)->with('notes')->get();
 
         return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }

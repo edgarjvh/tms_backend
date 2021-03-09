@@ -41,6 +41,12 @@ Route::post('/deleteCarrierContact', 'ContactsController@deleteCarrierContact')-
 Route::post('/uploadCarrierAvatar', 'ContactsController@uploadCarrierAvatar')->middleware('cors');
 Route::post('/removeCarrierAvatar', 'ContactsController@removeCarrierAvatar')->middleware('cors');
 
+Route::post('/saveFactoringCompanyContact', 'ContactsController@saveFactoringCompanyContact')->middleware('cors');
+Route::post('/deleteFactoringCompanyContact', 'ContactsController@deleteFactoringCompanyContact')->middleware('cors');
+Route::post('/uploadFactoringCompanyAvatar', 'ContactsController@uploadFactoringCompanyAvatar')->middleware('cors');
+Route::post('/removeFactoringCompanyAvatar', 'ContactsController@removeFactoringCompanyAvatar')->middleware('cors');
+Route::post('/factoringCompanyContactsSearch', 'ContactsController@factoringCompanyContactsSearch')->middleware('cors');
+
 Route::post('/notes', 'NotesController@notes')->name('notes')->middleware('cors');
 Route::post('/saveNote', 'NotesController@saveNote')->middleware('cors');
 Route::post('/saveCustomerNote', 'NotesController@saveCustomerNote')->middleware('cors');
@@ -78,6 +84,9 @@ Route::post('/saveFactoringCompany', 'FactoringCompaniesController@saveFactoring
 Route::post('/saveCarrierFactoringCompany', 'FactoringCompaniesController@saveCarrierFactoringCompany')->middleware('cors');
 Route::post('/deleteCarrierFactoringCompany', 'FactoringCompaniesController@deleteCarrierFactoringCompany')->middleware('cors');
 Route::post('/factoringCompanySearch', 'FactoringCompaniesController@factoringCompanySearch')->middleware('cors');
+Route::post('/saveFactoringCompanyMailingAddress', 'FactoringCompaniesController@saveFactoringCompanyMailingAddress')->middleware('cors');
+Route::post('/deleteFactoringCompanyMailingAddress', 'FactoringCompaniesController@deleteFactoringCompanyMailingAddress')->middleware('cors');
+Route::post('/saveFactoringCompanyNotes', 'FactoringCompaniesController@saveFactoringCompanyNotes')->middleware('cors');
 
 Route::post('/saveDocument', 'CustomerDocumentsController@saveDocument')->middleware('cors');
 Route::post('/getDocumentsByCustomer', 'CustomerDocumentsController@getDocumentsByCustomer')->middleware('cors');
@@ -90,6 +99,13 @@ Route::post('/getDocumentsByCarrier', 'CarrierDocumentsController@getDocumentsBy
 Route::post('/deleteCarrierDocument', 'CarrierDocumentsController@deleteCarrierDocument')->middleware('cors');
 Route::post('/getNotesByDocument', 'CarrierDocumentsController@getNotesByDocument')->middleware('cors');
 Route::post('/saveCarrierDocumentNote', 'CarrierDocumentsController@saveCarrierDocumentNote')->middleware('cors');
+
+Route::post('/saveFactoringCompanyDocument', 'FactoringCompanyDocumentsController@saveFactoringCompanyDocument')->middleware('cors');
+Route::post('/getDocumentsByFactoringCompany', 'FactoringCompanyDocumentsController@getDocumentsByFactoringCompany')->middleware('cors');
+Route::post('/deleteFactoringCompanyDocument', 'FactoringCompanyDocumentsController@deleteFactoringCompanyDocument')->middleware('cors');
+Route::post('/getNotesByFactoringCompanyDocument', 'FactoringCompanyDocumentsController@getNotesByFactoringCompanyDocument')->middleware('cors');
+Route::post('/saveFactoringCompanyDocumentNote', 'FactoringCompanyDocumentsController@saveFactoringCompanyDocumentNote')->middleware('cors');
+Route::post('/getFactoringCompanyDocuments', 'FactoringCompanyDocumentsController@getFactoringCompanyDocuments')->middleware('cors');
 
 Route::post('/getDispatchNotes', 'DispatchNotesController@getDispatchNotes')->middleware('cors');
 Route::post('/getInternalNotes', 'DispatchNotesController@getInternalNotes')->middleware('cors');
