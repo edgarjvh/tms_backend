@@ -173,30 +173,30 @@ class CustomersController extends Controller
             'id' => $id
         ],
             [
-                'code' => $code,
+                'code' => strtoupper($code),
                 'code_number' => $code_number,
                 'name' => $name,
                 'address1' => $address1,
                 'address2' => $address2,
                 'city' => $city,
-                'state' => $state,
+                'state' => strtoupper($state),
                 'zip' => $zip,
                 'contact_name' => $contact_name,
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
-                'email' => $email,
+                'email' => strtolower($email),
                 'mailing_code' => $mailing_code,
                 'mailing_code_number' => $mailing_code_number,
                 'mailing_name' => $mailing_name,
                 'mailing_address1' => $mailing_address1,
                 'mailing_address2' => $mailing_address2,
                 'mailing_city' => $mailing_city,
-                'mailing_state' => $mailing_state,
+                'mailing_state' => strtoupper($mailing_state),
                 'mailing_zip' => $mailing_zip,
                 'mailing_contact_name' => $mailing_contact_name,
                 'mailing_contact_phone' => $mailing_contact_phone,
                 'mailing_ext' => $mailing_contact_phone_ext,
-                'mailing_email' => $mailing_email,
+                'mailing_email' => strtolower($mailing_email),
                 'mailing_bill_to' => $mailing_bill_to !== '' ? $mailing_code : '',
                 'mailing_division' => $mailing_division,
                 'mailing_agent_code' => $mailing_agent_code,
@@ -222,8 +222,8 @@ class CustomersController extends Controller
             if (count($contacts) === 0) {
                 $contact = new Contact();
                 $contact->customer_id = $customer->id;
-                $contact->first_name = $contact_first;
-                $contact->last_name = $contact_last;
+                $contact->first_name = trim($contact_first);
+                $contact->last_name = trim($contact_last);
                 $contact->phone_work = $contact_phone;
                 $contact->phone_ext = $contact_phone_ext;
                 $contact->email_work = $email;

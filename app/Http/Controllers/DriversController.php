@@ -13,6 +13,7 @@ class DriversController extends Controller
         $drivers = CarrierDriver::where('carrier_id', $carrier_id)
             ->with('carrier')
             ->has('carrier')
+            ->orderBy('first_name', 'asc')
             ->get();
 
         return response()->json(['result' => 'OK', 'drivers' => $drivers]);

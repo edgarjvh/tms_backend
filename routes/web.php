@@ -117,4 +117,13 @@ Route::post('/deleteNotesForCarrier', 'DispatchNotesController@deleteNotesForCar
 Route::post('/saveCarrierMailingAddress', 'CarrierMailingAddressesController@saveCarrierMailingAddress')->middleware('cors');
 Route::post('/deleteCarrierMailingAddress', 'CarrierMailingAddressesController@deleteCarrierMailingAddress')->middleware('cors');
 
+Route::post('/getOrders', 'OrdersController@getOrders')->middleware('cors');
+Route::post('/getOrderByOrderNumber', 'OrdersController@getOrderByOrderNumber')->middleware('cors');
+Route::post('/getOrderByTripNumber', 'OrdersController@getOrderByTripNumber')->middleware('cors');
+Route::post('/getLastOrderNumber', 'OrdersController@getLastOrderNumber')->middleware('cors');
+Route::post('/saveOrder', 'OrdersController@saveOrder')->middleware('cors');
+
+
+
 Route::get('/getFile/{filename}', 'CustomerDocumentsController@getFile')->middleware('cors');
+

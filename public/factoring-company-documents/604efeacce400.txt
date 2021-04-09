@@ -1,0 +1,7 @@
+!RP,2306,0,tdd1.zuprevencion
+[25/06/2015 11:23:37 a.m.] Edgar Villasmil: !RP,2319,190.142.248.235
+[25/06/2015 11:23:53 a.m.] Edgar Villasmil: !RP,769,0,1750
+[25/06/2015 11:24:05 a.m.] Edgar Villasmil: corrijo !RP,2319,0,190.142.248.235
+[25/06/2015 11:24:20 a.m.] Edgar Villasmil: !RP,262,0,90
+[25/06/2015 11:24:31 a.m.] Edgar Villasmil: !RP,265,0,90
+[25/06/2015 11:24:55 a.m.] Edgar Villasmil: !R3,49,129

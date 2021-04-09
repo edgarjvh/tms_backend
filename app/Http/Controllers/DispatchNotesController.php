@@ -24,23 +24,23 @@ class DispatchNotesController extends Controller
 
     public function saveInternalNotes(Request $request)
     {
-        $dispatch_id = isset($request->dispatch_id) ? $request->dispatch_id : 0;
+        $order_number = isset($request->order_number) ? $request->order_number : 0;
         $user = isset($request->user) ? $request->user : '';
         $date_time = isset($request->date_time) ? $request->date_time : '';
-        $note = isset($request->note) ? $request->note : '';
+        $text = isset($request->text) ? $request->text : '';
 
         $internal_note = InternalNotes::updateOrCreate([
             'id' => 0
         ], [
-            'dispatch_id' => 0,
+            'order_number' => $order_number,
             'user' => $user,
             'date_time' => $date_time,
-            'note' => $note
+            'text' => $text
         ]);
 
-        $internal_notes = InternalNotes::all();
+        $internal_notes = InternalNotes::where('order_number', $order_number)->get();
 
-        return response()->json(['result' => 'OK', 'internal_note' => $internal_note, 'internal_notes' => $internal_notes]);
+        return response()->json(['result' => 'OK', 'internal_note' => $internal_note, 'data' => $internal_notes]);
     }
 
     public function getNotesForCarrier(Request $request)
@@ -53,32 +53,34 @@ class DispatchNotesController extends Controller
     public function saveNotesForCarrier(Request $request)
     {
         $id = isset($request->id) ? $request->id : 0;
+        $order_number = isset($request->order_number) ? $request->order_number : 0;
         $user = isset($request->user) ? $request->user : '';
         $date_time = isset($request->date_time) ? $request->date_time : '';
-        $note = isset($request->note) ? $request->note : '';
+        $text = isset($request->text) ? $request->text : '';
 
         $note_for_carrier = NotesForCarrier::updateOrCreate([
             'id' => $id
         ], [
-            'dispatch_id' => 0,
+            'order_number' => $order_number,
             'user' => $user,
             'date_time' => $date_time,
-            'note' => $note
+            'text' => $text
         ]);
 
-        $notes_for_carrier = NotesForCarrier::all();
+        $notes_for_carrier = NotesForCarrier::where('order_number', $order_number)->get();
 
-        return response()->json(['result' => 'OK', 'note_for_carrier' => $note_for_carrier, 'notes_for_carrier' => $notes_for_carrier]);
+        return response()->json(['result' => 'OK', 'note_for_carrier' => $note_for_carrier, 'data' => $notes_for_carrier]);
     }
 
     public function deleteNotesForCarrier(Request $request)
     {
         $id = isset($request->id) ? $request->id : 0;
+        $order_number = isset($request->order_number) ? $request->order_number : 0;
 
         $note_for_carrier = NotesForCarrier::where('id', $id)->delete();
 
-        $notes_for_carrier = NotesForCarrier::all();
+        $notes_for_carrier = NotesForCarrier::where('order_number', $order_number)->get();
 
-        return response()->json(['result' => 'OK', 'note_for_carrier' => $note_for_carrier, 'notes_for_carrier' => $notes_for_carrier]);
+        return response()->json(['result' => 'OK', 'note_for_carrier' => $note_for_carrier, 'data' => $notes_for_carrier]);
     }
 }

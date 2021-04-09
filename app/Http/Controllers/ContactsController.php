@@ -6,6 +6,7 @@ use App\Carrier;
 use App\Contact;
 use App\CarrierContact;
 use App\Customer;
+use App\FactoringCompany;
 use App\FactoringCompanyContact;
 use Illuminate\Http\Request;
 
@@ -269,9 +270,9 @@ class ContactsController extends Controller
             [
                 'customer_id' => $customer_id,
                 'prefix' => $prefix,
-                'first_name' => $first_name,
-                'middle_name' => $middle_name,
-                'last_name' => $last_name,
+                'first_name' => trim($first_name),
+                'middle_name' => trim($middle_name),
+                'last_name' => trim($last_name),
                 'suffix' => $suffix,
                 'title' => $title,
                 'department' => $department,
@@ -529,9 +530,9 @@ class ContactsController extends Controller
             [
                 'carrier_id' => $carrier_id,
                 'prefix' => $prefix,
-                'first_name' => $first_name,
-                'middle_name' => $middle_name,
-                'last_name' => $last_name,
+                'first_name' => trim($first_name),
+                'middle_name' => trim($middle_name),
+                'last_name' => trim($last_name),
                 'suffix' => $suffix,
                 'title' => $title,
                 'department' => $department,
@@ -696,9 +697,9 @@ class ContactsController extends Controller
             [
                 'factoring_company_id' => $factoring_company_id,
                 'prefix' => $prefix,
-                'first_name' => $first_name,
-                'middle_name' => $middle_name,
-                'last_name' => $last_name,
+                'first_name' => trim($first_name),
+                'middle_name' => trim($middle_name),
+                'last_name' => trim($last_name),
                 'suffix' => $suffix,
                 'title' => $title,
                 'department' => $department,
@@ -733,11 +734,11 @@ class ContactsController extends Controller
                 'automatic_emails_empty' => $automatic_emails_empty
             ]);
 
-//        if ($is_primary === 1){
-//            Carrier::where('id', $factoring_company_id)->update([
-//                'primary_contact_id' => $contact->id
-//            ]);
-//        }
+        if ($is_primary === 1){
+            FactoringCompany::where('id', $factoring_company_id)->update([
+                'primary_contact_id' => $contact->id
+            ]);
+        }
 
         $newContact = FactoringCompanyContact::where('id', $contact->id)
             ->with('factoring_company')

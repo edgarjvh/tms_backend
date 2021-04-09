@@ -76,6 +76,6 @@ class DirectionsController extends Controller
 
         $directions = Direction::where('customer_id', $customer_id)->get();
 
-        return response()->json(['result' => 'OK', 'directions' => $directions]);
+        return response()->json(['result' => 'OK', 'data' => $directions]);
     }
 }
