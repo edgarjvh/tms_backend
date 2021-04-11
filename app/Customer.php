@@ -9,7 +9,7 @@ class Customer extends Model
     protected $guarded = [];
 
     public function contacts(){
-        return $this->hasMany(Contact::class);
+        return $this->hasMany(Contact::class)->orderBy('last_name', 'asc');
     }
 
     public function documents(){

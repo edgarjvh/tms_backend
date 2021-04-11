@@ -2,3 +2,7 @@
 /.env
 /tms-backend.zip
 /public/customer-documents/*
+/public/factoring-company-documents/*
+/public/carrier-documents/*
+/public/avatars/*
+/vendor/

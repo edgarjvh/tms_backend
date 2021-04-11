@@ -34,12 +34,43 @@ class CustomersController extends Controller
             ->whereRaw("contact_phone like '%$contact_phone%'")
             ->whereRaw("email like '%$email%'")
             ->orderBy('code', 'ASC')
-            ->orderBy('code_number', 'ASC')->get();
+            ->orderBy('code_number', 'ASC')
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])
+            ->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
 
-    public function saveCustomer(Request $request){
+    public function customerSearch(Request $request)
+    {
+        // error_log($request->search[0]['data']);
+        $name = isset($request->search[0]['data']) ? trim($request->search[0]['data']) : '';
+        $city = isset($request->search[1]['data']) ? trim($request->search[1]['data']) : '';
+        $state = isset($request->search[2]['data']) ? trim($request->search[2]['data']) : '';
+        $zip = isset($request->search[3]['data']) ? trim($request->search[3]['data']) : '';
+        $contact_name = isset($request->search[4]['data']) ? trim($request->search[4]['data']) : '';
+        $contact_phone = isset($request->search[5]['data']) ? trim($request->search[5]['data']) : '';
+        $email = isset($request->search[6]['data']) ? trim($request->search[6]['data']) : '';
+
+        $customers = Customer::whereRaw("1 = 1")
+            // ->whereRaw("code like '%$code%'")
+            ->whereRaw("LOWER(name) like '%$name%'")
+            ->whereRaw("LOWER(city) like '%$city%'")
+            ->whereRaw("LOWER(state) like '%$state%'")
+            ->whereRaw("zip like '%$zip%'")
+            ->whereRaw("LOWER(contact_name) like '%$contact_name%'")
+            ->whereRaw("contact_phone like '%$contact_phone%'")
+            ->whereRaw("LOWER(email) like '%$email%'")
+            ->orderBy('code', 'ASC')
+            ->orderBy('code_number', 'ASC')
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])
+            ->get();
+
+        return response()->json(['result' => 'OK', 'customers' => $customers]);
+    }
+
+    public function saveCustomer(Request $request)
+    {
         $id = isset($request->id) ? trim($request->id) : '';
         $code = isset($request->code) ? trim($request->code) : '';
         $code_number = 0;
@@ -52,7 +83,8 @@ class CustomersController extends Controller
         $zip = isset($request->zip) ? trim($request->zip) : '';
         $contact_name = isset($request->contact_name) ? trim($request->contact_name) : '';
         $contact_phone = isset($request->contact_phone) ? trim($request->contact_phone) : '';
-        $contact_phone_ext = isset($request->contact_phone_ext) ? trim($request->contact_phone_ext) : '';
+        $contact_phone_ext = isset($request->contact_phone_ext) ? trim($request->contact_phone_ext) :
+            (isset($request->ext) ? $request->ext : '');
         $email = isset($request->email) ? trim($request->email) : '';
         $mailing_code = isset($request->mailing_code) ? trim($request->mailing_code) : '';
         $mailing_code_number = 0;
@@ -65,7 +97,8 @@ class CustomersController extends Controller
         $mailing_zip = isset($request->mailing_zip) ? trim($request->mailing_zip) : '';
         $mailing_contact_name = isset($request->mailing_contact_name) ? trim($request->mailing_contact_name) : '';
         $mailing_contact_phone = isset($request->mailing_contact_phone) ? trim($request->mailing_contact_phone) : '';
-        $mailing_contact_phone_ext = isset($request->mailing_contact_phone_ext) ? trim($request->mailing_contact_phone_ext) : '';
+        $mailing_contact_phone_ext = isset($request->mailing_contact_phone_ext) ? trim($request->mailing_contact_phone_ext) :
+            (isset($request->mailing_ext) ? $request->mailing_ext : '');
         $mailing_email = isset($request->mailing_email) ? trim($request->mailing_email) : '';
         $mailing_bill_to = isset($request->mailing_bill_to) ? trim($request->mailing_bill_to) : '';
         $mailing_division = isset($request->mailing_division) ? trim($request->mailing_division) : '';
@@ -76,51 +109,51 @@ class CustomersController extends Controller
         $curCustomer = Customer::where('id', $id)->first();
 
         error_log('1');
-        if ($curCustomer){
+        if ($curCustomer) {
             error_log('2');
             // si es el mismo codigo y numero
-            if(($curCustomer->code . ($curCustomer->code_number === 0 ? "" : $curCustomer->code_number)) === $code){
+            if (($curCustomer->code . ($curCustomer->code_number === 0 ? "" : $curCustomer->code_number)) === $code) {
                 error_log('3');
                 $code_number = $curCustomer->code_number;
-            }else{
+            } else {
                 error_log('4');
                 // verificamos si hay otro registro con el mismo codigo
                 $codeExist = Customer::where('id', '<>', $id)
                     ->where('code', $curCustomer->code)
                     ->orderBy('id', 'asc')->get();
 
-                if (count($codeExist) > 0){
+                if (count($codeExist) > 0) {
                     error_log('5');
                     $code_number = $codeExist[count($codeExist) - 1]->code_number + 1;
                 }
             }
 
-            if ($mailing_code !== ''){
+            if ($mailing_code !== '') {
                 error_log('6');
-                if ($curCustomer->code === $mailing_code){
+                if ($curCustomer->code === $mailing_code) {
                     error_log('7');
                     $mailing_code_number = $curCustomer->code_number;
-                }else{
+                } else {
                     error_log('8');
                     $mailing_codeExist = Customer::where('id', '<>', $id)
                         ->where('mailing_code', $mailing_code)
                         ->orderBy('mailing_code_number', 'asc')->get();
 
-                    if (count($mailing_codeExist) > 0){
+                    if (count($mailing_codeExist) > 0) {
                         error_log('9');
                         $mailing_code_number = $mailing_codeExist[count($mailing_codeExist) - 1]->mailing_code_number + 1;
                     }
                 }
             }
 
-        }else{
+        } else {
             error_log('10');
             // verificamos si existe un customer con el codigo
             $codeExist = Customer::where('id', '<>', $id)
                 ->where('code', $code)
                 ->orderBy('id', 'asc')->get();
 
-            if (count($codeExist) > 0){
+            if (count($codeExist) > 0) {
                 error_log('11');
                 $code_number = $codeExist[count($codeExist) - 1]->code_number + 1;
             }
@@ -128,69 +161,69 @@ class CustomersController extends Controller
 
         $with_contact = true;
 
-        if (trim($contact_name) === '' || (trim($contact_phone) === '' && trim($email) === '')){
-            $contact_name = '';
-            $contact_phone = '';
-            $contact_phone_ext = '';
-            $email = '';
+        if (trim($contact_name) === '' || trim($contact_phone) === '' || trim($email) === '') {
+//            $contact_name = '';
+//            $contact_phone = '';
+//            $contact_phone_ext = '';
+//            $email = '';
             $with_contact = false;
         }
 
         $customer = Customer::updateOrCreate([
             'id' => $id
         ],
-        [
-            'code' => $code,
-            'code_number' => $code_number,
-            'name' => $name,
-            'address1' => $address1,
-            'address2' => $address2,
-            'city' => $city,
-            'state' => $state,
-            'zip' => $zip,
-            'contact_name' => $contact_name,
-            'contact_phone' => $contact_phone,
-            'ext' => $contact_phone_ext,
-            'email' => $email,
-            'mailing_code' => $mailing_code,
-            'mailing_code_number' => $mailing_code_number,
-            'mailing_name' => $mailing_name,
-            'mailing_address1' => $mailing_address1,
-            'mailing_address2' => $mailing_address2,
-            'mailing_city' => $mailing_city,
-            'mailing_state' => $mailing_state,
-            'mailing_zip' => $mailing_zip,
-            'mailing_contact_name' => $mailing_contact_name,
-            'mailing_contact_phone' => $mailing_contact_phone,
-            'mailing_ext' => $mailing_contact_phone_ext,
-            'mailing_email' => $mailing_email,
-            'mailing_bill_to' => $mailing_bill_to !== '' ? $mailing_code : '',
-            'mailing_division' => $mailing_division,
-            'mailing_agent_code' => $mailing_agent_code,
-            'mailing_salesman' => $mailing_salesman,
-            'mailing_fid' => $mailing_fid
-        ]);
+            [
+                'code' => strtoupper($code),
+                'code_number' => $code_number,
+                'name' => $name,
+                'address1' => $address1,
+                'address2' => $address2,
+                'city' => $city,
+                'state' => strtoupper($state),
+                'zip' => $zip,
+                'contact_name' => $contact_name,
+                'contact_phone' => $contact_phone,
+                'ext' => $contact_phone_ext,
+                'email' => strtolower($email),
+                'mailing_code' => $mailing_code,
+                'mailing_code_number' => $mailing_code_number,
+                'mailing_name' => $mailing_name,
+                'mailing_address1' => $mailing_address1,
+                'mailing_address2' => $mailing_address2,
+                'mailing_city' => $mailing_city,
+                'mailing_state' => strtoupper($mailing_state),
+                'mailing_zip' => $mailing_zip,
+                'mailing_contact_name' => $mailing_contact_name,
+                'mailing_contact_phone' => $mailing_contact_phone,
+                'mailing_ext' => $mailing_contact_phone_ext,
+                'mailing_email' => strtolower($mailing_email),
+                'mailing_bill_to' => $mailing_bill_to !== '' ? $mailing_code : '',
+                'mailing_division' => $mailing_division,
+                'mailing_agent_code' => $mailing_agent_code,
+                'mailing_salesman' => $mailing_salesman,
+                'mailing_fid' => $mailing_fid
+            ]);
 
-        if ($with_contact){
+        if ($with_contact) {
             $contacts = Contact::where('customer_id', $customer->id)->get();
 
             $contact_name_splitted = explode(" ", $contact_name);
             $contact_first = $contact_name_splitted[0];
             $contact_last = '';
 
-            if (count($contact_name_splitted) > 0){
-                for ($i = 1; $i < count($contact_name_splitted); $i++){
+            if (count($contact_name_splitted) > 0) {
+                for ($i = 1; $i < count($contact_name_splitted); $i++) {
                     $contact_last .= $contact_name_splitted[$i] . " ";
                 }
             }
 
             $contact_last = trim($contact_last);
 
-            if (count($contacts) === 0){
+            if (count($contacts) === 0) {
                 $contact = new Contact();
                 $contact->customer_id = $customer->id;
-                $contact->first_name = $contact_first;
-                $contact->last_name = $contact_last;
+                $contact->first_name = trim($contact_first);
+                $contact->last_name = trim($contact_last);
                 $contact->phone_work = $contact_phone;
                 $contact->phone_ext = $contact_phone_ext;
                 $contact->email_work = $email;
@@ -208,10 +241,14 @@ class CustomersController extends Controller
             }
         }
 
-        return response()->json(['result' => 'OK', 'customer' => $customer]);
+        $newCustomer = Customer::where('id', $customer->id)
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])->first();
+
+        return response()->json(['result' => 'OK', 'customer' => $newCustomer]);
     }
 
-    public function getCustomerPayload(Request $request){
+    public function getCustomerPayload(Request $request)
+    {
         $customer_id = $request->customer_id;
 
         $contacts = Contact::where('customer_id', $customer_id)->orderBy('last_name', 'asc')->get();
@@ -230,7 +267,8 @@ class CustomersController extends Controller
         ]);
     }
 
-    public function getFullCustomers(Request $request){
+    public function getFullCustomers(Request $request)
+    {
         $customers = Customer::with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);

@@ -34,6 +34,8 @@ class HoursController extends Controller
             'delivery_hours_close' => $delivery_hours_close
         ]);
 
+        $customer_hours = CustomerHour::where('customer_id', $customer_id)->first();
+
         return response()->json(['result' => 'OK', 'customer_hours' => $customer_hours]);
     }
 }

@@ -8,4 +8,8 @@ class Equipment extends Model
 {
     protected $guarded = [];
     protected $table = 'equipments';
+
+    public function drivers(){
+        return $this->hasMany(CarrierDriver::class);
+    }
 }
