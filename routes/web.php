@@ -94,6 +94,12 @@ Route::post('/deleteCustomerDocument', 'CustomerDocumentsController@deleteCustom
 Route::post('/getNotesByDocument', 'CustomerDocumentsController@getNotesByDocument')->middleware('cors');
 Route::post('/saveCustomerDocumentNote', 'CustomerDocumentsController@saveCustomerDocumentNote')->middleware('cors');
 
+Route::post('/saveOrderDocument', 'OrderDocumentsController@saveDocument')->middleware('cors');
+Route::post('/getDocumentsByOrder', 'OrderDocumentsController@getDocumentsByCustomer')->middleware('cors');
+Route::post('/deleteOrderDocument', 'OrderDocumentsController@deleteCustomerDocument')->middleware('cors');
+Route::post('/getNotesByOrderDocument', 'OrderDocumentsController@getNotesByDocument')->middleware('cors');
+Route::post('/saveOrderDocumentNote', 'OrderDocumentsController@saveCustomerDocumentNote')->middleware('cors');
+
 Route::post('/saveCarrierDocument', 'CarrierDocumentsController@saveDocument')->middleware('cors');
 Route::post('/getDocumentsByCarrier', 'CarrierDocumentsController@getDocumentsByCarrier')->middleware('cors');
 Route::post('/deleteCarrierDocument', 'CarrierDocumentsController@deleteCarrierDocument')->middleware('cors');
@@ -122,8 +128,17 @@ Route::post('/getOrderByOrderNumber', 'OrdersController@getOrderByOrderNumber')-
 Route::post('/getOrderByTripNumber', 'OrdersController@getOrderByTripNumber')->middleware('cors');
 Route::post('/getLastOrderNumber', 'OrdersController@getLastOrderNumber')->middleware('cors');
 Route::post('/saveOrder', 'OrdersController@saveOrder')->middleware('cors');
+Route::post('/saveOrderEvent', 'OrdersController@saveOrderEvent')->middleware('cors');
 
+Route::post('/getDivisions', 'DivisionsController@getDivisions')->middleware('cors');
+Route::post('/getEventTypes', 'EventTypesController@getEventTypes')->middleware('cors');
+Route::post('/getLoadTypes', 'LoadTypesController@getLoadTypes')->middleware('cors');
+Route::post('/getTemplates', 'TemplatesController@getTemplates')->middleware('cors');
 
+Route::post('/getMileage', 'MileagesController@getMileage')->middleware('cors');
+Route::post('/saveMileage', 'MileagesController@saveMileage')->middleware('cors');
+
+Route::post('/getPivotOrder', 'OrdersController@getPivotOrder');
 
 Route::get('/getFile/{filename}', 'CustomerDocumentsController@getFile')->middleware('cors');
 

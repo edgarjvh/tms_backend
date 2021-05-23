@@ -37,7 +37,7 @@ class CarriersController extends Controller
             ->with('factoring_company')
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')
-            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address'])
+            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents'])
             ->get();
 
         return response()->json(['result' => 'OK', 'carriers' => $carriers]);
@@ -65,7 +65,7 @@ class CarriersController extends Controller
             ->whereRaw("LOWER(email) like '%$email%'")
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')
-            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address'])
+            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents'])
             ->get();
 
         return response()->json(['result' => 'OK', 'carriers' => $carriers]);
@@ -221,7 +221,7 @@ class CarriersController extends Controller
         }
 
         $carrier = Carrier::where('id', $carrier->id)
-            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address'])->first();
+            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents'])->first();
 
 
         return response()->json(['result' => 'OK', 'carrier' => $carrier]);
@@ -241,7 +241,7 @@ class CarriersController extends Controller
 
     public function getFullCarriers()
     {
-        $carriers = Carrier::with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address'])->get();
+        $carriers = Carrier::with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents'])->get();
 
         return response()->json(['result' => 'OK', 'carriers' => $carriers]);
     }

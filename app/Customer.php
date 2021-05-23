@@ -31,4 +31,8 @@ class Customer extends Model
     public function notes(){
         return $this->hasMany(Note::class);
     }
+
+    public function zip_data(){
+        return $this->belongsTo(ZipCode::class,'zip','zip_code', 'us_zipcodes');
+    }
 }

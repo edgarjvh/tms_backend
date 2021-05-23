@@ -25,7 +25,8 @@ class Carrier extends Model
             'contacts',
             'invoices',
             'mailing_address',
-            'notes'
+            'notes',
+            'documents'
         ]);
     }
 
@@ -42,5 +43,9 @@ class Carrier extends Model
     public function insurances()
     {
         return $this->hasMany(Insurance::class)->with(['insurance_type']);
+    }
+
+    public function documents(){
+        return $this->hasMany(CarrierDocument::class)->with(['notes']);
     }
 }

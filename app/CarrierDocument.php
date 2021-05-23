@@ -9,7 +9,7 @@ class CarrierDocument extends Model
     protected $guarded = [];
     protected $table = 'carrier_documents';
 
-    public function customer(){
+    public function carrier(){
         return $this->belongsTo(Carrier::class);
     }
 

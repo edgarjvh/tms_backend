@@ -3,14 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Customer;
+use App\Delivery;
 use App\Order;
+use App\OrderEvent;
+use App\Pickup;
+use App\Route;
 use Illuminate\Http\Request;
+use stdClass;
 
 class OrdersController extends Controller
 {
     public function getOrders(Request $request)
     {
-        $orders = Order::with(['bill_to_company', 'shipper_company', 'consignee_company', 'carrier', 'driver', 'notes_for_carrier', 'internal_notes'])
+        $orders = Order::with([
+            'bill_to_company',
+            'carrier',
+            'driver',
+            'notes_for_carrier',
+            'internal_notes',
+            'pickups',
+            'deliveries',
+            'routing',
+            'documents',
+            'events'
+        ])
             ->orderBy('order_number', 'ASC')
             ->get();
 
@@ -22,7 +38,18 @@ class OrdersController extends Controller
         $order_number = isset($request->order_number) ? $request->order_number : 0;
 
         $order = Order::where('order_number', $order_number)
-            ->with(['bill_to_company', 'shipper_company', 'consignee_company', 'carrier', 'driver', 'notes_for_carrier', 'internal_notes'])
+            ->with([
+                'bill_to_company',
+                'carrier',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'documents',
+                'events'
+            ])
             ->first();
 
         $result = $order ? 'OK' : 'NOT FOUND';
@@ -35,7 +62,18 @@ class OrdersController extends Controller
         $trip_number = isset($request->trip_number) ? $request->trip_number : 0;
 
         $order = Order::where('trip_number', $trip_number)
-            ->with(['bill_to_company', 'shipper_company', 'consignee_company', 'carrier', 'driver', 'notes_for_carrier', 'internal_notes'])
+            ->with([
+                'bill_to_company',
+                'carrier',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'documents',
+                'events'
+            ])
             ->first();
 
         $result = $order ? 'OK' : 'NOT FOUND';
@@ -56,6 +94,9 @@ class OrdersController extends Controller
 
     public function saveOrder(Request $request)
     {
+        $pickups = isset($request->pickups) ? $request->pickups : [];
+        $deliveries = isset($request->deliveries) ? $request->deliveries : [];
+        $routing = isset($request->routing) ? $request->routing : [];
         $order_number = (int)(isset($request->order_number) ? $request->order_number : 0);
         $ae_number = isset($request->ae_number) ? $request->ae_number : 0;
         $trip_number = (int)(isset($request->trip_number) ? $request->trip_number : 0);
@@ -68,35 +109,11 @@ class OrdersController extends Controller
         $carrier_id = isset($request->carrier_id) ? $request->carrier_id : 0;
         $carrier_load = isset($request->carrier_load) ? $request->carrier_load : '';
         $carrier_driver_id = isset($request->carrier_driver_id) ? $request->carrier_driver_id : 0;
-        $pu_date1 = isset($request->pu_date1) ? $request->pu_date1 : '';
-        $pu_date2 = isset($request->pu_date2) ? $request->pu_date2 : '';
-        $pu_time1 = isset($request->pu_time1) ? $request->pu_time1 : '';
-        $pu_time2 = isset($request->pu_time2) ? $request->pu_time2 : '';
-        $bol_numbers = isset($request->bol_numbers) ? $request->bol_numbers : '';
-        $po_numbers = isset($request->po_numbers) ? $request->po_numbers : '';
-        $ref_numbers = isset($request->ref_numbers) ? $request->ref_numbers : '';
-        $seal_number = isset($request->seal_number) ? $request->seal_number : '';
-        $shipper_special_instructions = isset($request->shipper_special_instructions) ? $request->shipper_special_instructions : '';
-        $delivery_date1 = isset($request->delivery_date1) ? $request->delivery_date1 : '';
-        $delivery_date2 = isset($request->delivery_date2) ? $request->delivery_date2 : '';
-        $delivery_time1 = isset($request->delivery_time1) ? $request->delivery_time1 : '';
-        $delivery_time2 = isset($request->delivery_time2) ? $request->delivery_time2 : '';
-        $consignee_special_instructions = isset($request->consignee_special_instructions) ? $request->consignee_special_instructions : '';
-        $pu1 = isset($request->pu1) ? $request->pu1 : '';
-        $pu2 = isset($request->pu2) ? $request->pu2 : '';
-        $pu3 = isset($request->pu3) ? $request->pu3 : '';
-        $pu4 = isset($request->pu4) ? $request->pu4 : '';
-        $pu5 = isset($request->pu5) ? $request->pu5 : '';
-        $delivery1 = isset($request->delivery1) ? $request->delivery1 : '';
-        $delivery2 = isset($request->delivery2) ? $request->delivery2 : '';
-        $delivery3 = isset($request->delivery3) ? $request->delivery3 : '';
-        $delivery4 = isset($request->delivery4) ? $request->delivery4 : '';
-        $delivery5 = isset($request->delivery5) ? $request->delivery5 : '';
         $agent_code = isset($request->agent_code) ? $request->agent_code : '';
         $agent_commission = isset($request->agent_commission) ? $request->agent_commission : '';
         $salesman_code = isset($request->salesman_code) ? $request->salesman_code : '';
         $salesman_commission = isset($request->salesman_commission) ? $request->salesman_commission : '';
-        $miles = isset($request->miles) ? $request->miles : '';
+        $miles = isset($request->miles) ? $request->miles : 0;
         $charges = isset($request->charges) ? $request->charges : '';
         $order_cost = isset($request->order_cost) ? $request->order_cost : '';
         $profit = isset($request->profit) ? $request->profit : '';
@@ -121,7 +138,7 @@ class OrdersController extends Controller
                     $trip_number = 1;
                 }
             }
-        }else{
+        } else {
             if ($carrier_id > 0 && $trip_number === 0) {
                 if ($last_trip_number) {
                     $trip_number = $last_trip_number + 1;
@@ -145,30 +162,6 @@ class OrdersController extends Controller
             'carrier_id' => $carrier_id,
             'carrier_load' => $carrier_load,
             'carrier_driver_id' => $carrier_driver_id,
-            'pu_date1' => $pu_date1,
-            'pu_date2' => $pu_date2,
-            'pu_time1' => $pu_time1,
-            'pu_time2' => $pu_time2,
-            'bol_numbers' => $bol_numbers,
-            'po_numbers' => $po_numbers,
-            'ref_numbers' => $ref_numbers,
-            'seal_number' => $seal_number,
-            'shipper_special_instructions' => $shipper_special_instructions,
-            'delivery_date1' => $delivery_date1,
-            'delivery_date2' => $delivery_date2,
-            'delivery_time1' => $delivery_time1,
-            'delivery_time2' => $delivery_time2,
-            'consignee_special_instructions' => $consignee_special_instructions,
-            'pu1' => $pu1,
-            'pu2' => $pu2,
-            'pu3' => $pu3,
-            'pu4' => $pu4,
-            'pu5' => $pu5,
-            'delivery1' => $delivery1,
-            'delivery2' => $delivery2,
-            'delivery3' => $delivery3,
-            'delivery4' => $delivery4,
-            'delivery5' => $delivery5,
             'agent_code' => $agent_code,
             'agent_commission' => $agent_commission,
             'salesman_code' => $salesman_code,
@@ -182,10 +175,169 @@ class OrdersController extends Controller
             'expedited' => $expedited
         ]);
 
+        $order->pickups()->detach();
+
+        if (count($pickups) > 0) {
+            $pivot_pickup = array();
+
+            for ($i = 0; $i < count($pickups); $i++) {
+                $pu = $pickups[$i];
+                $data = isset($pu['extra_data']) ? $pu['extra_data'] : [];
+
+                $order->pickups()->attach($pu['id'], [
+                    'pu_date1' => isset($data['pu_date1']) ? $data['pu_date1'] : '',
+                    'pu_date2' => isset($data['pu_date2']) ? $data['pu_date2'] : '',
+                    'pu_time1' => isset($data['pu_time1']) ? $data['pu_time1'] : '',
+                    'pu_time2' => isset($data['pu_time2']) ? $data['pu_time2'] : '',
+                    'bol_numbers' => isset($data['bol_numbers']) ? $data['bol_numbers'] : '',
+                    'po_numbers' => isset($data['po_numbers']) ? $data['po_numbers'] : '',
+                    'ref_numbers' => isset($data['ref_numbers']) ? $data['ref_numbers'] : '',
+                    'seal_number' => isset($data['seal_number']) ? $data['seal_number'] : '',
+                    'special_instructions' => isset($data['special_instructions']) ? $data['special_instructions'] : ''
+                ]);
+            }
+        } else {
+            $order->pickups()->detach();
+        }
+
+        $order->deliveries()->detach();
+
+        if (count($deliveries) > 0) {
+            $pivot_delivery = array();
+
+            for ($i = 0; $i < count($deliveries); $i++) {
+                $delivery = $deliveries[$i];
+                $data = isset($delivery['extra_data']) ? $delivery['extra_data'] : [];
+
+                $order->deliveries()->attach($delivery['id'], [
+                    'delivery_date1' => isset($data['delivery_date1']) ? $data['delivery_date1'] : '',
+                    'delivery_date2' => isset($data['delivery_date2']) ? $data['delivery_date2'] : '',
+                    'delivery_time1' => isset($data['delivery_time1']) ? $data['delivery_time1'] : '',
+                    'delivery_time2' => isset($data['delivery_time2']) ? $data['delivery_time2'] : '',
+                    'special_instructions' => isset($data['special_instructions']) ? $data['special_instructions'] : ''
+                ]);
+            }
+        } else {
+            $order->deliveries()->detach();
+        }
+
+        $order->routing()->detach();
+
+        if (count($routing) > 0) {
+            $pivot_routing = array();
+
+            for ($i = 0; $i < count($routing); $i++) {
+                $route = $routing[$i];
+                $data = isset($route['extra_data']) ? $route['extra_data'] : [];
+
+                $order->routing()->attach($route['id'], [
+                    'type' => isset($data['type']) ? $data['type'] : ''
+                ]);
+            }
+        } else {
+            $order->routing()->detach();
+        }
+
         $order = Order::where('order_number', $order_number)
-            ->with(['bill_to_company', 'shipper_company', 'consignee_company', 'carrier', 'driver', 'notes_for_carrier', 'internal_notes'])
-            ->first();
+            ->with([
+                'bill_to_company',
+                'carrier',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'documents',
+                'events'
+            ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $order, 'order_number' => $order_number]);
+    }
+
+    public function getPivotOrder(Request $request)
+    {
+        $order_id = $request->order_id;
+
+        $order = Order::where('id', $order_id)
+            ->with([
+                'bill_to_company',
+                'carrier',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'documents',
+                'events'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'order' => $order]);
+    }
+
+    public function savePivotOrder(Request $request)
+    {
+        $order_id = $request->order_id;
+
+
+        $order = Order::where('id', $order_id)
+            ->with([
+                'bill_to_company',
+                'carrier',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'documents',
+                'events'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'order' => $order]);
+    }
+
+    public function saveOrderEvent(Request $request){
+        $order_id = isset($request->order_id) ? $request->order_id : 0;
+        $event_type = isset($request->event_type) ? $request->event_type : '';
+        $shipper_id = isset($request->shipper_id) ? $request->shipper_id : 0;
+        $consignee_id = isset($request->consignee_id) ? $request->consignee_id : 0;
+        $old_carrier_id = isset($request->old_carrier_id) ? $request->old_carrier_id : 0;
+        $new_carrier_id = isset($request->new_carrier_id) ? $request->new_carrier_id : 0;
+        $event_time = isset($request->event_time) ? $request->event_time : '';
+        $event_date = isset($request->event_date) ? $request->event_date : '';
+        $user_id = isset($request->user_id) ? $request->user_id : 0;
+        $event_location = isset($request->event_location) ? $request->event_location : '';
+        $event_notes = isset($request->event_notes) ? $request->event_notes : '';
+
+        if ($order_id === 0){
+            return response()->json(['result' => 'ORDER ID NOT VALID', 'order_id' => $order_id]);
+        }
+
+        $order_event = OrderEvent::updateOrCreate([
+            'event_type' => $event_type,
+            'shipper_id' => $shipper_id,
+            'consignee_id' => $consignee_id,
+            'old_carrier_id' => $old_carrier_id,
+            'new_carrier_id' => $new_carrier_id,
+        ], [
+            'order_id' => $order_id,
+            'event_type' => $event_type,
+            'shipper_id' => $shipper_id,
+            'consignee_id' => $consignee_id,
+            'old_carrier_id' => $old_carrier_id,
+            'new_carrier_id' => $new_carrier_id,
+            'event_time' => $event_time,
+            'event_date' => $event_date,
+            'user_id' => $user_id,
+            'event_location' => $event_location,
+            'event_notes' => $event_notes
+        ]);
+
+        $order_events = OrderEvent::where('order_id' , $order_id)
+            ->with(['shipper', 'consignee', 'old_carrier', 'new_carrier'])->get();
+
+        return response()->json(['result' => 'OK', 'order_event' => $order_event, 'order_events' => $order_events]);
     }
 }

@@ -35,7 +35,7 @@ class CustomersController extends Controller
             ->whereRaw("email like '%$email%'")
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])
             ->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
@@ -63,7 +63,7 @@ class CustomersController extends Controller
             ->whereRaw("LOWER(email) like '%$email%'")
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])
             ->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
@@ -242,7 +242,7 @@ class CustomersController extends Controller
         }
 
         $newCustomer = Customer::where('id', $customer->id)
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])->first();
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])->first();
 
         return response()->json(['result' => 'OK', 'customer' => $newCustomer]);
     }
@@ -269,7 +269,7 @@ class CustomersController extends Controller
 
     public function getFullCustomers(Request $request)
     {
-        $customers = Customer::with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes'])->get();
+        $customers = Customer::with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
