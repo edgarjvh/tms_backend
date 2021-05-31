@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     protected $guarded = [];
+    protected $table = 'customers';
+    protected $primaryKey = 'id';
 
     public function contacts(){
-        return $this->hasMany(Contact::class)->orderBy('last_name', 'asc');
+        return $this->hasMany(Contact::class)->orderBy('first_name', 'asc');
     }
 
     public function documents(){

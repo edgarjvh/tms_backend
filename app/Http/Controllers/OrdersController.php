@@ -25,7 +25,10 @@ class OrdersController extends Controller
             'deliveries',
             'routing',
             'documents',
-            'events'
+            'events',
+            'division',
+            'load_type',
+            'template'
         ])
             ->orderBy('order_number', 'ASC')
             ->get();
@@ -48,7 +51,10 @@ class OrdersController extends Controller
                 'deliveries',
                 'routing',
                 'documents',
-                'events'
+                'events',
+                'division',
+                'load_type',
+                'template'
             ])
             ->first();
 
@@ -72,7 +78,10 @@ class OrdersController extends Controller
                 'deliveries',
                 'routing',
                 'documents',
-                'events'
+                'events',
+                'division',
+                'load_type',
+                'template'
             ])
             ->first();
 
@@ -100,9 +109,9 @@ class OrdersController extends Controller
         $order_number = (int)(isset($request->order_number) ? $request->order_number : 0);
         $ae_number = isset($request->ae_number) ? $request->ae_number : 0;
         $trip_number = (int)(isset($request->trip_number) ? $request->trip_number : 0);
-        $division = isset($request->division) ? $request->division : '';
-        $load_type = isset($request->load_type) ? $request->load_type : '';
-        $template = isset($request->template) ? $request->template : '';
+        $division_id = isset($request->division_id) ? $request->division_id : 0;
+        $load_type_id = isset($request->load_type_id) ? $request->load_type_id : 0;
+        $template_id = isset($request->template_id) ? $request->template_id : 0;
         $bill_to_customer_id = isset($request->bill_to_customer_id) ? $request->bill_to_customer_id : 0;
         $shipper_customer_id = isset($request->shipper_customer_id) ? $request->shipper_customer_id : 0;
         $consignee_customer_id = isset($request->consignee_customer_id) ? $request->consignee_customer_id : 0;
@@ -153,9 +162,9 @@ class OrdersController extends Controller
         ], [
             'ae_number' => $ae_number,
             'trip_number' => $trip_number,
-            'division' => $division,
-            'load_type' => $load_type,
-            'template' => $template,
+            'division_id' => $division_id,
+            'load_type_id' => $load_type_id,
+            'template_id' => $template_id,
             'bill_to_customer_id' => $bill_to_customer_id,
             'shipper_customer_id' => $shipper_customer_id,
             'consignee_customer_id' => $consignee_customer_id,
@@ -249,7 +258,10 @@ class OrdersController extends Controller
                 'deliveries',
                 'routing',
                 'documents',
-                'events'
+                'events',
+                'division',
+                'load_type',
+                'template'
             ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $order, 'order_number' => $order_number]);
@@ -270,7 +282,10 @@ class OrdersController extends Controller
                 'deliveries',
                 'routing',
                 'documents',
-                'events'
+                'events',
+                'division',
+                'load_type',
+                'template'
             ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $order]);
@@ -292,7 +307,10 @@ class OrdersController extends Controller
                 'deliveries',
                 'routing',
                 'documents',
-                'events'
+                'events',
+                'division',
+                'load_type',
+                'template'
             ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $order]);
@@ -303,6 +321,8 @@ class OrdersController extends Controller
         $event_type = isset($request->event_type) ? $request->event_type : '';
         $shipper_id = isset($request->shipper_id) ? $request->shipper_id : 0;
         $consignee_id = isset($request->consignee_id) ? $request->consignee_id : 0;
+        $arrived_customer_id = isset($request->arrived_customer_id) ? $request->arrived_customer_id : 0;
+        $departed_customer_id = isset($request->departed_customer_id) ? $request->departed_customer_id : 0;
         $old_carrier_id = isset($request->old_carrier_id) ? $request->old_carrier_id : 0;
         $new_carrier_id = isset($request->new_carrier_id) ? $request->new_carrier_id : 0;
         $event_time = isset($request->event_time) ? $request->event_time : '';
@@ -319,6 +339,8 @@ class OrdersController extends Controller
             'event_type' => $event_type,
             'shipper_id' => $shipper_id,
             'consignee_id' => $consignee_id,
+            'arrived_customer_id' => $arrived_customer_id,
+            'departed_customer_id' => $departed_customer_id,
             'old_carrier_id' => $old_carrier_id,
             'new_carrier_id' => $new_carrier_id,
         ], [
@@ -326,6 +348,8 @@ class OrdersController extends Controller
             'event_type' => $event_type,
             'shipper_id' => $shipper_id,
             'consignee_id' => $consignee_id,
+            'arrived_customer_id' => $arrived_customer_id,
+            'departed_customer_id' => $departed_customer_id,
             'old_carrier_id' => $old_carrier_id,
             'new_carrier_id' => $new_carrier_id,
             'event_time' => $event_time,
@@ -336,7 +360,8 @@ class OrdersController extends Controller
         ]);
 
         $order_events = OrderEvent::where('order_id' , $order_id)
-            ->with(['shipper', 'consignee', 'old_carrier', 'new_carrier'])->get();
+            ->with(['shipper', 'consignee', 'arrived_customer', 'departed_customer', 'old_carrier', 'new_carrier'])
+            ->orderBy('updated_at', 'desc')->get();
 
         return response()->json(['result' => 'OK', 'order_event' => $order_event, 'order_events' => $order_events]);
     }

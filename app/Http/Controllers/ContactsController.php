@@ -35,7 +35,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('customer')
                 ->has('customer')
                 ->get();
@@ -50,7 +50,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('customer')
                 ->has('customer')
                 ->get();
@@ -82,7 +82,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('customer')
                 ->has('customer')
                 ->get();
@@ -97,7 +97,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('customer')
                 ->has('customer')
                 ->get();
@@ -128,7 +128,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('carrier')
                 ->has('carrier')
                 ->get();
@@ -143,7 +143,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('carrier')
                 ->has('carrier')
                 ->get();
@@ -157,7 +157,7 @@ class ContactsController extends Controller
 
         $contacts = Contact::whereRaw("1 = 1")
             ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-            ->orderBy('last_name', 'ASC')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -170,7 +170,7 @@ class ContactsController extends Controller
         error_log("customer_id = $customer_id");
 
         $contacts = Contact::whereRaw("((LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%') OR (LOWER(first_name) like '%$email%' or LOWER(last_name) like '%$email%'))")
-            ->orderBy('last_name', 'ASC')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -183,7 +183,7 @@ class ContactsController extends Controller
         $contacts = Contact::whereRaw("1 = 1")
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -197,12 +197,12 @@ class ContactsController extends Controller
         $contact = Contact::where('id', $contact_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->first();
         $contacts = Contact::where('customer_id', $customer_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
@@ -214,7 +214,7 @@ class ContactsController extends Controller
         $contacts = Contact::where('customer_id', $customer_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
         return response()->json(['result' => 'OK', 'contacts' => $contacts, 'contact' => null]);
     }
@@ -224,6 +224,8 @@ class ContactsController extends Controller
         $contact_id = isset($request->contact_id) ? $request->contact_id : (isset($request->id) ? $request->id : 0);
         $curContact = Contact::where('id', $contact_id)->first();
         $customer_id = $request->customer_id;
+
+        $customer = Customer::where('id', $customer_id)->first();
 
         $prefix = isset($request->prefix) ? $request->prefix : ($curContact ? $curContact->prefix : '');
         $first_name = isset($request->first_name) ? $request->first_name : ($curContact ? $curContact->first_name : '');
@@ -235,18 +237,20 @@ class ContactsController extends Controller
         $email_work = isset($request->email_work) ? $request->email_work : ($curContact ? $curContact->email_work : '');
         $email_personal = isset($request->email_personal) ? $request->email_personal : ($curContact ? $curContact->email_personal : '');
         $email_other = isset($request->email_other) ? $request->email_other : ($curContact ? $curContact->email_other : '');
+        $primary_email = isset($request->primary_email) ? $request->primary_email : ($curContact ? $curContact->primary_email : 'work');
         $phone_work = isset($request->phone_work) ? $request->phone_work : ($curContact ? $curContact->phone_work : '');
         $phone_work_fax = isset($request->phone_work_fax) ? $request->phone_work_fax : ($curContact ? $curContact->phone_work_fax : '');
         $phone_mobile = isset($request->phone_mobile) ? $request->phone_mobile : ($curContact ? $curContact->phone_mobile : '');
         $phone_direct = isset($request->phone_direct) ? $request->phone_direct : ($curContact ? $curContact->phone_direct : '');
         $phone_other = isset($request->phone_other) ? $request->phone_other : ($curContact ? $curContact->phone_other : '');
+        $primary_phone = isset($request->primary_phone) ? $request->primary_phone : ($curContact ? $curContact->primary_phone : 'work');
         $phone_ext = isset($request->phone_ext) ? $request->phone_ext : ($curContact ? $curContact->phone_ext : '');
         $country = isset($request->country) ? $request->country : ($curContact ? $curContact->country : '');
-        $address1 = isset($request->address1) ? $request->address1 : ($curContact ? $curContact->address1 : '');
-        $address2 = isset($request->address2) ? $request->address2 : ($curContact ? $curContact->address2 : '');
-        $city = isset($request->city) ? $request->city : ($curContact ? $curContact->city : '');
-        $state = isset($request->state) ? $request->state : ($curContact ? $curContact->state : '');
-        $zip_code = isset($request->zip_code) ? $request->zip_code : ($curContact ? $curContact->zip_code : '');
+        $address1 = isset($request->address1) ? $request->address1 : ($curContact ? $curContact->address1 : $customer->address1);
+        $address2 = isset($request->address2) ? $request->address2 : ($curContact ? $curContact->address2 : $customer->address2);
+        $city = isset($request->city) ? $request->city : ($curContact ? $curContact->city : $customer->city);
+        $state = isset($request->state) ? $request->state : ($curContact ? $curContact->state : $customer->state);
+        $zip_code = isset($request->zip_code) ? $request->zip_code : ($curContact ? $curContact->zip_code : $customer->zip);
         $birthday = isset($request->birthday) ? $request->birthday : ($curContact ? $curContact->birthday : '');
         $website = isset($request->website) ? $request->website : ($curContact ? $curContact->website : '');
         $notes = isset($request->notes) ? $request->notes : ($curContact ? $curContact->notes : '');
@@ -264,6 +268,10 @@ class ContactsController extends Controller
 
         $is_primary = (int) $is_primary;
 
+
+
+
+
         $contact = Contact::updateOrCreate([
             'id' => $contact_id
         ],
@@ -279,11 +287,13 @@ class ContactsController extends Controller
                 'email_work' => $email_work,
                 'email_personal' => $email_personal,
                 'email_other' => $email_other,
+                'primary_email' => $primary_email,
                 'phone_work' => $phone_work,
                 'phone_work_fax' => $phone_work_fax,
                 'phone_mobile' => $phone_mobile,
                 'phone_direct' => $phone_direct,
                 'phone_other' => $phone_other,
+                'primary_phone' => $primary_phone,
                 'phone_ext' => $phone_ext,
                 'country' => $country,
                 'address1' => $address1,
@@ -321,7 +331,7 @@ class ContactsController extends Controller
         $contacts = Contact::where('customer_id', $customer_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
@@ -355,7 +365,7 @@ class ContactsController extends Controller
         $contacts = Contact::where('customer_id', $customer_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
@@ -383,7 +393,7 @@ class ContactsController extends Controller
         $contacts = Contact::where('customer_id', $customer_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
@@ -398,7 +408,7 @@ class ContactsController extends Controller
         $contacts = Contact::where('customer_id', $contact->customer_id)
             ->with('customer')
             ->has('customer')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -428,7 +438,7 @@ class ContactsController extends Controller
             ->whereRaw("LOWER(state) like '%$state%'")
             ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
             ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-            ->orderBy('last_name', 'ASC')
+            ->orderBy('first_name', 'ASC')
             ->with('carrier')
             ->has('carrier')
             ->get();
@@ -443,7 +453,7 @@ class ContactsController extends Controller
         $contacts = CarrierContact::whereRaw("1 = 1")
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -457,12 +467,12 @@ class ContactsController extends Controller
         $contact = CarrierContact::where('id', $contact_id)
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->first();
         $contacts = CarrierContact::where('carrier_id', $carrier_id)
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
@@ -474,7 +484,7 @@ class ContactsController extends Controller
         $contacts = CarrierContact::where('carrier_id', $carrier_id)
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
         return response()->json(['result' => 'OK', 'contacts' => $contacts, 'contact' => null]);
     }
@@ -495,11 +505,13 @@ class ContactsController extends Controller
         $email_work = isset($request->email_work) ? $request->email_work : ($curContact ? $curContact->email_work : '');
         $email_personal = isset($request->email_personal) ? $request->email_personal : ($curContact ? $curContact->email_personal : '');
         $email_other = isset($request->email_other) ? $request->email_other : ($curContact ? $curContact->email_other : '');
+        $primary_email = isset($request->primary_email) ? $request->primary_email : ($curContact ? $curContact->primary_email : 'work');
         $phone_work = isset($request->phone_work) ? $request->phone_work : ($curContact ? $curContact->phone_work : '');
         $phone_work_fax = isset($request->phone_work_fax) ? $request->phone_work_fax : ($curContact ? $curContact->phone_work_fax : '');
         $phone_mobile = isset($request->phone_mobile) ? $request->phone_mobile : ($curContact ? $curContact->phone_mobile : '');
         $phone_direct = isset($request->phone_direct) ? $request->phone_direct : ($curContact ? $curContact->phone_direct : '');
         $phone_other = isset($request->phone_other) ? $request->phone_other : ($curContact ? $curContact->phone_other : '');
+        $primary_phone = isset($request->primary_phone) ? $request->primary_phone : ($curContact ? $curContact->primary_phone : 'work');
         $phone_ext = isset($request->phone_ext) ? $request->phone_ext : ($curContact ? $curContact->phone_ext : '');
         $country = isset($request->country) ? $request->country : ($curContact ? $curContact->country : '');
         $address1 = isset($request->address1) ? $request->address1 : ($curContact ? $curContact->address1 : '');
@@ -539,11 +551,13 @@ class ContactsController extends Controller
                 'email_work' => $email_work,
                 'email_personal' => $email_personal,
                 'email_other' => $email_other,
+                'primary_email' => $primary_email,
                 'phone_work' => $phone_work,
                 'phone_work_fax' => $phone_work_fax,
                 'phone_mobile' => $phone_mobile,
                 'phone_direct' => $phone_direct,
                 'phone_other' => $phone_other,
+                'primary_phone' => $primary_phone,
                 'phone_ext' => $phone_ext,
                 'country' => $country,
                 'address1' => $address1,
@@ -581,7 +595,7 @@ class ContactsController extends Controller
         $contacts = CarrierContact::where('carrier_id', $carrier_id)
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
@@ -639,7 +653,7 @@ class ContactsController extends Controller
         $contacts = CarrierContact::where('carrier_id', $contact->carrier_id)
             ->with('carrier')
             ->has('carrier')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -662,11 +676,13 @@ class ContactsController extends Controller
         $email_work = isset($request->email_work) ? $request->email_work : ($curContact ? $curContact->email_work : '');
         $email_personal = isset($request->email_personal) ? $request->email_personal : ($curContact ? $curContact->email_personal : '');
         $email_other = isset($request->email_other) ? $request->email_other : ($curContact ? $curContact->email_other : '');
+        $primary_email = isset($request->primary_email) ? $request->primary_email : ($curContact ? $curContact->primary_email : 'work');
         $phone_work = isset($request->phone_work) ? $request->phone_work : ($curContact ? $curContact->phone_work : '');
         $phone_work_fax = isset($request->phone_work_fax) ? $request->phone_work_fax : ($curContact ? $curContact->phone_work_fax : '');
         $phone_mobile = isset($request->phone_mobile) ? $request->phone_mobile : ($curContact ? $curContact->phone_mobile : '');
         $phone_direct = isset($request->phone_direct) ? $request->phone_direct : ($curContact ? $curContact->phone_direct : '');
         $phone_other = isset($request->phone_other) ? $request->phone_other : ($curContact ? $curContact->phone_other : '');
+        $primary_phone = isset($request->primary_phone) ? $request->primary_phone : ($curContact ? $curContact->primary_phone : 'work');
         $phone_ext = isset($request->phone_ext) ? $request->phone_ext : ($curContact ? $curContact->phone_ext : '');
         $country = isset($request->country) ? $request->country : ($curContact ? $curContact->country : '');
         $address1 = isset($request->address1) ? $request->address1 : ($curContact ? $curContact->address1 : '');
@@ -706,11 +722,13 @@ class ContactsController extends Controller
                 'email_work' => $email_work,
                 'email_personal' => $email_personal,
                 'email_other' => $email_other,
+                'primary_email' => $primary_email,
                 'phone_work' => $phone_work,
                 'phone_work_fax' => $phone_work_fax,
                 'phone_mobile' => $phone_mobile,
                 'phone_direct' => $phone_direct,
                 'phone_other' => $phone_other,
+                'primary_phone' => $primary_phone,
                 'phone_ext' => $phone_ext,
                 'country' => $country,
                 'address1' => $address1,
@@ -748,7 +766,7 @@ class ContactsController extends Controller
         $contacts = FactoringCompanyContact::where('factoring_company_id', $factoring_company_id)
             ->with('factoring_company')
             ->has('factoring_company')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
@@ -782,7 +800,7 @@ class ContactsController extends Controller
         $contacts = FactoringCompanyContact::where('factoring_company_id', $factoring_company_id)
             ->with('factoring_company')
             ->has('factoring_company')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
@@ -805,7 +823,7 @@ class ContactsController extends Controller
         $contacts = FactoringCompanyContact::where('factoring_company_id', $factoring_company_id)
             ->with('factoring_company')
             ->has('factoring_company')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $contact,'contacts' => $contacts]);
@@ -820,7 +838,7 @@ class ContactsController extends Controller
         $contacts = FactoringCompanyContact::where('factoring_company_id', $contact->factoring_company_id)
             ->with('factoring_company')
             ->has('factoring_company')
-            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'ASC')
             ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
@@ -849,7 +867,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('factoring_company')
                 ->has('factoring_company')
                 ->get();
@@ -864,7 +882,7 @@ class ContactsController extends Controller
                 ->whereRaw("LOWER(state) like '%$state%'")
                 ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
                 ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('last_name', 'ASC')
+                ->orderBy('first_name', 'ASC')
                 ->with('factoring_company')
                 ->has('factoring_company')
                 ->get();

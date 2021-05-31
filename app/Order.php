@@ -93,6 +93,19 @@ class Order extends Model
 
     public function events(){
         return $this->hasMany(OrderEvent::class)
-            ->with(['shipper', 'consignee', 'old_carrier', 'new_carrier']);
+            ->with(['shipper', 'consignee', 'arrived_customer', 'departed_customer', 'old_carrier', 'new_carrier'])
+            ->orderBy('updated_at', 'desc');
+    }
+
+    public function division(){
+        return $this->belongsTo(Division::class)->orderBy('name', 'asc');
+    }
+
+    public function load_type(){
+        return $this->belongsTo(LoadType::class)->orderBy('name', 'asc');
+    }
+
+    public function template(){
+        return $this->belongsTo(Template::class)->orderBy('name', 'asc');
     }
 }

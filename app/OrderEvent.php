@@ -23,6 +23,16 @@ class OrderEvent extends Model
             ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data']);
     }
 
+    public function arrived_customer(){
+        return $this->belongsTo(Customer::class, 'arrived_customer_id', 'id', 'customers')
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data']);
+    }
+
+    public function departed_customer(){
+        return $this->belongsTo(Customer::class, 'departed_customer_id', 'id', 'customers')
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data']);
+    }
+
     public function old_carrier(){
         return $this->belongsTo(Carrier::class, 'old_carrier_id', 'id', 'carriers')
             ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address']);

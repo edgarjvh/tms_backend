@@ -8,8 +8,14 @@ use Illuminate\Http\Request;
 
 class InsuranceTypesController extends Controller
 {
-    public function getInsuranceTypes(){
-        $types = InsuranceType::whereRaw("1 = 1")->orderBy('name', 'ASC')->get();
+    public function getInsuranceTypes(Request $request){
+        $name = isset($request->name) ? trim($request->name) : '';
+
+        $types = InsuranceType::whereRaw("1 = 1")
+            ->whereRaw("name like '%$name%'")
+            ->orderBy('name', 'ASC')
+            ->get();
+
         $companies = Insurance::orderBy('company', 'ASC')->get(['id', 'company']);
         return response()->json(['result' => 'OK', 'types' => $types, 'companies' => $companies]);
     }

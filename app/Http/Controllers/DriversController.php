@@ -8,15 +8,20 @@ use Illuminate\Http\Request;
 class DriversController extends Controller
 {
     public function getDriversByCarrierId(Request $request){
-        $carrier_id = $request->carrier_id;
+        $carrier_id = isset($request->carrier_id) ? $request->carrier_id: 0;
+        $name = isset($request->name) ? $request->name: '';
 
-        $drivers = CarrierDriver::where('carrier_id', $carrier_id)
-            ->with('carrier')
+        $count = count(CarrierDriver::where('carrier_id', $carrier_id)->get());
+
+        $drivers = CarrierDriver::whereRaw("1 = 1")
+            ->whereRaw("carrier_id = $carrier_id")
+            ->whereRaw("concat(first_name, ' ', last_name) like '%$name%'")
+            ->with(['carrier', 'equipment'])
             ->has('carrier')
             ->orderBy('first_name', 'asc')
             ->get();
 
-        return response()->json(['result' => 'OK', 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'drivers' => $drivers, 'count' => $count]);
     }
 
     public function saveCarrierDriver(Request $request){
