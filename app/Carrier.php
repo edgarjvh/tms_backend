@@ -32,7 +32,7 @@ class Carrier extends Model
 
     public function mailing_address()
     {
-        return $this->hasOne(CarrierMailingAddress::class);
+        return $this->hasOne(CarrierMailingAddress::class)->with(['mailing_contact']);
     }
 
     public function notes()

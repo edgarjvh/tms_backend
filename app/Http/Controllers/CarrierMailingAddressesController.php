@@ -23,7 +23,9 @@ class CarrierMailingAddressesController extends Controller
         $contact_phone = isset($request->contact_phone) ? trim($request->contact_phone) : '';
         $ext = isset($request->ext) ? trim($request->ext) : '';
         $email = isset($request->email) ? trim($request->email) : '';
-
+        $mailing_contact_id = isset($request->mailing_contact_id) ? trim($request->mailing_contact_id) : 0;
+        $mailing_contact_primary_phone = isset($request->mailing_contact_primary_phone) ? trim($request->mailing_contact_primary_phone) : 'work';
+        $mailing_contact_primary_email = isset($request->mailing_contact_primary_email) ? trim($request->mailing_contact_primary_email) : 'work';
 
         if ($carrier_id > 0){
 
@@ -69,10 +71,15 @@ class CarrierMailingAddressesController extends Controller
                     'contact_name' => $contact_name,
                     'contact_phone' => $contact_phone,
                     'ext' => $ext,
-                    'email' => $email
+                    'email' => $email,
+                    'mailing_contact_id' => $mailing_contact_id,
+                    'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
+                    'mailing_contact_primary_email' => $mailing_contact_primary_email,
                 ]);
 
-            return response()->json(['result' => 'OK', 'mailing_address' => $mailingAddress]);
+            $newMailingAddress = CarrierMailingAddress::where('carrier_id', $carrier_id)->with(['mailing_contact'])->first();
+
+            return response()->json(['result' => 'OK', 'mailing_address' => $newMailingAddress]);
         }        
     }
 

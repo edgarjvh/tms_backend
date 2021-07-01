@@ -12,4 +12,8 @@ class CarrierMailingAddress extends Model
     public function carrier(){
         return $this->belongsTo(Carrier::class);
     }
+
+    public function mailing_contact(){
+        return $this->belongsTo(CarrierContact::class,'mailing_contact_id', 'id', 'carrier_contacts');
+    }
 }

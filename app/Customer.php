@@ -14,6 +14,10 @@ class Customer extends Model
         return $this->hasMany(Contact::class)->orderBy('first_name', 'asc');
     }
 
+    public function mailing_contact(){
+        return $this->belongsTo(Contact::class,'mailing_contact_id', 'id', 'contacts');
+    }
+
     public function documents(){
         return $this->hasMany(CustomerDocument::class)->with('notes');
     }
@@ -36,5 +40,13 @@ class Customer extends Model
 
     public function zip_data(){
         return $this->belongsTo(ZipCode::class,'zip','zip_code', 'us_zipcodes');
+    }
+
+    public function orders(){
+        return $this->hasMany(Order::class, 'bill_to_customer_id', 'id')
+            ->with([
+                'pickups',
+                'deliveries'
+            ]);
     }
 }

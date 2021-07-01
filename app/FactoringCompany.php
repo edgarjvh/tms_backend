@@ -26,7 +26,7 @@ class FactoringCompany extends Model
     }
 
     public function mailing_address(){
-        return $this->hasOne(FactoringCompanyMailingAddress::class);
+        return $this->hasOne(FactoringCompanyMailingAddress::class)->with(['mailing_contact']);
     }
 
     public function documents(){

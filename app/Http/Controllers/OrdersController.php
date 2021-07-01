@@ -325,7 +325,9 @@ class OrdersController extends Controller
         $departed_customer_id = isset($request->departed_customer_id) ? $request->departed_customer_id : 0;
         $old_carrier_id = isset($request->old_carrier_id) ? $request->old_carrier_id : 0;
         $new_carrier_id = isset($request->new_carrier_id) ? $request->new_carrier_id : 0;
+        $time = isset($request->time) ? $request->time : '';
         $event_time = isset($request->event_time) ? $request->event_time : '';
+        $date = isset($request->date) ? $request->date : '';
         $event_date = isset($request->event_date) ? $request->event_date : '';
         $user_id = isset($request->user_id) ? $request->user_id : 0;
         $event_location = isset($request->event_location) ? $request->event_location : '';
@@ -352,7 +354,9 @@ class OrdersController extends Controller
             'departed_customer_id' => $departed_customer_id,
             'old_carrier_id' => $old_carrier_id,
             'new_carrier_id' => $new_carrier_id,
+            'time' => $time,
             'event_time' => $event_time,
+            'date' => $date,
             'event_date' => $event_date,
             'user_id' => $user_id,
             'event_location' => $event_location,

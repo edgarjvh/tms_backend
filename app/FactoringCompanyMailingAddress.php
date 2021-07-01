@@ -12,4 +12,8 @@ class FactoringCompanyMailingAddress extends Model
     public function factoring_company(){
         return $this->belongsTo(FactoringCompany::class);
     }
+
+    public function mailing_contact(){
+        return $this->belongsTo(FactoringCompanyContact::class,'mailing_contact_id', 'id', 'factoring_company_contacts');
+    }
 }

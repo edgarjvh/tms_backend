@@ -12,25 +12,25 @@ class Order extends Model
     public function bill_to_company()
     {
         return $this->belongsTo(Customer::class, 'bill_to_customer_id', 'id')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data']);
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact']);
     }
 
     public function shipper_company()
     {
         return $this->belongsTo(Customer::class, 'shipper_customer_id', 'id')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data']);
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact']);
     }
 
     public function consignee_company()
     {
         return $this->belongsTo(Customer::class, 'consignee_customer_id', 'id')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data']);
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact']);
     }
 
     public function carrier()
     {
         return $this->belongsTo(Carrier::class)
-            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address']);
+            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents']);
     }
 
     public function driver(){
@@ -47,7 +47,7 @@ class Order extends Model
 
     public function pickups () {
         return $this->belongsToMany(Customer::class, 'order_pickups', 'order_id', 'customer_id')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact'])
             ->withPivot([
                 'pu_date1',
                 'pu_date2',
@@ -66,7 +66,7 @@ class Order extends Model
 
     public function deliveries () {
         return $this->belongsToMany(Customer::class, 'order_deliveries', 'order_id', 'customer_id')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact'])
             ->withPivot([
                 'delivery_date1',
                 'delivery_date2',

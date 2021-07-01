@@ -35,7 +35,7 @@ class CustomersController extends Controller
             ->whereRaw("email like '%$email%'")
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact', 'orders'])
             ->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
@@ -63,7 +63,7 @@ class CustomersController extends Controller
             ->whereRaw("LOWER(email) like '%$email%'")
             ->orderBy('code', 'ASC')
             ->orderBy('code_number', 'ASC')
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact'])
             ->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
@@ -96,6 +96,11 @@ class CustomersController extends Controller
         $mailing_state = isset($request->mailing_state) ? trim($request->mailing_state) : '';
         $mailing_zip = isset($request->mailing_zip) ? trim($request->mailing_zip) : '';
         $mailing_contact_name = isset($request->mailing_contact_name) ? trim($request->mailing_contact_name) : '';
+
+        $mailing_contact_id = isset($request->mailing_contact_id) ? trim($request->mailing_contact_id) : 0;
+        $mailing_contact_primary_phone = isset($request->mailing_contact_primary_phone) ? trim($request->mailing_contact_primary_phone) : 'work';
+        $mailing_contact_primary_email = isset($request->mailing_contact_primary_email) ? trim($request->mailing_contact_primary_email) : 'work';
+
         $mailing_contact_phone = isset($request->mailing_contact_phone) ? trim($request->mailing_contact_phone) : '';
         $mailing_contact_phone_ext = isset($request->mailing_contact_phone_ext) ? trim($request->mailing_contact_phone_ext) :
             (isset($request->mailing_ext) ? $request->mailing_ext : '');
@@ -193,6 +198,9 @@ class CustomersController extends Controller
                 'mailing_city' => $mailing_city,
                 'mailing_state' => strtoupper($mailing_state),
                 'mailing_zip' => $mailing_zip,
+                'mailing_contact_id' => $mailing_contact_id,
+                'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
+                'mailing_contact_primary_email' => $mailing_contact_primary_email,
                 'mailing_contact_name' => $mailing_contact_name,
                 'mailing_contact_phone' => $mailing_contact_phone,
                 'mailing_ext' => $mailing_contact_phone_ext,
@@ -242,7 +250,7 @@ class CustomersController extends Controller
         }
 
         $newCustomer = Customer::where('id', $customer->id)
-            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])->first();
+            ->with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact'])->first();
 
         return response()->json(['result' => 'OK', 'customer' => $newCustomer]);
     }
@@ -269,7 +277,7 @@ class CustomersController extends Controller
 
     public function getFullCustomers(Request $request)
     {
-        $customers = Customer::with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data'])->get();
+        $customers = Customer::with(['contacts', 'documents', 'directions', 'hours', 'automaticEmails', 'notes', 'zip_data', 'mailing_contact'])->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
