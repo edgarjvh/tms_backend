@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="61441d39-4112-4d3b-bbbb-ff1da74b79e7" name="TMS Server" url="http://147.135.37.228">
+        <fileTransfer host="147.135.37.228" port="21" rootFolder="/public_html/tms/backend">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="21" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

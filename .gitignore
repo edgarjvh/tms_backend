@@ -1,0 +1,13 @@
+/node_modules/
+/.env
+/tms-backend.zip
+/TMS Backend.zip
+/public/customer-documents/*
+/public/factoring-company-documents/*
+/public/carrier-documents/*
+/public/avatars/*
+/vendor/
+/vendor/*
+/public/order-documents/*
+/public/order-billing-documents/*
+/public/order-invoice-carrier-documents/*
