@@ -39,6 +39,12 @@ use App\Http\Controllers\OrderDocumentsController;
 use App\Http\Controllers\CarrierDocumentsController;
 use App\Http\Controllers\FactoringCompanyDocumentsController;
 use App\Http\Controllers\DispatchNotesController;
+use App\Http\Controllers\CompaniesController;
+use App\Http\Controllers\CompanyMailingAddressesController;
+use App\Http\Controllers\EmployeesController;
+use App\Http\Controllers\AgentsController;
+use App\Http\Controllers\CompanyDriversController;
+use App\Http\Controllers\OwnerOperatorsController;
 
 Route::get('/gettingRevenue', function () {
     $date_start = '08/15/2021';
@@ -160,6 +166,10 @@ Route::get('/gettingOrderInvoiceNotes', function () {
     $query1->where('order_id', $order_id);
     $data = $query1->get();
     return view('welcome', compact('data'));
+});
+
+Route::get('/phpinfo', function () {
+    return view('welcome');
 });
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
@@ -349,3 +359,40 @@ Route::post('/getOrderHistoryCarrier', [OrdersController::class, 'getOrderHistor
 Route::post('/getOrderCarrierRatings', [OrderCarrierRatingsController::class, 'getOrderCarrierRatings']);
 Route::post('/saveOrderCarrierRating', [OrderCarrierRatingsController::class, 'saveOrderCarrierRating']);
 Route::post('/deleteOrderCarrierRating', [OrderCarrierRatingsController::class, 'deleteOrderCarrierRating']);
+
+Route::post('/companies', [CompaniesController::class, 'companies']);
+Route::post('/saveCompany', [CompaniesController::class, 'saveCompany']);
+Route::post('/removeCompany', [CompaniesController::class, 'removeCompany']);
+Route::post('/uploadCompanyLogo', [CompaniesController::class, 'uploadCompanyLogo']);
+Route::post('/removeCompanyLogo', [CompaniesController::class, 'removeCompanyLogo']);
+
+Route::post('/saveCompanyMailingAddress', [CompanyMailingAddressesController::class, 'saveCompanyMailingAddress']);
+Route::post('/deleteCompanyMailingAddress', [CompanyMailingAddressesController::class, 'deleteCompanyMailingAddress']);
+
+Route::post('/saveEmployee', [EmployeesController::class, 'saveEmployee']);
+Route::post('/deleteEmployee', [EmployeesController::class, 'deleteEmployee']);
+Route::post('/uploadEmployeeAvatar', [EmployeesController::class, 'uploadAvatar']);
+Route::post('/removeEmployeeAvatar', [EmployeesController::class, 'removeAvatar']);
+Route::post('/companyEmployeesSearch', [EmployeesController::class, 'companyEmployeesSearch']);
+Route::post('/resetEmployeePassword', [EmployeesController::class, 'resetEmployeePassword']);
+
+Route::post('/saveAgent', [AgentsController::class, 'saveAgent']);
+Route::post('/deleteAgent', [AgentsController::class, 'deleteAgent']);
+Route::post('/uploadAgentAvatar', [AgentsController::class, 'uploadAvatar']);
+Route::post('/removeAgentAvatar', [AgentsController::class, 'removeAvatar']);
+Route::post('/companyAgentsSearch', [AgentsController::class, 'companyAgentsSearch']);
+Route::post('/resetAgentPassword', [AgentsController::class, 'resetAgentPassword']);
+
+Route::post('/saveDriver', [CompanyDriversController::class, 'saveDriver']);
+Route::post('/deleteDriver', [CompanyDriversController::class, 'deleteDriver']);
+Route::post('/uploadDriverAvatar', [CompanyDriversController::class, 'uploadAvatar']);
+Route::post('/removeDriverAvatar', [CompanyDriversController::class, 'removeAvatar']);
+Route::post('/companyDriversSearch', [CompanyDriversController::class, 'companyDriversSearch']);
+
+Route::post('/saveOperator', [OwnerOperatorsController::class, 'saveOperator']);
+Route::post('/deleteOperator', [OwnerOperatorsController::class, 'deleteOperator']);
+Route::post('/uploadOperatorAvatar', [OwnerOperatorsController::class, 'uploadAvatar']);
+Route::post('/removeOperatorAvatar', [OwnerOperatorsController::class, 'removeAvatar']);
+Route::post('/companyOperatorsSearch', [OwnerOperatorsController::class, 'companyOperatorsSearch']);
+
+

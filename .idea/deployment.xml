@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="TMS Server">
+  <component name="PublishConfigData" serverName="TMS Server" uploadOnCheckin="61441d39-4112-4d3b-bbbb-ff1da74b79e7">
     <serverData>
       <paths name="TMS Server">
         <serverdata>
           <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
     </serverData>
+    <option name="myUploadOnCheckinName" value="TMS Server" />
   </component>
 </project>

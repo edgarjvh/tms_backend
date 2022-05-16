@@ -26,7 +26,7 @@ class OrdersController extends Controller
     {
         $ORDER = new Order();
 
-        $orders = $ORDER->with([
+        $orders = $ORDER->where('isImported', 0)->with([
             'bill_to_company',
             'carrier',
             'equipment',

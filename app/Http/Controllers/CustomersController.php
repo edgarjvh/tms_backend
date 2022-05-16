@@ -122,7 +122,7 @@ class CustomersController extends Controller
         $email = $request->search[6]['data'] ?? '';
 
         $customers = $CUSTOMER->whereRaw("1 = 1")
-            ->whereRaw("LOWER(name) like '%$name%'")
+            ->whereRaw("LOWER(name) like '$name%'")
             ->whereRaw("LOWER(city) like '%$city%'")
             ->whereRaw("LOWER(state) like '%$state%'")
             ->whereRaw("zip like '%$zip%'")
