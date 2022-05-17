@@ -192,6 +192,7 @@ Route::post('/carrierSearch', [CarriersController::class, 'carrierSearch']);
 Route::post('/getFullCarriers', [CarriersController::class, 'getFullCarriers']);
 Route::post('/saveCarrier', [CarriersController::class, 'saveCarrier']);
 Route::post('/submitCarrierImport', [CarriersController::class, 'submitCarrierImport']);
+Route::post('/submitCarrierImport2', [CarriersController::class, 'submitCarrierImport2']);
 Route::post('/getCarrierPayload', [CarriersController::class, 'getCarrierPayload']);
 Route::post('/getCarrierPopupItems', [CarriersController::class, 'getCarrierPopupItems']);
 Route::post('/saveCarrierEquipment', [CarrierEquipmentsController::class, 'saveCarrierEquipment']);
@@ -334,6 +335,8 @@ Route::post('/saveOrderDelivery', [OrdersController::class, 'saveOrderDelivery']
 Route::post('/saveOrderRouting', [OrdersController::class, 'saveOrderRouting']);
 Route::post('/getOrdersRelatedData', [OrdersController::class, 'getOrdersRelatedData']);
 Route::post('/submitOrderImport', [OrdersController::class, 'submitOrderImport']);
+Route::post('/submitOrderImport2', [OrdersController::class, 'submitOrderImport2']);
+Route::post('/arrayTest', [OrdersController::class, 'arrayTest']);
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
 Route::post('/getEventTypes', [EventTypesController::class, 'getEventTypes']);

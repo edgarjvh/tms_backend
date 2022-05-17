@@ -20,7 +20,7 @@ class EquipmentsController extends Controller
         $name = $request->name ?? '';
 
         $equipments = $EQUIPMENT->whereRaw("1 = 1")
-            ->whereRaw("LOWER(name) like '%$name%'")
+            ->whereRaw("LOWER(name) like '$name%'")
             ->orderBy('name')->get();
 
         return response()->json(['result' => 'OK', 'equipments' => $equipments]);

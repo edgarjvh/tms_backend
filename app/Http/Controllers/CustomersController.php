@@ -487,125 +487,117 @@ class CustomersController extends Controller
      */
     public function submitCustomerImport2(Request $request)
     {
-        $customerList = $request->list ?? [];
-        $savedCustomers = [];
+        $list = $request->list ?? [];
 
-        if (count($customerList) > 0) {
-            for ($i = 0; $i < count($customerList); $i++) {
-                $currentCustomer = $customerList[$i];
+        if (count($list) > 0) {
+            for ($i = 0; $i < count($list); $i++) {
+                $item = $list[$i];
 
-//                $CUSTOMER = new Customer();
-//                $CUSTOMER_CONTACT = new Contact();
+                $code = $item['code'] ?? null;
+                $code_number = $item['codeNumber'] ?? 0;
+                $name = $item['name'] ?? '';
+                $address1 = $item['address1'] ?? '';
+                $address2 = $item['address2'] ?? '';
+                $city = $item['city'] ?? '';
+                $state = $item['state'] ?? '';
+                $zip = $item['zip'] ?? '';
+                $contact_name = $item['contact'] ?? '';
+                $contact_first_name = $item['contactFirstName'] ?? '';
+                $contact_last_name = $item['contactLastName'] ?? '';
+                $contact_phone = $item['phone'] ?? '';
+                $ext = $item['ext'] ?? '';
+                $email = $item['email'] ?? '';
+                $hours_open = $item['hoursOpen'] ?? '';
+                $hours_close = $item['hoursClose'] ?? '';
+                $bill_to_code = $item['billToCode'] ?? null;
+                $bill_to_code_number = $item['billToCodeNumber'] ?? 0;
 
-                $id = 0;
-                $code = $currentCustomer['code'] ?? '';
-                $code_number = 0;
-                $name = $currentCustomer['name'] ?? '';
-                $address1 = $currentCustomer['address1'] ?? '';
-                $address2 = $currentCustomer['address2'] ?? '';
-                $city = $currentCustomer['city'] ?? '';
-                $state = $currentCustomer['state'] ?? '';
-                $zip = $currentCustomer['zip'] ?? '';
-                $contact_name = $currentCustomer['contact'] ?? '';
-                $contact_phone = $currentCustomer['phone'] ?? '';
-                $contact_phone_ext = $currentCustomer['ext'] ?? '';
-                $email = $currentCustomer['email'] ?? '';
+                $customer_id = 0;
 
-//                $curCustomer = Customer::where('id', $id)->first();
-
-                $codeExist = Customer::where('code', $code)->get();
-
-                if (count($codeExist) > 0) {
-                    $max_code_number = Customer::where('code', $code)->max('code_number');
-                    $code_number = $max_code_number + 1;
-                } else {
-                    $code_number = 0;
-                }
-
-                $with_contact = true;
-
-                if (trim($contact_name) === '' || trim($contact_phone) === '') {
-                    $with_contact = false;
-                }
-
-                $customer = Customer::updateOrCreate([
-                    'id' => $id
-                ],
-                    [
-                        'code' => strtoupper($code),
-                        'code_number' => $code_number,
-                        'name' => $name,
-                        'address1' => $address1,
-                        'address2' => $address2,
-                        'city' => $city,
-                        'state' => strtoupper($state),
-                        'zip' => $zip,
-                        'contact_name' => $contact_name,
-                        'contact_phone' => $contact_phone,
-                        'ext' => $contact_phone_ext,
-                        'email' => strtolower($email)
-                    ]);
-
-                if ($with_contact) {
-                    $contacts = Contact::where('customer_id', $customer->id)->get();
-
-                    $contact_name_splitted = explode(" ", $contact_name);
-                    $contact_first = $contact_name_splitted[0];
-                    $contact_last = '';
-
-                    if (count($contact_name_splitted) > 0) {
-                        for ($i = 1; $i < count($contact_name_splitted); $i++) {
-                            $contact_last .= $contact_name_splitted[$i] . " ";
-                        }
-                    }
-
-                    $contact_last = trim($contact_last);
-
-                    if (count($contacts) === 0) {
-                        $contact = new Contact();
-                        $contact->customer_id = $customer->id;
-                        $contact->first_name = trim($contact_first);
-                        $contact->last_name = trim($contact_last);
-                        $contact->phone_work = $contact_phone;
-                        $contact->phone_ext = $contact_phone_ext;
-                        $contact->email_work = $email;
-                        $contact->address1 = $address1;
-                        $contact->address2 = $address2;
-                        $contact->city = $city;
-                        $contact->state = $state;
-                        $contact->zip_code = $zip;
-                        $contact->is_primary = 1;
-                        $contact->save();
-
-                        Customer::where('id', $customer->id)->update([
-                            'primary_contact_id' => $contact->id
+                try {
+                    $saved_customer = Customer::updateOrCreate([
+                        'id' => 0
+                    ],
+                        [
+                            'code' => strtoupper($code),
+                            'code_number' => $code_number,
+                            'name' => $name,
+                            'address1' => $address1,
+                            'address2' => $address2,
+                            'city' => $city,
+                            'state' => strtoupper($state),
+                            'zip' => $zip,
+                            'contact_name' => $contact_name,
+                            'contact_phone' => $contact_phone,
+                            'ext' => $ext,
+                            'email' => strtolower($email)
                         ]);
-                    } elseif (count($contacts) === 1) {
 
-                        $contact = $contacts[0];
-                        if ($contact->first_name === $contact_first && $contact->last_name === $contact_last) {
+                    $customer_id = $saved_customer->id;
+                } catch (Throwable|Exception $e) {
+                    $customer_id = 0;
+                }
 
-                            Contact::where('id', $contact->id)->update([
-                                'phone_work' => ($contact->primary_phone === 'work') ? $contact_phone : $contact->phone_work,
-                                'phone_work_fax' => ($contact->primary_phone === 'fax') ? $contact_phone : $contact->phone_work_fax,
-                                'phone_mobile' => ($contact->primary_phone === 'mobile') ? $contact_phone : $contact->phone_mobile,
-                                'phone_direct' => ($contact->primary_phone === 'direct') ? $contact_phone : $contact->phone_direct,
-                                'phone_other' => ($contact->primary_phone === 'other') ? $contact_phone : $contact->phone_other,
-                                'phone_ext' => $contact_phone_ext,
-                                'email_work' => ($contact->primary_email === 'work') ? $email : $contact->email_work,
-                                'email_personal' => ($contact->primary_email === 'personal') ? $email : $contact->email_personal,
-                                'email_other' => ($contact->primary_email === 'other') ? $email : $contact->email_other
-                            ]);
+                if ($customer_id > 0) {
+                    try {
+                        if (!empty($bill_to_code)) {
+                            CustomerMailingAddress::updateOrCreate([
+                                'customer_id' => $customer_id
+                            ],
+                                [
+                                    'bill_to_code' => $bill_to_code,
+                                    'bill_to_code_number' => $bill_to_code_number
+                                ]);
                         }
+                    } catch (Throwable|Exception $e) {
+
+                    }
+
+                    try {
+                        $saved_contact = Contact::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'customer_id' => $customer_id,
+                            'first_name' => $contact_first_name,
+                            'last_name' => $contact_last_name,
+                            'phone_work' => $contact_phone,
+                            'phone_ext' => $ext,
+                            'email_work' => $email,
+                            'address1' => $address1,
+                            'address2' => $address2,
+                            'city' => $city,
+                            'state' => $state,
+                            'zip_code' => $zip,
+                            'is_primary' => 1
+                        ]);
+
+                        Customer::where('id', $customer_id)->update([
+                            'primary_contact_id' => $saved_contact->id
+                        ]);
+                    } catch (Throwable|Exception $e) {
+
+                    }
+
+                    try {
+                        if ($hours_open !== '' || $hours_close !== '') {
+                            CustomerHour::updateorCreate([
+                                'customer_id' => $customer_id
+                            ],
+                                [
+                                    'hours_open' => $hours_open,
+                                    'hours_close' => $hours_close
+                                ]);
+                        }
+                    }catch (Throwable|Exception $e) {
+
                     }
                 }
 
-                $savedCustomers[] = $customer;
             }
 
-            return response()->json(['result' => 'OK', 'customers' => $savedCustomers]);
+            return response()->json(['result' => 'OK']);
         } else {
-            return response()->json(['result' => 'NO CUSTOMERS']);
+            return response()->json(['result' => 'NO LIST']);
         }
     }
 

@@ -18,7 +18,7 @@ use App\Models\Route;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Throwable;
 
 class OrdersController extends Controller
 {
@@ -1184,5 +1184,285 @@ class OrdersController extends Controller
             'result' => 'OK',
             'order' => $newOrder
         ]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function submitOrderImport2(Request $request){
+        $list = $request->list ?? [];
+        $err_messages = [];
+
+        if (count($list) > 0){
+            for ($i = 0; $i < count($list); $i++){
+                $item = $list[$i];
+                $err_obj = (object)[];
+
+                $order = $item['order'];
+                $trip = $item['trip'];
+                $load_type_id = ($item['loadTypeId'] ?? 0) === 0 ? null : $item['loadTypeId'];
+                $haz_mat = $item['hazMat'];
+                $expedited = $item['expedited'];
+                $miles = ($item['miles'] ?? 0) * 1609.34;
+                $order_date_time = $item['orderDateTime'];
+                $bill_to_customer_id = ($item['billToCustomerId'] ?? 0) === 0 ? null : $item['billToCustomerId'];
+                $carrier_id = ($item['carrierId'] ?? 0) === 0 ? null : $item['carrierId'];
+                $equipment_id = ($item['equipmentTypeId'] ?? 0) === 0 ? null : $item['equipmentTypeId'];
+                $shipper_customer_id = $item['shipperCustomerId'] ?? 0;
+                $pu_date1 = $item['pu_date1'] ?? '';
+                $pu_date2 = $item['pu_date2'] ?? '';
+                $pu_time1 = $item['pu_time1'] ?? '';
+                $pu_time2 = $item['pu_time2'] ?? '';
+                $ref_numbers = $item['ref_numbers'] ?? '';
+                $consignee_customer_id = $item['consigneeCustomerId'] ?? 0;
+                $delivery_date1 = $item['delivery_date1'] ?? '';
+                $delivery_date2 = $item['delivery_date2'] ?? '';
+                $delivery_time1 = $item['delivery_time1'] ?? '';
+                $delivery_time2 = $item['delivery_time2'] ?? '';
+                $order_customer_rating = $item['customerRating'] ?? null;
+                $order_carrier_rating = $item['carrierRating'] ?? null;
+                $loaded_event = $item['loadedEvent'] ?? null;
+                $delivered_event = $item['deliveredEvent'] ?? null;
+
+                $order_id = 0;
+
+                $err_obj->order_number = $order;
+                $err_obj->text = '';
+
+                try {
+                    $saved_order = Order::updateOrCreate([
+                        'id' => 0
+                    ],[
+                        'order_number' => $order,
+                        'trip_number' => $trip,
+                        'load_type_id' => $load_type_id,
+                        'haz_mat' => $haz_mat,
+                        'expedited' => $expedited,
+                        'miles' => $miles,
+                        'order_date_time' => $order_date_time,
+                        'bill_to_customer_id' => $bill_to_customer_id,
+                        'carrier_id' => $carrier_id,
+                        'equipment_id' => $equipment_id
+                    ]);
+
+                    $order_id = $saved_order->id;
+                } catch (Throwable | Exception $e) {
+                    $order_id = 0;
+
+                    if (trim($err_obj->text) === ''){
+                        $err_obj->text = $e->getMessage();
+                    }else{
+                        $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                    }
+                }
+
+                if ($order_id > 0){
+                    $pickup = null;
+                    $delivery = null;
+
+                    if ($shipper_customer_id > 0){
+                        try {
+                            $pickup = Pickup::updateOrCreate([
+                                'id' => 0
+                            ], [
+                                'order_id' => $order_id,
+                                'customer_id' => $shipper_customer_id,
+                                'pu_date1' => $pu_date1,
+                                'pu_time1' => $pu_time1,
+                                'pu_date2' => $pu_date2,
+                                'pu_time2' => $pu_time2,
+                                'ref_numbers' => $ref_numbers
+                            ]);
+                        }catch (Throwable | Exception $e){
+                            if (trim($err_obj->text) === ''){
+                                $err_obj->text = $e->getMessage();
+                            }else{
+                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                            }
+                        }
+                    }
+
+                    if ($consignee_customer_id > 0) {
+                        try {
+                            $delivery = Delivery::updateOrCreate([
+                                'id' => 0
+                            ], [
+                                'order_id' => $order_id,
+                                'customer_id' => $consignee_customer_id,
+                                'delivery_date1' => $delivery_date1,
+                                'delivery_time1' => $delivery_time1,
+                                'delivery_date2' => $delivery_date2,
+                                'delivery_time2' => $delivery_time2
+                            ]);
+                        }catch (Throwable | Exception $e){
+                            if (trim($err_obj->text) === ''){
+                                $err_obj->text = $e->getMessage();
+                            }else{
+                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                            }
+                        }
+                    }
+
+                    if ($shipper_customer_id > 0 && $consignee_customer_id > 0) {
+                        try{
+                            if (($pickup->id ?? 0) > 0){
+                                Route::updateOrCreate([
+                                    'id' => 0
+                                ], [
+                                    'order_id' => $order_id,
+                                    'pickup_id' => $pickup->id,
+                                    'type' => 'pickup'
+                                ]);
+                            }
+                        }catch (Throwable | Exception $e){
+                            if (trim($err_obj->text) === ''){
+                                $err_obj->text = $e->getMessage();
+                            }else{
+                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                            }
+                        }
+
+                        try {
+                            if (($delivery->id ?? 0) > 0){
+                                Route::updateOrCreate([
+                                    'id' => 0
+                                ], [
+                                    'order_id' => $order_id,
+                                    'delivery_id' => $delivery->id,
+                                    'type' => 'delivery'
+                                ]);
+                            }
+                        }catch (Throwable | Exception $e){
+                            if (trim($err_obj->text) === ''){
+                                $err_obj->text = $e->getMessage();
+                            }else{
+                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                            }
+                        }
+                    }
+
+                    try {
+                        if ($order_customer_rating['total_charges'] > 0) {
+                            OrderCustomerRating::updateOrCreate([
+                                'id' => 0
+                            ], [
+                                'order_id' => $order_id,
+                                'rate_type_id' => $order_customer_rating['rateTypeId'],
+                                'description' => $order_customer_rating['description'],
+                                'pieces' => $order_customer_rating['pieces'],
+                                'pieces_unit' => 'sk',
+                                'weight' => $order_customer_rating['weight'],
+                                'total_charges' => $order_customer_rating['total_charges']
+                            ]);
+                        }
+                    }catch (Throwable | Exception $e){
+                        if (trim($err_obj->text) === ''){
+                            $err_obj->text = $e->getMessage();
+                        }else{
+                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                        }
+                    }
+
+                    try {
+                        if ($order_carrier_rating['total_charges'] > 0) {
+                            OrderCarrierRating::updateOrCreate([
+                                'id' => 0
+                            ], [
+                                'order_id' => $order_id,
+                                'rate_type_id' => $order_carrier_rating['rateTypeId'],
+                                'description' => $order_carrier_rating['description'],
+                                'pieces' => $order_carrier_rating['pieces'],
+                                'pieces_unit' => 'sk',
+                                'weight' => $order_carrier_rating['weight'],
+                                'total_charges' => $order_carrier_rating['total_charges']
+                            ]);
+                        }
+                    }catch (Throwable | Exception $e){
+                        if (trim($err_obj->text) === ''){
+                            $err_obj->text = $e->getMessage();
+                        }else{
+                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                        }
+                    }
+
+                    try {
+                        OrderEvent::updateOrCreate([
+                            'id' => 0
+                        ], [
+                            'order_id' => $order_id,
+                            'event_type_id' => $loaded_event['eventTypeId'],
+                            'time' => $loaded_event['time'],
+                            'event_time' => $loaded_event['eventTime'],
+                            'date' => $loaded_event['date'],
+                            'event_date' => $loaded_event['eventDate'],
+                            'event_location' => $loaded_event['eventLocation'],
+                            'event_notes' => $loaded_event['eventNotes']
+                        ]);
+                    }catch (Throwable | Exception $e){
+                        if (trim($err_obj->text) === ''){
+                            $err_obj->text = $e->getMessage();
+                        }else{
+                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                        }
+                    }
+
+                    try {
+                        OrderEvent::updateOrCreate([
+                            'id' => 0
+                        ], [
+                            'order_id' => $order_id,
+                            'event_type_id' => $delivered_event['eventTypeId'],
+                            'time' => $delivered_event['time'],
+                            'event_time' => $delivered_event['eventTime'],
+                            'date' => $delivered_event['date'],
+                            'event_date' => $delivered_event['eventDate'],
+                            'event_location' => $delivered_event['eventLocation'],
+                            'event_notes' => $delivered_event['eventNotes']
+                        ]);
+                    }catch (Throwable | Exception $e){
+                        if (trim($err_obj->text) === ''){
+                            $err_obj->text = $e->getMessage();
+                        }else{
+                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
+                        }
+                    }
+                }
+
+                if (trim($err_obj->text) !== ''){
+                    $err_messages[] = $err_obj;
+                }
+            }
+
+            return response()->json(['result' => 'OK', 'err_messages' => $err_messages]);
+        }else{
+            return response()->json(['result' => 'NO LIST']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+    public function arrayTest(): JsonResponse{
+        $arr = [];
+
+        for ($i = 0; $i < 10; $i++){
+            $obj = (object)[];
+            $obj->order_number = $i;
+
+            $msg = [];
+            $msg[] = 'first';
+            $msg[] = 'second';
+            $msg[] = 'third';
+            $msg[] = 'fourth';
+
+            $obj->messages = $msg;
+
+            $arr[] = $obj;
+        }
+
+        return response()->json($arr);
     }
 }

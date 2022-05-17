@@ -111,15 +111,17 @@ class CarriersController extends Controller
     {
         $CARRIER = new Carrier();
 
-        $name = $request->search[0]['data'] ?? '';
-        $city = $request->search[1]['data'] ?? '';
-        $state = $request->search[2]['data'] ?? '';
-        $zip = $request->search[3]['data'] ?? '';
-        $contact_name = $request->search[4]['data'] ?? '';
-        $contact_phone = $request->search[5]['data'] ?? '';
-        $email = $request->search[6]['data'] ?? '';
+        $code = $request->search[0]['data'] ?? '';
+        $name = $request->search[1]['data'] ?? '';
+        $city = $request->search[2]['data'] ?? '';
+        $state = $request->search[3]['data'] ?? '';
+        $zip = $request->search[4]['data'] ?? '';
+        $contact_name = $request->search[5]['data'] ?? '';
+        $contact_phone = $request->search[6]['data'] ?? '';
+        $email = $request->search[7]['data'] ?? '';
 
         $carriers = $CARRIER->whereRaw("1 = 1")
+            ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
             ->whereRaw("LOWER(name) like '$name%'")
             ->whereRaw("LOWER(city) like '$city%'")
             ->whereRaw("LOWER(state) like '$state%'")
@@ -438,6 +440,102 @@ class CarriersController extends Controller
         $newCarrier = $CARRIER->where('id', $carrier->id)->first();
 
         return response()->json(['result' => 'OK', 'carrier' => $newCarrier]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function submitCarrierImport2(Request $request){
+        $list = $request->list ?? [];
+
+        if (count($list) > 0) {
+            for ($i = 0; $i < count($list); $i++) {
+                $item = $list[$i];
+
+                $code = $item['code'] ?? null;
+                $code_number = $item['codeNumber'] ?? 0;
+                $name = $item['name'] ?? '';
+                $address1 = $item['address1'] ?? '';
+                $address2 = $item['address2'] ?? '';
+                $city = $item['city'] ?? '';
+                $state = $item['state'] ?? '';
+                $zip = $item['zip'] ?? '';
+                $contact_name = $item['contact'] ?? '';
+                $contact_first_name = $item['contactFirstName'] ?? '';
+                $contact_last_name = $item['contactLastName'] ?? '';
+                $contact_phone = $item['phone'] ?? '';
+                $ext = $item['ext'] ?? '';
+                $email = $item['email'] ?? '';
+                $mc_number = $item['mcNumber'] ?? '';
+                $dot_number = $item['dotNumber'] ?? '';
+                $scac = $item['scac'] ?? '';
+                $fid = $item['fid'] ?? '';
+                $do_not_use = $item['doNotUse'] ?? 0;
+
+                $carrier_id = 0;
+
+                try {
+                    $saved_carrier = Carrier::updateOrCreate([
+                        'id' => 0
+                    ],
+                        [
+                            'code' => strtoupper($code),
+                            'code_number' => $code_number,
+                            'name' => $name,
+                            'address1' => $address1,
+                            'address2' => $address2,
+                            'city' => $city,
+                            'state' => strtoupper($state),
+                            'zip' => $zip,
+                            'contact_name' => $contact_name,
+                            'contact_phone' => $contact_phone,
+                            'ext' => $ext,
+                            'email' => strtolower($email),
+                            'mc_number' => $mc_number,
+                            'dot_number' => $dot_number,
+                            'scac' => strtoupper($scac),
+                            'fid' => $fid,
+                            'do_not_use' => $do_not_use
+                        ]);
+
+                    $carrier_id = $saved_carrier->id;
+                } catch (Throwable|Exception $e) {
+                    $carrier_id = 0;
+                }
+
+                if ($carrier_id > 0) {
+                    try {
+                        $saved_contact = CarrierContact::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'carrier_id' => $carrier_id,
+                            'first_name' => $contact_first_name,
+                            'last_name' => $contact_last_name,
+                            'phone_work' => $contact_phone,
+                            'phone_ext' => $ext,
+                            'email_work' => $email,
+                            'address1' => $address1,
+                            'address2' => $address2,
+                            'city' => $city,
+                            'state' => $state,
+                            'zip_code' => $zip,
+                            'is_primary' => 1
+                        ]);
+
+                        Carrier::where('id', $carrier_id)->update([
+                            'primary_contact_id' => $saved_contact->id
+                        ]);
+                    } catch (Throwable|Exception $e) {
+
+                    }
+                }
+            }
+
+            return response()->json(['result' => 'OK']);
+        } else {
+            return response()->json(['result' => 'NO LIST']);
+        }
     }
 
     /**
