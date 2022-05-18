@@ -1190,16 +1190,15 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function submitOrderImport2(Request $request){
+    public function submitOrderImport2(Request $request): JsonResponse{
         $list = $request->list ?? [];
-        $err_messages = [];
 
         if (count($list) > 0){
             for ($i = 0; $i < count($list); $i++){
                 $item = $list[$i];
-                $err_obj = (object)[];
 
                 $order = $item['order'];
+
                 $trip = $item['trip'];
                 $load_type_id = ($item['loadTypeId'] ?? 0) === 0 ? null : $item['loadTypeId'];
                 $haz_mat = $item['hazMat'];
@@ -1227,9 +1226,6 @@ class OrdersController extends Controller
 
                 $order_id = 0;
 
-                $err_obj->order_number = $order;
-                $err_obj->text = '';
-
                 try {
                     $saved_order = Order::updateOrCreate([
                         'id' => 0
@@ -1248,13 +1244,7 @@ class OrdersController extends Controller
 
                     $order_id = $saved_order->id;
                 } catch (Throwable | Exception $e) {
-                    $order_id = 0;
 
-                    if (trim($err_obj->text) === ''){
-                        $err_obj->text = $e->getMessage();
-                    }else{
-                        $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                    }
                 }
 
                 if ($order_id > 0){
@@ -1275,11 +1265,7 @@ class OrdersController extends Controller
                                 'ref_numbers' => $ref_numbers
                             ]);
                         }catch (Throwable | Exception $e){
-                            if (trim($err_obj->text) === ''){
-                                $err_obj->text = $e->getMessage();
-                            }else{
-                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                            }
+
                         }
                     }
 
@@ -1296,11 +1282,7 @@ class OrdersController extends Controller
                                 'delivery_time2' => $delivery_time2
                             ]);
                         }catch (Throwable | Exception $e){
-                            if (trim($err_obj->text) === ''){
-                                $err_obj->text = $e->getMessage();
-                            }else{
-                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                            }
+
                         }
                     }
 
@@ -1316,11 +1298,7 @@ class OrdersController extends Controller
                                 ]);
                             }
                         }catch (Throwable | Exception $e){
-                            if (trim($err_obj->text) === ''){
-                                $err_obj->text = $e->getMessage();
-                            }else{
-                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                            }
+
                         }
 
                         try {
@@ -1334,11 +1312,7 @@ class OrdersController extends Controller
                                 ]);
                             }
                         }catch (Throwable | Exception $e){
-                            if (trim($err_obj->text) === ''){
-                                $err_obj->text = $e->getMessage();
-                            }else{
-                                $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                            }
+
                         }
                     }
 
@@ -1357,11 +1331,7 @@ class OrdersController extends Controller
                             ]);
                         }
                     }catch (Throwable | Exception $e){
-                        if (trim($err_obj->text) === ''){
-                            $err_obj->text = $e->getMessage();
-                        }else{
-                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                        }
+
                     }
 
                     try {
@@ -1379,11 +1349,7 @@ class OrdersController extends Controller
                             ]);
                         }
                     }catch (Throwable | Exception $e){
-                        if (trim($err_obj->text) === ''){
-                            $err_obj->text = $e->getMessage();
-                        }else{
-                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                        }
+
                     }
 
                     try {
@@ -1400,11 +1366,7 @@ class OrdersController extends Controller
                             'event_notes' => $loaded_event['eventNotes']
                         ]);
                     }catch (Throwable | Exception $e){
-                        if (trim($err_obj->text) === ''){
-                            $err_obj->text = $e->getMessage();
-                        }else{
-                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                        }
+
                     }
 
                     try {
@@ -1421,20 +1383,13 @@ class OrdersController extends Controller
                             'event_notes' => $delivered_event['eventNotes']
                         ]);
                     }catch (Throwable | Exception $e){
-                        if (trim($err_obj->text) === ''){
-                            $err_obj->text = $e->getMessage();
-                        }else{
-                            $err_obj->text = $err_obj->text . ' | ' . $e->getMessage();
-                        }
+
                     }
                 }
 
-                if (trim($err_obj->text) !== ''){
-                    $err_messages[] = $err_obj;
-                }
             }
 
-            return response()->json(['result' => 'OK', 'err_messages' => $err_messages]);
+            return response()->json(['result' => 'OK']);
         }else{
             return response()->json(['result' => 'NO LIST']);
         }

@@ -8,10 +8,7 @@
     <title>Document</title>
 </head>
 <body>
-{{-- <div id="main"></div> --}}
-{{-- <?php phpinfo(); ?> --}}
-
-{{$data}}
+<?php phpinfo(); ?>
 <script defer src="./../js/app.js"></script>
 </body>
 </html>
