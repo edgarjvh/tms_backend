@@ -58,6 +58,7 @@ Route::post('/getCarrierById', [CarriersController::class, 'getCarrierById']);
 Route::post('/carriers', [CarriersController::class, 'carriers'])->name('carriers');
 Route::post('/carrierSearch', [CarriersController::class, 'carrierSearch']);
 Route::post('/getFullCarriers', [CarriersController::class, 'getFullCarriers']);
+Route::post('/getCarrierOrders', [CarriersController::class, 'getCarrierOrders']);
 Route::post('/saveCarrier', [CarriersController::class, 'saveCarrier']);
 Route::post('/submitCarrierImport', [CarriersController::class, 'submitCarrierImport']);
 Route::post('/submitCarrierImport2', [CarriersController::class, 'submitCarrierImport2']);

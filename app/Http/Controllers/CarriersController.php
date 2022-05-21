@@ -10,6 +10,7 @@ use App\Models\CarrierNote;
 use App\Models\Equipment;
 use App\Models\Insurance;
 use App\Models\InsuranceType;
+use App\Models\Order;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -144,6 +145,41 @@ class CarriersController extends Controller
             ->get();
 
         return response()->json(['result' => 'OK', 'carriers' => $carriers]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCarrierOrders(Request $request)
+    {
+        $id = $request->id ?? 0;
+
+        $ORDER = Order::query();
+
+        $ORDER->whereRaw("1 = 1");
+        $ORDER->whereHas('carrier', function ($query1) use ($id) {
+            $query1->where('id', $id);
+        });
+
+        $ORDER->select([
+            'id',
+            'order_number'
+        ]);
+
+        $ORDER->with([
+            'carrier',
+            'pickups',
+            'deliveries',
+            'routing'
+        ]);
+
+
+        $ORDER->orderBy('id', 'desc');
+
+        $orders = $ORDER->get();
+
+        return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
 
     /**

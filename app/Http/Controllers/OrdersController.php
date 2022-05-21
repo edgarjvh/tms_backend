@@ -26,28 +26,29 @@ class OrdersController extends Controller
     {
         $ORDER = new Order();
 
-        $orders = $ORDER->where('isImported', 0)->with([
+        $orders = $ORDER->where('is_imported', 0)->with([
             'bill_to_company',
             'carrier',
-            'equipment',
-            'driver',
-            'notes_for_driver',
-            'notes_for_carrier',
-            'internal_notes',
+//            'equipment',
+//            'driver',
+//            'notes_for_driver',
+//            'notes_for_carrier',
+//            'internal_notes',
             'pickups',
             'deliveries',
             'routing',
-            'documents',
+//            'documents',
             'events',
-            'division',
-            'load_type',
-            'template',
-            'order_customer_ratings',
-            'order_carrier_ratings',
-            'billing_documents',
-            'billing_notes',
-            'term'
+//            'division',
+//            'load_type',
+//            'template',
+//            'order_customer_ratings',
+//            'order_carrier_ratings',
+//            'billing_documents',
+//            'billing_notes',
+//            'term'
         ])
+
             ->orderBy('order_number')
             ->get();
 
@@ -1239,7 +1240,8 @@ class OrdersController extends Controller
                         'order_date_time' => $order_date_time,
                         'bill_to_customer_id' => $bill_to_customer_id,
                         'carrier_id' => $carrier_id,
-                        'equipment_id' => $equipment_id
+                        'equipment_id' => $equipment_id,
+                        'is_imported' => 1
                     ]);
 
                     $order_id = $saved_order->id;

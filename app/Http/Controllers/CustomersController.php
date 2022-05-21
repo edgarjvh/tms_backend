@@ -113,34 +113,36 @@ class CustomersController extends Controller
     {
         $CUSTOMER = new Customer();
 
-        $name = $request->search[0]['data'] ?? '';
-        $city = $request->search[1]['data'] ?? '';
-        $state = $request->search[2]['data'] ?? '';
-        $zip = $request->search[3]['data'] ?? '';
-        $contact_name = $request->search[4]['data'] ?? '';
-        $contact_phone = $request->search[5]['data'] ?? '';
-        $email = $request->search[6]['data'] ?? '';
+        $code = $request->search[0]['data'] ?? '';
+        $name = $request->search[1]['data'] ?? '';
+        $city = $request->search[2]['data'] ?? '';
+        $state = $request->search[3]['data'] ?? '';
+        $zip = $request->search[4]['data'] ?? '';
+        $contact_name = $request->search[5]['data'] ?? '';
+        $contact_phone = $request->search[6]['data'] ?? '';
+        $email = $request->search[7]['data'] ?? '';
 
         $customers = $CUSTOMER->whereRaw("1 = 1")
+            ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
             ->whereRaw("LOWER(name) like '$name%'")
-            ->whereRaw("LOWER(city) like '%$city%'")
-            ->whereRaw("LOWER(state) like '%$state%'")
-            ->whereRaw("zip like '%$zip%'")
-            ->whereRaw("LOWER(contact_name) like '%$contact_name%'")
-            ->whereRaw("contact_phone like '%$contact_phone%'")
-            ->whereRaw("LOWER(email) like '%$email%'")
+            ->whereRaw("LOWER(city) like '$city%'")
+            ->whereRaw("LOWER(state) like '$state%'")
+            ->whereRaw("zip like '$zip%'")
+            ->whereRaw("LOWER(contact_name) like '$contact_name%'")
+            ->whereRaw("contact_phone like '$contact_phone%'")
+            ->whereRaw("LOWER(email) like '$email%'")
             ->orderBy('code')
             ->orderBy('code_number')
-            ->with([
-                'contacts',
-                'documents',
-                'directions',
-                'hours',
-                'automatic_emails',
-                'notes',
-                'zip_data',
-                'mailing_address'
-            ])
+//            ->with([
+//                'contacts',
+//                'documents',
+//                'directions',
+//                'hours',
+//                'automatic_emails',
+//                'notes',
+//                'zip_data',
+//                'mailing_address'
+//            ])
             ->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
@@ -171,12 +173,20 @@ class CustomersController extends Controller
             });
         });
 
+        $ORDER->select([
+            'id',
+            'order_number'
+        ]);
+
         $ORDER->with([
             'bill_to_company',
             'pickups',
             'deliveries',
             'routing'
         ]);
+
+
+        $ORDER->orderBy('id', 'desc');
 
         $orders = $ORDER->get();
 
@@ -556,7 +566,7 @@ class CustomersController extends Controller
                     try {
                         $saved_contact = Contact::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'customer_id' => $customer_id,
                             'first_name' => $contact_first_name,
                             'last_name' => $contact_last_name,
@@ -588,7 +598,7 @@ class CustomersController extends Controller
                                     'hours_close' => $hours_close
                                 ]);
                         }
-                    }catch (Throwable|Exception $e) {
+                    } catch (Throwable|Exception $e) {
 
                     }
                 }
