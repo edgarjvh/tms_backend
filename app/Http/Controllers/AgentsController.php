@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Agent;
 use App\Models\Company;
@@ -292,6 +294,40 @@ class AgentsController extends Controller
         }else{
             return response()->json(['result' => 'no agent']);
         }
+    }
+
+    /**
+     * @param Request $request     *
+     */
+    public function loginAgent(Request $request) {
+        if (!Auth::guard('agent')->attempt(['email_work' => $request->email, 'password' => $request->password])){
+            return response([
+                'message' => 'Invalid Credentials'
+            ], \Symfony\Component\HttpFoundation\Response::HTTP_UNAUTHORIZED);
+        }
+
+        $agent = Auth::guard('agent')->user();
+
+        $token = $agent->createToken('token')->plainTextToken;
+
+        $cookie = cookie('jwt_tms', $token, 60 * 24);
+
+        return response([
+            'message' => 'success',
+            'token' => $token
+        ])->withCookie($cookie);
+    }
+
+    public function agent(){
+        return Auth::guard('agent')->user();
+    }
+
+    public function logoutAgent(){
+        $cookie = Cookie::forget('jwt_tms');
+
+        return response([
+            'message' => 'Success'
+        ])->withCookie($cookie);
     }
 
     function random_str(

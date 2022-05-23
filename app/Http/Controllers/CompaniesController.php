@@ -9,6 +9,28 @@ use Illuminate\Http\Request;
 class CompaniesController extends Controller
 {
     /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCompanyById(Request $request) : JsonResponse{
+        $id = $request->id ?? 0;
+
+        $COMPANY = new Company();
+
+        $company = $COMPANY->where('id', $id)
+            ->with([
+                'mailing_address',
+                'employees',
+                'agents',
+                'drivers',
+                'operators'
+            ])
+            ->first();
+
+        return response()->json(['result' => 'OK', 'company' => $company]);
+    }
+
+    /**
      * @return JsonResponse
      */
     public function companies(): JsonResponse

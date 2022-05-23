@@ -10,6 +10,10 @@ class Company extends Model
     protected array $guarded = [];
     protected string $table = 'companies';
 
+    public function mailing_address() {
+        return $this->hasOne(CompanyMailingAddress::class, 'company_id', 'id');
+    }
+
     public function employees() {
         return $this->hasMany(Employee::class, 'company_id', 'id');
     }

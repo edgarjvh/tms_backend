@@ -2,14 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use http\Env\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Company;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class EmployeesController extends Controller
 {
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getEmployees() : JsonResponse{
+        $employees = Employee::with(['company'])->get();
+
+        return response()->json(['result' => 'OK', 'employees' => $employees]);
+    }
+
     /**
      * @param Request $request
      * @return JsonResponse
@@ -293,6 +307,8 @@ class EmployeesController extends Controller
             return response()->json(['result' => 'no employee']);
         }
     }
+
+
 
     function random_str(
         int $length = 10,

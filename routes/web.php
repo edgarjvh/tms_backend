@@ -39,6 +39,7 @@ use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\AgentsController;
 use App\Http\Controllers\CompanyDriversController;
 use App\Http\Controllers\OwnerOperatorsController;
+use App\Http\Controllers\AuthController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
 Route::post('/getCustomerById', [CustomersController::class, 'getCustomerById']);
@@ -232,6 +233,7 @@ Route::post('/getOrderCarrierRatings', [OrderCarrierRatingsController::class, 'g
 Route::post('/saveOrderCarrierRating', [OrderCarrierRatingsController::class, 'saveOrderCarrierRating']);
 Route::post('/deleteOrderCarrierRating', [OrderCarrierRatingsController::class, 'deleteOrderCarrierRating']);
 
+Route::post('/getCompanyById', [CompaniesController::class, 'getCompanyById']);
 Route::post('/companies', [CompaniesController::class, 'companies']);
 Route::post('/saveCompany', [CompaniesController::class, 'saveCompany']);
 Route::post('/removeCompany', [CompaniesController::class, 'removeCompany']);
@@ -241,6 +243,7 @@ Route::post('/removeCompanyLogo', [CompaniesController::class, 'removeCompanyLog
 Route::post('/saveCompanyMailingAddress', [CompanyMailingAddressesController::class, 'saveCompanyMailingAddress']);
 Route::post('/deleteCompanyMailingAddress', [CompanyMailingAddressesController::class, 'deleteCompanyMailingAddress']);
 
+Route::post('/getEmployees', [EmployeesController::class, 'getEmployees']);
 Route::post('/saveEmployee', [EmployeesController::class, 'saveEmployee']);
 Route::post('/deleteEmployee', [EmployeesController::class, 'deleteEmployee']);
 Route::post('/uploadEmployeeAvatar', [EmployeesController::class, 'uploadAvatar']);
@@ -267,4 +270,9 @@ Route::post('/uploadOperatorAvatar', [OwnerOperatorsController::class, 'uploadAv
 Route::post('/removeOperatorAvatar', [OwnerOperatorsController::class, 'removeAvatar']);
 Route::post('/companyOperatorsSearch', [OwnerOperatorsController::class, 'companyOperatorsSearch']);
 
-
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/generatePass', [AuthController::class, 'generatePass']);
+Route::middleware('auth:sanctum')->group(function (){
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+});
