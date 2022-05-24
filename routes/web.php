@@ -134,6 +134,8 @@ Route::post('/factoringCompanySearch', [FactoringCompaniesController::class, 'fa
 Route::post('/saveFactoringCompanyMailingAddress', [FactoringCompaniesController::class, 'saveFactoringCompanyMailingAddress']);
 Route::post('/deleteFactoringCompanyMailingAddress', [FactoringCompaniesController::class, 'deleteFactoringCompanyMailingAddress']);
 Route::post('/saveFactoringCompanyNotes', [FactoringCompaniesController::class, 'saveFactoringCompanyNotes']);
+Route::post('/saveAchWiringInfo', [FactoringCompaniesController::class, 'saveAchWiringInfo']);
+Route::post('/getFactoringCompanyOutstandingInvoices', [FactoringCompaniesController::class, 'getFactoringCompanyOutstandingInvoices']);
 
 Route::post('/saveCustomerDocument', [CustomerDocumentsController::class, 'saveCustomerDocument']);
 Route::post('/getDocumentsByCustomer', [CustomerDocumentsController::class, 'getDocumentsByCustomer']);

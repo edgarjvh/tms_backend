@@ -7,6 +7,7 @@ use App\Models\FactoringCompany;
 use App\Models\FactoringCompanyContact;
 use App\Models\FactoringCompanyMailingAddress;
 use App\Models\FactoringCompanyNote;
+use App\Models\Order;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -374,5 +375,68 @@ class FactoringCompaniesController extends Controller
         $factoring_company_notes = $FACTORING_COMPANY_NOTE->where('factoring_company_id', $factoring_company_id)->get();
 
         return response()->json(['result' => 'OK', 'factoring_company_note' => $factoring_company_note, 'data' => $factoring_company_notes]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveAchWiringInfo(Request $request) : JsonResponse {
+        $factoring_company_id = $request->factoring_company_id ?? 0;
+        $ach_banking_info = $request->ach_banking_info ?? '';
+        $ach_account_info = $request->ach_account_info ?? '';
+        $ach_aba_routing = $request->ach_aba_routing ?? '';
+        $ach_remittence_email = $request->ach_remittence_email ?? '';
+        $ach_type = $request->ach_type ?? 'checking';
+        $wiring_banking_info = $request->wiring_banking_info ?? '';
+        $wiring_account_info = $request->wiring_account_info ?? '';
+        $wiring_aba_routing = $request->wiring_aba_routing ?? '';
+        $wiring_remittence_email = $request->wiring_remittence_email ?? '';
+        $wiring_type = $request->wiring_type ?? 'checking';
+
+        $FACTORING_COMPANY = new FactoringCompany();
+
+        $FACTORING_COMPANY->updateOrCreate([
+            'id'=>$factoring_company_id
+        ],[
+            'ach_banking_info' => $ach_banking_info,
+            'ach_account_info' => $ach_account_info,
+            'ach_aba_routing' => $ach_aba_routing,
+            'ach_remittence_email' => strtolower($ach_remittence_email),
+            'ach_type' => strtolower($ach_type),
+            'wiring_banking_info' => $wiring_banking_info,
+            'wiring_account_info' => $wiring_account_info,
+            'wiring_aba_routing' => $wiring_aba_routing,
+            'wiring_remittence_email' => strtolower($wiring_remittence_email),
+            'wiring_type' => strtolower($wiring_type),
+        ]);
+
+        $factoring_company = $FACTORING_COMPANY->where('id', $factoring_company_id)
+            ->with(['documents', 'contacts', 'invoices', 'carriers', 'mailing_address', 'notes'])->first();
+
+        return response()->json(['result' => 'OK', 'factoring_company' => $factoring_company]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getFactoringCompanyOutstandingInvoices(Request $request) : JsonResponse {
+        $factoring_company_id = $request->factoring_company_id ?? 0;
+
+        $ORDER = Order::query();
+
+        $ORDER->whereHas('carrier', function ($query1) use ($factoring_company_id){
+            $query1->whereHas('factoring_company', function ($query2) use ($factoring_company_id){
+                $query2->where('id', $factoring_company_id);
+            });
+        });
+
+        $ORDER->where('invoice_date_paid', '<>', '');
+        $ORDER->where('carrier_check_number', '<>', '');
+
+        $orders = $ORDER->orderBy('order_number', 'desc')->get();
+
+        return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
 }
