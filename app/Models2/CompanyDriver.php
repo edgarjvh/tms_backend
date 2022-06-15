@@ -13,4 +13,8 @@ class CompanyDriver extends Model
     public function company(){
         return $this->belongsTo(Company::class)->with(['drivers']);
     }
+
+    public function documents(){
+        return $this->hasMany(DriverDocument::class)->with(['notes']);
+    }
 }

@@ -56,7 +56,22 @@ class OwnerOperatorsController extends Controller
             $notes = $request->notes ?? ($curOperator ? $curOperator->notes : '');
             $is_primary_admin = $request->is_primary_admin ?? ($curOperator ? $curOperator->is_primary_admin : 0);
             $is_online = $request->is_online ?? ($curOperator ? $curOperator->is_online : 0);
-
+            $operator_own_units = $request->operator_own_units ?? ($curOperator ? $curOperator->operator_own_units : 0);
+            $driver_manager = $request->driver_manager ?? ($curOperator ? $curOperator->driver_manager : '');
+            $division = $request->division ?? ($curOperator ? $curOperator->division : '');
+            $unit_number = $request->unit_number ?? ($curOperator ? $curOperator->unit_number : '');
+            $trailer_number = $request->trailer_number ?? ($curOperator ? $curOperator->trailer_number : '');
+            $tractor_plate = $request->tractor_plate ?? ($curOperator ? $curOperator->tractor_plate : '');
+            $trailer_plate = $request->trailer_plate ?? ($curOperator ? $curOperator->trailer_plate : '');
+            $drivers_license_number = $request->drivers_license_number ?? ($curOperator ? $curOperator->drivers_license_number : '');
+            $driver_state = $request->driver_state ?? ($curOperator ? $curOperator->driver_state : '');
+            $expiration_date = $request->expiration_date ?? ($curOperator ? $curOperator->expiration_date : '');
+            $endorsements = $request->endorsements ?? ($curOperator ? $curOperator->endorsements : '');
+            $hire_date = $request->hire_date ?? ($curOperator ? $curOperator->hire_date : '');
+            $termination_date = $request->termination_date ?? ($curOperator ? $curOperator->termination_date : '');
+            $physical_date = $request->physical_date ?? ($curOperator ? $curOperator->physical_date : '');
+            $renewal_date = $request->renewal_date ?? ($curOperator ? $curOperator->renewal_date : '');
+            $drug_test_date = $request->drug_test_date ?? ($curOperator ? $curOperator->drug_test_date : '');
             $is_primary_admin = (int)$is_primary_admin;
 
             $operator = $OPERATOR->updateOrCreate([
@@ -92,7 +107,23 @@ class OwnerOperatorsController extends Controller
                     'website' => $website,
                     'notes' => $notes,
                     'is_primary_admin' => $is_primary_admin,
-                    'is_online' => $is_online
+                    'is_online' => $is_online,
+                    'operator_own_units' => $operator_own_units,
+                    'driver_manager' => $driver_manager,
+                    'division' => $division,
+                    'unit_number' => $unit_number,
+                    'trailer_number' => $trailer_number,
+                    'tractor_plate' => $tractor_plate,
+                    'trailer_plate' => $trailer_plate,
+                    'drivers_license_number' => $drivers_license_number,
+                    'driver_state' => $driver_state,
+                    'expiration_date' => $expiration_date,
+                    'endorsements' => $endorsements,
+                    'hire_date' => $hire_date,
+                    'termination_date' => $termination_date,
+                    'physical_date' => $physical_date,
+                    'renewal_date' => $renewal_date,
+                    'drug_test_date' => $drug_test_date
                 ]);
 
             $newOperator = $OPERATOR->where('id', $operator->id)

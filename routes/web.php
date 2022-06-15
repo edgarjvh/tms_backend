@@ -39,6 +39,10 @@ use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\AgentsController;
 use App\Http\Controllers\CompanyDriversController;
 use App\Http\Controllers\OwnerOperatorsController;
+use App\Http\Controllers\EmployeeDocumentsController;
+use App\Http\Controllers\AgentDocumentsController;
+use App\Http\Controllers\DriverDocumentsController;
+use App\Http\Controllers\OperatorDocumentsController;
 use App\Http\Controllers\AuthController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
@@ -271,6 +275,30 @@ Route::post('/deleteOperator', [OwnerOperatorsController::class, 'deleteOperator
 Route::post('/uploadOperatorAvatar', [OwnerOperatorsController::class, 'uploadAvatar']);
 Route::post('/removeOperatorAvatar', [OwnerOperatorsController::class, 'removeAvatar']);
 Route::post('/companyOperatorsSearch', [OwnerOperatorsController::class, 'companyOperatorsSearch']);
+
+Route::post('/saveEmployeeDocument', [EmployeeDocumentsController::class, 'saveEmployeeDocument']);
+Route::post('/getDocumentsByEmployee', [EmployeeDocumentsController::class, 'getDocumentsByEmployee']);
+Route::post('/deleteEmployeeDocument', [EmployeeDocumentsController::class, 'deleteEmployeeDocument']);
+Route::post('/getNotesByEmployeeDocument', [EmployeeDocumentsController::class, 'getNotesByEmployeeDocument']);
+Route::post('/saveEmployeeDocumentNote', [EmployeeDocumentsController::class, 'saveEmployeeDocumentNote']);
+
+Route::post('/saveAgentDocument', [AgentDocumentsController::class, 'saveAgentDocument']);
+Route::post('/getDocumentsByAgent', [AgentDocumentsController::class, 'getDocumentsByAgent']);
+Route::post('/deleteAgentDocument', [AgentDocumentsController::class, 'deleteAgentDocument']);
+Route::post('/getNotesByAgentDocument', [AgentDocumentsController::class, 'getNotesByAgentDocument']);
+Route::post('/saveAgentDocumentNote', [AgentDocumentsController::class, 'saveAgentDocumentNote']);
+
+Route::post('/saveDriverDocument', [DriverDocumentsController::class, 'saveDriverDocument']);
+Route::post('/getDocumentsByDriver', [DriverDocumentsController::class, 'getDocumentsByDriver']);
+Route::post('/deleteDriverDocument', [DriverDocumentsController::class, 'deleteDriverDocument']);
+Route::post('/getNotesByDriverDocument', [DriverDocumentsController::class, 'getNotesByDriverDocument']);
+Route::post('/saveDriverDocumentNote', [DriverDocumentsController::class, 'saveDriverDocumentNote']);
+
+Route::post('/saveOperatorDocument', [OperatorDocumentsController::class, 'saveOperatorDocument']);
+Route::post('/getDocumentsByOperator', [OperatorDocumentsController::class, 'getDocumentsByOperator']);
+Route::post('/deleteOperatorDocument', [OperatorDocumentsController::class, 'deleteOperatorDocument']);
+Route::post('/getNotesByOperatorDocument', [OperatorDocumentsController::class, 'getNotesByOperatorDocument']);
+Route::post('/saveOperatorDocumentNote', [OperatorDocumentsController::class, 'saveOperatorDocumentNote']);
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/generatePass', [AuthController::class, 'generatePass']);

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class OwnerOperator extends Model
 {
     protected $guarded = [];
-    protected $table = 'company_owner_operators';
+    protected $table = 'company_operators';
 
     public function company(){
         return $this->belongsTo(Company::class)->with(['operators']);

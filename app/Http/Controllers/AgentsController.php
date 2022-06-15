@@ -58,6 +58,7 @@ class AgentsController extends Controller
             $notes = $request->notes ?? ($curAgent ? $curAgent->notes : '');
             $is_primary_admin = $request->is_primary_admin ?? ($curAgent ? $curAgent->is_primary_admin : 0);
             $is_online = $request->is_online ?? ($curAgent ? $curAgent->is_online : 0);
+            $agent_own_units = $request->agent_own_units ?? ($curAgent ? $curAgent->agent_own_units : 0);
 
             $is_primary_admin = (int)$is_primary_admin;
 
@@ -94,7 +95,8 @@ class AgentsController extends Controller
                     'website' => $website,
                     'notes' => $notes,
                     'is_primary_admin' => $is_primary_admin,
-                    'is_online' => $is_online
+                    'is_online' => $is_online,
+                    'agent_own_units' => $agent_own_units
                 ]);
 
             $newAgent = $AGENT->where('id', $agent->id)

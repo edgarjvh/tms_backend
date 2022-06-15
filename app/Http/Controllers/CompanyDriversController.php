@@ -57,6 +57,27 @@ class CompanyDriversController extends Controller
             $is_primary_admin = $request->is_primary_admin ?? ($curDriver ? $curDriver->is_primary_admin : 0);
             $is_online = $request->is_online ?? ($curDriver ? $curDriver->is_online : 0);
 
+            $driver_manager = $request->driver_manager ?? ($curDriver ? $curDriver->driver_manager : '');
+            $division = $request->division ?? ($curDriver ? $curDriver->division : '');
+            $unit_number = $request->unit_number ?? ($curDriver ? $curDriver->unit_number : '');
+            $trailer_number = $request->trailer_number ?? ($curDriver ? $curDriver->trailer_number : '');
+            $tractor_plate = $request->tractor_plate ?? ($curDriver ? $curDriver->tractor_plate : '');
+            $trailer_plate = $request->trailer_plate ?? ($curDriver ? $curDriver->trailer_plate : '');
+            $drivers_license_number = $request->drivers_license_number ?? ($curDriver ? $curDriver->drivers_license_number : '');
+            $driver_state = $request->driver_state ?? ($curDriver ? $curDriver->driver_state : '');
+            $expiration_date = $request->expiration_date ?? ($curDriver ? $curDriver->expiration_date : '');
+            $endorsements = $request->endorsements ?? ($curDriver ? $curDriver->endorsements : '');
+            $hire_date = $request->hire_date ?? ($curDriver ? $curDriver->hire_date : '');
+            $termination_date = $request->termination_date ?? ($curDriver ? $curDriver->termination_date : '');
+            $physical_date = $request->physical_date ?? ($curDriver ? $curDriver->physical_date : '');
+            $renewal_date = $request->renewal_date ?? ($curDriver ? $curDriver->renewal_date : '');
+            $drug_test_date = $request->drug_test_date ?? ($curDriver ? $curDriver->drug_test_date : '');
+            $pay_rate = $request->pay_rate ?? ($curDriver ? $curDriver->pay_rate : 0.00);
+            $per_hour_per_day = $request->per_hour_per_day ?? ($curDriver ? $curDriver->per_hour_per_day : 0.00);
+            $per_hour_per_day_unit = $request->per_hour_per_day_unit ?? ($curDriver ? $curDriver->per_hour_per_day_unit : 'hr');
+
+
+
             $is_primary_admin = (int)$is_primary_admin;
 
             $driver = $DRIVER->updateOrCreate([
@@ -92,7 +113,25 @@ class CompanyDriversController extends Controller
                     'website' => $website,
                     'notes' => $notes,
                     'is_primary_admin' => $is_primary_admin,
-                    'is_online' => $is_online
+                    'is_online' => $is_online,
+                    'driver_manager' => $driver_manager,
+                    'division' => $division,
+                    'unit_number' => $unit_number,
+                    'trailer_number' => $trailer_number,
+                    'tractor_plate' => $tractor_plate,
+                    'trailer_plate' => $trailer_plate,
+                    'drivers_license_number' => $drivers_license_number,
+                    'driver_state' => $driver_state,
+                    'expiration_date' => $expiration_date,
+                    'endorsements' => $endorsements,
+                    'hire_date' => $hire_date,
+                    'termination_date' => $termination_date,
+                    'physical_date' => $physical_date,
+                    'renewal_date' => $renewal_date,
+                    'drug_test_date' => $drug_test_date,
+                    'pay_rate' => $pay_rate,
+                    'per_hour_per_day' => $per_hour_per_day,
+                    'per_hour_per_day_unit' => $per_hour_per_day_unit
                 ]);
 
             $newDriver = $DRIVER->where('id', $driver->id)

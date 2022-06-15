@@ -3,6 +3,10 @@
 /tms-backend.zip
 /TMS Backend.zip
 /public/customer-documents/*
+/public/agent-documents/*
+/public/driver-documents/*
+/public/employee-documents/*
+/public/operator-documents/*
 /public/factoring-company-documents/*
 /public/carrier-documents/*
 /public/avatars/*
