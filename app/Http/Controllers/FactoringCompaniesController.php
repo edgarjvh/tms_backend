@@ -381,7 +381,7 @@ class FactoringCompaniesController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveAchWiringInfo(Request $request) : JsonResponse {
+    public function saveFactoringCompanyAchWiringInfo(Request $request) : JsonResponse {
         $factoring_company_id = $request->factoring_company_id ?? 0;
         $ach_banking_info = $request->ach_banking_info ?? '';
         $ach_account_info = $request->ach_account_info ?? '';

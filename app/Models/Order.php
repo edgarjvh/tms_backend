@@ -20,7 +20,7 @@ class Order extends Model
     public function bill_to_company()
     {
         return $this->belongsTo(Customer::class, 'bill_to_customer_id', 'id')
-            ->with(['contacts']);
+            ->with(['contacts', 'term']);
     }
 
     public function carrier()
@@ -137,5 +137,13 @@ class Order extends Model
 
     public function term(){
         return $this->belongsTo(Term::class);
+    }
+
+    public function agent(){
+        return $this->belongsTo(Agent::class);
+    }
+
+    public function employee(){
+        return $this->belongsTo(Employee::class);
     }
 }

@@ -69,6 +69,7 @@ Route::post('/submitCarrierImport', [CarriersController::class, 'submitCarrierIm
 Route::post('/submitCarrierImport2', [CarriersController::class, 'submitCarrierImport2']);
 Route::post('/getCarrierPayload', [CarriersController::class, 'getCarrierPayload']);
 Route::post('/getCarrierPopupItems', [CarriersController::class, 'getCarrierPopupItems']);
+Route::post('/saveCarrierAchWiringInfo', [CarriersController::class, 'saveCarrierAchWiringInfo']);
 Route::post('/saveCarrierEquipment', [CarrierEquipmentsController::class, 'saveCarrierEquipment']);
 
 Route::post('/getContacts', [ContactsController::class, 'getContacts']);
@@ -102,9 +103,11 @@ Route::post('/factoringCompanyContactsSearch', [ContactsController::class, 'fact
 Route::post('/notes', [NotesController::class, 'notes'])->name('notes');
 Route::post('/saveNote', [NotesController::class, 'saveNote']);
 Route::post('/saveCustomerNote', [NotesController::class, 'saveCustomerNote']);
+Route::post('/deleteCustomerNote', [NotesController::class, 'deleteCustomerNote']);
 
 Route::post('/carrierNotes', [NotesController::class, 'carrierNotes'])->name('notes');
 Route::post('/saveCarrierNote', [NotesController::class, 'saveCarrierNote']);
+Route::post('/deleteCarrierNote', [NotesController::class, 'deleteCarrierNote']);
 
 Route::post('/directions', [DirectionsController::class, 'directions'])->name('directions');
 Route::post('/saveDirection', [DirectionsController::class, 'saveDirection']);
@@ -138,7 +141,7 @@ Route::post('/factoringCompanySearch', [FactoringCompaniesController::class, 'fa
 Route::post('/saveFactoringCompanyMailingAddress', [FactoringCompaniesController::class, 'saveFactoringCompanyMailingAddress']);
 Route::post('/deleteFactoringCompanyMailingAddress', [FactoringCompaniesController::class, 'deleteFactoringCompanyMailingAddress']);
 Route::post('/saveFactoringCompanyNotes', [FactoringCompaniesController::class, 'saveFactoringCompanyNotes']);
-Route::post('/saveAchWiringInfo', [FactoringCompaniesController::class, 'saveAchWiringInfo']);
+Route::post('/saveFactoringCompanyAchWiringInfo', [FactoringCompaniesController::class, 'saveFactoringCompanyAchWiringInfo']);
 Route::post('/getFactoringCompanyOutstandingInvoices', [FactoringCompaniesController::class, 'getFactoringCompanyOutstandingInvoices']);
 
 Route::post('/saveCustomerDocument', [CustomerDocumentsController::class, 'saveCustomerDocument']);
@@ -180,6 +183,7 @@ Route::post('/saveOrderInvoiceCarrierDocumentNote', [OrderDocumentsController::c
 Route::post('/getDispatchNotes', [DispatchNotesController::class, 'getDispatchNotes']);
 Route::post('/getInternalNotes', [DispatchNotesController::class, 'getInternalNotes']);
 Route::post('/saveInternalNotes', [DispatchNotesController::class, 'saveInternalNotes']);
+Route::post('/deleteInternalNotes', [DispatchNotesController::class, 'deleteInternalNotes']);
 Route::post('/getNotesForCarrier', [DispatchNotesController::class, 'getNotesForCarrier']);
 Route::post('/saveNotesForCarrier', [DispatchNotesController::class, 'saveNotesForCarrier']);
 Route::post('/deleteNotesForCarrier', [DispatchNotesController::class, 'deleteNotesForCarrier']);
@@ -207,8 +211,11 @@ Route::post('/saveOrderEvent', [OrdersController::class, 'saveOrderEvent']);
 Route::post('/removeOrderPickup', [OrdersController::class, 'removeOrderPickup']);
 Route::post('/removeOrderDelivery', [OrdersController::class, 'removeOrderDelivery']);
 Route::post('/saveOrderPickup', [OrdersController::class, 'saveOrderPickup']);
+Route::post('/saveTemplateOrderPickup', [OrdersController::class, 'saveTemplateOrderPickup']);
 Route::post('/saveOrderDelivery', [OrdersController::class, 'saveOrderDelivery']);
+Route::post('/saveTemplateOrderDelivery', [OrdersController::class, 'saveTemplateOrderDelivery']);
 Route::post('/saveOrderRouting', [OrdersController::class, 'saveOrderRouting']);
+Route::post('/saveTemplateOrderRouting', [OrdersController::class, 'saveTemplateOrderRouting']);
 Route::post('/getOrdersRelatedData', [OrdersController::class, 'getOrdersRelatedData']);
 Route::post('/submitOrderImport', [OrdersController::class, 'submitOrderImport']);
 Route::post('/submitOrderImport2', [OrdersController::class, 'submitOrderImport2']);

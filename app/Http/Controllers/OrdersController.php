@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Carrier;
 use App\Models\Customer;
 use App\Models\Delivery;
+use App\Models\TemplateDelivery;
 use App\Models\Equipment;
 use App\Models\EventType;
 use App\Models\LoadType;
@@ -13,8 +14,10 @@ use App\Models\OrderCarrierRating;
 use App\Models\OrderCustomerRating;
 use App\Models\OrderEvent;
 use App\Models\Pickup;
+use App\Models\TemplatePickup;
 use App\Models\RateType;
 use App\Models\Route;
+use App\Models\TemplateRoute;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -364,7 +367,9 @@ class OrdersController extends Controller
                 'order_carrier_ratings',
                 'billing_documents',
                 'billing_notes',
-                'term'
+                'term',
+                'agent',
+                'employee'
             ])
             ->first();
 
@@ -404,7 +409,9 @@ class OrdersController extends Controller
                 'order_carrier_ratings',
                 'billing_documents',
                 'billing_notes',
-                'term'
+                'term',
+                'agent',
+                'employee'
             ])
             ->first();
 
@@ -444,7 +451,9 @@ class OrdersController extends Controller
                 'order_carrier_ratings',
                 'billing_documents',
                 'billing_notes',
-                'term'
+                'term',
+                'agent',
+                'employee'
             ])
             ->first();
 
@@ -478,7 +487,8 @@ class OrdersController extends Controller
         $ORDER = new Order();
 
         $order_number = (int)($request->order_number ?? 0);
-        $ae_number = $request->ae_number ?? 0;
+        $agent_id = $request->agent_id ?? null;
+        $employee_id = $request->employee_id ?? null;
         $trip_number = (int)($request->trip_number ?? 0);
         $division_id = isset($request->division_id) ? $request->division_id > 0 ? $request->division_id : null : null;
         $load_type_id = isset($request->load_type_id) ? $request->load_type_id > 0 ? $request->load_type_id : null : null;
@@ -486,6 +496,10 @@ class OrdersController extends Controller
         $bill_to_customer_id = isset($request->bill_to_customer_id) ? $request->bill_to_customer_id > 0 ? $request->bill_to_customer_id : null : null;
         $carrier_id = isset($request->carrier_id) ? $request->carrier_id > 0 ? $request->carrier_id : null : null;
         $carrier_load = $request->carrier_load ?? '';
+
+        $carrier_contact_id = $request->carrier_contact_id ?? null;
+        $carrier_contact_primary_phone = $request->carrier_contact_primary_phone ?? 'work';
+
         $equipment_id = $request->equipment_id ?? null;
         $carrier_driver_id = isset($request->carrier_driver_id) ? $request->carrier_driver_id > 0 ? $request->carrier_driver_id : null : null;
         $agent_code = $request->agent_code ?? '';
@@ -547,13 +561,16 @@ class OrdersController extends Controller
         $order = $ORDER->updateOrCreate([
             'order_number' => $order_number
         ], [
-            'ae_number' => $ae_number,
+            'agent_id' => $agent_id,
+            'employee_id' => $employee_id,
             'trip_number' => $trip_number,
             'division_id' => $division_id,
             'load_type_id' => $load_type_id,
             'template_id' => $template_id,
             'bill_to_customer_id' => $bill_to_customer_id,
             'carrier_id' => $carrier_id,
+            'carrier_contact_id' => $carrier_contact_id,
+            'carrier_contact_primary_phone' => $carrier_contact_primary_phone,
             'carrier_load' => $carrier_load,
             'equipment_id' => $equipment_id,
             'carrier_driver_id' => $carrier_driver_id,
@@ -634,7 +651,9 @@ class OrdersController extends Controller
                 'order_carrier_ratings',
                 'billing_documents',
                 'billing_notes',
-                'term'
+                'term',
+                'agent',
+                'employee'
             ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $newOrder, 'order_number' => $order_number]);
@@ -659,7 +678,8 @@ class OrdersController extends Controller
         $event_time = $request->event_time ?? '';
         $date = $request->date ?? '';
         $event_date = $request->event_date ?? '';
-        $user_id = $request->user_id ?? 0;
+        $agent_id = $request->agent_id ?? null;
+        $employee_id = $request->employee_id ?? null;
         $event_location = $request->event_location ?? '';
         $event_notes = $request->event_notes ?? '';
 
@@ -689,7 +709,8 @@ class OrdersController extends Controller
             'event_time' => $event_time,
             'date' => $date,
             'event_date' => $event_date,
-            'user_id' => $user_id,
+            'agent_id' => $agent_id,
+            'employee_id' => $employee_id,
             'event_location' => $event_location,
             'event_notes' => $event_notes
         ]);
@@ -781,6 +802,75 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function saveTemplateOrderPickup(Request $request): JsonResponse
+    {
+        $TEMPLATE_PICKUP = new TemplatePickup();
+        $TEMPLATE = new Template();
+
+        $template_id = $request->template_id ?? 0;
+        $id = $request->id ?? 0;
+        $customer_id = $request->customer_id ?? 0;
+        $pu_date1 = $request->pu_date1 ?? '';
+        $pu_date2 = $request->pu_date2 ?? '';
+        $pu_time1 = $request->pu_time1 ?? '';
+        $pu_time2 = $request->pu_time2 ?? '';
+        $bol_numbers = $request->bol_numbers ?? '';
+        $po_numbers = $request->po_numbers ?? '';
+        $ref_numbers = $request->ref_numbers ?? '';
+        $seal_number = $request->seal_number ?? '';
+        $special_instructions = $request->special_instructions ?? null;
+        $type = $request->type ?? 'pickup';
+
+        if ($template_id > 0) {
+            if ($customer_id > 0) {
+                $pickup = $TEMPLATE_PICKUP->updateOrCreate([
+                    'id' => $id
+                ], [
+                    'template_id' => $template_id,
+                    'customer_id' => $customer_id,
+                    'type' => $type,
+                    'pu_date1' => $pu_date1,
+                    'pu_date2' => $pu_date2,
+                    'pu_time1' => $pu_time1,
+                    'pu_time2' => $pu_time2,
+                    'bol_numbers' => $bol_numbers,
+                    'po_numbers' => $po_numbers,
+                    'ref_numbers' => $ref_numbers,
+                    'seal_number' => $seal_number,
+                    'special_instructions' => $special_instructions
+                ]);
+
+                $pickup = $TEMPLATE_PICKUP->where('id', $pickup->id ?? 0)->with(['customer'])->first();
+
+                $template = $TEMPLATE->where('id', $template_id)->with([
+                    'bill_to_company',
+                    'carrier',
+                    'equipment',
+                    'driver',
+                    'notes_for_carrier',
+                    'internal_notes',
+                    'pickups',
+                    'deliveries',
+                    'routing',
+                    'division',
+                    'load_type',
+                    'order_customer_ratings',
+                    'order_carrier_ratings'
+                ])->first();
+
+                return response()->json(['result' => 'OK', 'pickup' => $pickup, 'template' => $template]);
+            } else {
+                return response()->json(['result' => 'NO CUSTOMER']);
+            }
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function saveOrderDelivery(Request $request): JsonResponse
     {
         $DELIVERY = new Delivery();
@@ -842,6 +932,67 @@ class OrdersController extends Controller
             }
         } else {
             return response()->json(['result' => 'NO ORDER']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplateOrderDelivery(Request $request): JsonResponse
+    {
+        $TEMPLATE_DELIVERY = new TemplateDelivery();
+        $TEMPLATE = new Template();
+
+        $template_id = $request->template_id ?? 0;
+        $id = $request->id ?? 0;
+        $customer_id = $request->customer_id ?? 0;
+        $delivery_date1 = $request->delivery_date1 ?? '';
+        $delivery_date2 = $request->delivery_date2 ?? '';
+        $delivery_time1 = $request->delivery_time1 ?? '';
+        $delivery_time2 = $request->delivery_time2 ?? '';
+        $special_instructions = $request->special_instructions ?? null;
+        $type = $request->type ?? 'delivery';
+
+        if ($template_id > 0) {
+            if ($customer_id > 0) {
+                $delivery = $TEMPLATE_DELIVERY->updateOrCreate([
+                    'id' => $id
+                ], [
+                    'template_id' => $template_id,
+                    'customer_id' => $customer_id,
+                    'type' => $type,
+                    'delivery_date1' => $delivery_date1,
+                    'delivery_date2' => $delivery_date2,
+                    'delivery_time1' => $delivery_time1,
+                    'delivery_time2' => $delivery_time2,
+                    'special_instructions' => $special_instructions
+                ]);
+
+                $delivery = $TEMPLATE_DELIVERY->where('id', $delivery->id ?? 0)->with(['customer'])->first();
+
+                $template = $TEMPLATE->where('id', $template_id)->with([
+                    'bill_to_company',
+                    'carrier',
+                    'equipment',
+                    'driver',
+                    'notes_for_carrier',
+                    'internal_notes',
+                    'pickups',
+                    'deliveries',
+                    'routing',
+                    'division',
+                    'load_type',
+                    'order_customer_ratings',
+                    'order_carrier_ratings',
+                ])->first();
+
+                return response()->json(['result' => 'OK', 'delivery' => $delivery, 'template' => $template]);
+            } else {
+                return response()->json(['result' => 'NO CUSTOMER']);
+            }
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
         }
     }
 
@@ -982,6 +1133,56 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function saveTemplateOrderRouting(Request $request): JsonResponse
+    {
+        $TEMPLATE_ROUTE = new TemplateRoute();
+        $TEMPLATE = new Template();
+        $template_id = $request->template_id ?? 0;
+        $routing = $request->routing ?? [];
+
+        if ($template_id > 0) {
+            $TEMPLATE_ROUTE->where('template_id', $template_id)->delete();
+
+            if (count($routing) > 0) {
+                for ($i = 0; $i < count($routing); $i++) {
+                    $route = $routing[$i];
+
+                    $TEMPLATE_ROUTE->updateOrCreate([
+                        'id' => 0
+                    ], [
+                        'template_id' => $template_id,
+                        'pickup_id' => $route['pickup_id'] ?? null,
+                        'delivery_id' => $route['delivery_id'] ?? null,
+                        'type' => $route['type'] ?? 'pickup'
+                    ]);
+                }
+            }
+            $template = $TEMPLATE->where('id', $template_id)->with([
+                'bill_to_company',
+                'carrier',
+                'equipment',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'division',
+                'load_type',
+                'order_customer_ratings',
+                'order_carrier_ratings'
+            ])->first();
+
+            return response()->json(['result' => 'OK', 'template' => $template]);
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getOrdersRelatedData()
     {
         $CUSTOMER = new Customer();
@@ -1040,6 +1241,8 @@ class OrdersController extends Controller
         $carrier_rating = $request->carrierRating ?? null;
         $loaded_event = $request->loadedEvent ?? null;
         $delivered_event = $request->deliveredEvent ?? null;
+        $agent_id = $request->agent_id ?? null;
+        $employee_id = $request->employee_id ?? null;
 
         $ORDER = new Order();
 
@@ -1048,7 +1251,8 @@ class OrdersController extends Controller
         ], [
             'order_number' => $order_number,
             'trip_number' => $trip_number,
-            'ae_number' => rand(1, 100),
+            'agent_id' => $agent_id,
+            'employee_id' => $employee_id,
             'order_date_time' => $order_date_time,
             'load_type_id' => $load_type_id,
             'bill_to_customer_id' => $bill_to_customer_id,

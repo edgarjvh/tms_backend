@@ -342,6 +342,55 @@ class CarriersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function saveCarrierAchWiringInfo(Request $request) : JsonResponse {
+        $carrier_id = $request->carrier_id ?? 0;
+        $ach_banking_info = $request->ach_banking_info ?? '';
+        $ach_account_info = $request->ach_account_info ?? '';
+        $ach_aba_routing = $request->ach_aba_routing ?? '';
+        $ach_remittence_email = $request->ach_remittence_email ?? '';
+        $ach_type = $request->ach_type ?? 'checking';
+        $wiring_banking_info = $request->wiring_banking_info ?? '';
+        $wiring_account_info = $request->wiring_account_info ?? '';
+        $wiring_aba_routing = $request->wiring_aba_routing ?? '';
+        $wiring_remittence_email = $request->wiring_remittence_email ?? '';
+        $wiring_type = $request->wiring_type ?? 'checking';
+
+        $CARRIER = new Carrier();
+
+        $CARRIER->updateOrCreate([
+            'id'=>$carrier_id
+        ],[
+            'ach_banking_info' => $ach_banking_info,
+            'ach_account_info' => $ach_account_info,
+            'ach_aba_routing' => $ach_aba_routing,
+            'ach_remittence_email' => strtolower($ach_remittence_email),
+            'ach_type' => strtolower($ach_type),
+            'wiring_banking_info' => $wiring_banking_info,
+            'wiring_account_info' => $wiring_account_info,
+            'wiring_aba_routing' => $wiring_aba_routing,
+            'wiring_remittence_email' => strtolower($wiring_remittence_email),
+            'wiring_type' => strtolower($wiring_type),
+        ]);
+
+        $carrier = $CARRIER->where('id', $carrier_id)
+            ->with([
+                'contacts',
+                'drivers',
+                'notes',
+                'insurances',
+                'factoring_company',
+                'mailing_address',
+                'documents',
+                'equipments_information'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'carrier' => $carrier]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function submitCarrierImport(Request $request){
         $CARRIER = new Carrier();
         $CARRIER_CONTACT = new CarrierContact();

@@ -35,7 +35,8 @@ class CustomersController extends Controller
                 'notes',
                 'zip_data',
                 'mailing_address',
-                'orders'
+                'orders',
+                'term'
             ])
             ->first();
 
@@ -80,7 +81,8 @@ class CustomersController extends Controller
                     'automatic_emails',
                     'notes',
                     'zip_data',
-                    'mailing_address'
+                    'mailing_address',
+                    'term'
                 ])
                 ->get();
         } else {
@@ -215,6 +217,7 @@ class CustomersController extends Controller
         $contact_phone = $request->contact_phone ?? '';
         $contact_phone_ext = $request->contact_phone_ext ?? ($request->ext ?? '');
         $email = $request->email ?? '';
+        $term_id = $request->term_id ?? null;
 
         $curCustomer = $CUSTOMER->where('id', $id)->first();
 
@@ -262,7 +265,8 @@ class CustomersController extends Controller
                 'contact_name' => $contact_name,
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
-                'email' => strtolower($email)
+                'email' => strtolower($email),
+                'term_id' => $term_id
             ]);
 
         if ($with_contact) {
@@ -328,7 +332,8 @@ class CustomersController extends Controller
                 'automatic_emails',
                 'notes',
                 'zip_data',
-                'mailing_address'
+                'mailing_address',
+                'term'
             ])->first();
 
         return response()->json(['result' => 'OK', 'customer' => $newCustomer]);
@@ -656,7 +661,8 @@ class CustomersController extends Controller
             'automatic_emails',
             'notes',
             'zip_data',
-            'mailing_address'
+            'mailing_address',
+            'term'
         ])->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);

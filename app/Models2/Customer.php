@@ -79,8 +79,12 @@ class Customer extends Model
             ]);
     }
 
+    public function term(){
+        return $this->belongsTo(Term::class);
+    }
+
     public function mailing_address()
     {
-        return $this->hasOne(CustomerMailingAddress::class)->with(['mailing_contact', 'bill_to_contact']);
+        return $this->hasOne(CustomerMailingAddress::class)->with(['mailing_contact', 'bill_to_contact', 'division']);
     }
 }

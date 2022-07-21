@@ -46,20 +46,38 @@ class DispatchNotesController extends Controller
     public function saveInternalNotes(Request $request) : JsonResponse
     {
         $INTERNAL_NOTES = new InternalNotes();
-
+        $id = $request->id ?? 0;
         $order_id = $request->order_id ?? 0;
         $user = $request->user ?? '';
         $date_time = $request->date_time ?? '';
         $text = $request->text ?? '';
 
         $internal_note = $INTERNAL_NOTES->updateOrCreate([
-            'id' => 0
+            'id' => $id
         ], [
             'order_id' => $order_id,
             'user' => $user,
             'date_time' => $date_time,
             'text' => $text
         ]);
+
+        $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->get();
+
+        return response()->json(['result' => 'OK', 'internal_note' => $internal_note, 'data' => $internal_notes]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteInternalNotes(Request $request) : JsonResponse
+    {
+        $INTERNAL_NOTES = new InternalNotes();
+
+        $id = $request->id ?? 0;
+        $order_id = $request->order_id ?? 0;
+
+        $internal_note = $INTERNAL_NOTES->where('id', $id)->delete();
 
         $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->get();
 

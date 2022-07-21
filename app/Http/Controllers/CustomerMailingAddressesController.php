@@ -39,6 +39,7 @@ class CustomerMailingAddressesController extends Controller
         $mailing_contact_id = $request->mailing_contact_id ?? null;
         $mailing_contact_primary_phone = $request->mailing_contact_primary_phone ?? 'work';
         $mailing_contact_primary_email = $request->mailing_contact_primary_email ?? 'work';
+        $division_id = ($request->division_id ?? 0) === 0 ? null : $request->division_id;
 
         if ($customer_id > 0){
             $curMailingAddress = $CUSTOMER_MAILING_ADDRESS->where('customer_id', $customer_id)->first();
@@ -72,7 +73,7 @@ class CustomerMailingAddressesController extends Controller
             ],
                 [
                     'code' => $code,
-                    'code_number' => $code_number,
+                    'code_number' => $code === '' ? 0 : $code_number,
                     'name' => $name,
                     'address1' => $address1,
                     'address2' => $address2,
@@ -85,16 +86,16 @@ class CustomerMailingAddressesController extends Controller
                     'email' => $email,
                     'bill_to_code' => $bill_to_code,
                     'bill_to_code_number' => $bill_to_code_number,
-                    'division' => $division,
                     'agent_code' => $agent_code,
                     'salesman' => $salesman,
                     'fid' => $fid,
                     'mailing_contact_id' => $mailing_contact_id,
                     'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
                     'mailing_contact_primary_email' => $mailing_contact_primary_email,
+                    'division_id' => $division_id
                 ]);
 
-            $newMailingAddress = $CUSTOMER_MAILING_ADDRESS->where('customer_id', $customer_id)->with(['mailing_contact'])->first();
+            $newMailingAddress = $CUSTOMER_MAILING_ADDRESS->where('customer_id', $customer_id)->with(['mailing_contact', 'division'])->first();
 
             return response()->json(['result' => 'OK', 'mailing_address' => $newMailingAddress]);
         }else{
