@@ -20,7 +20,7 @@ class EmployeeDocumentsController extends Controller
         $EMPLOYEE_DOCUMENT = new EmployeeDocument();
 
         $employee_id = $request->employee_id;
-        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with('notes')->get();
+        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -38,7 +38,7 @@ class EmployeeDocumentsController extends Controller
         $title = $request->title ?? '';
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
-        $user_id = $request->user_id ?? 0;
+        $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['doc'];
         $doc_name = $fileData['name'];
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
@@ -51,14 +51,14 @@ class EmployeeDocumentsController extends Controller
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
+            'user_code_id' => $user_code_id,
             'date_entered' => $date_entered,
             'title' => $title,
             'subject' => $subject,
             'tags' => $tags
         ]);
 
-        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with('notes')->get();
+        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('employee-documents/' . $doc_id));
 
@@ -83,7 +83,7 @@ class EmployeeDocumentsController extends Controller
         } catch (Throwable | Exception $e) {
         }
 
-        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with('notes')->get();
+        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -98,9 +98,9 @@ class EmployeeDocumentsController extends Controller
 
         $doc_id = $request->doc_id;
 
-        $documentNotes = $EMPLOYEE_DOCUMENT_NOTE->where('company_employee_document_id', $doc_id)->get();
+        $documentNotes = $EMPLOYEE_DOCUMENT_NOTE->where('company_employee_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
     }
 
     /**
@@ -112,25 +112,23 @@ class EmployeeDocumentsController extends Controller
         $EMPLOYEE_DOCUMENT = new EmployeeDocument();
         $EMPLOYEE_DOCUMENT_NOTE = new EmployeeDocumentNote();
 
-        $note_id = $request->note_id;
+        $id = $request->id;
         $employee_id = $request->employee_id;
         $doc_id = $request->doc_id;
-        $user = $request->user;
-        $date_time = $request->date_time;
-        $note = $request->text;
+        $user_code_id = $request->user_code_id;
+        $text = $request->text;
 
         $documentNote = $EMPLOYEE_DOCUMENT_NOTE->updateOrCreate([
-            'id' => $note_id
+            'id' => $id
         ], [
             'company_employee_document_id' => $doc_id,
-            'text' => $note,
-            'user' => $user,
-            'date_time' => $date_time
+            'text' => $text,
+            'user_code_id' => $user_code_id
         ]);
 
-        $documentNotes = $EMPLOYEE_DOCUMENT_NOTE->where('company_employee_document_id', $doc_id)->get();
-        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with('notes')->get();
+        $documentNotes = $EMPLOYEE_DOCUMENT_NOTE->where('company_employee_document_id', $doc_id)->with(['user_code'])->get();
+        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
+        return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
 }

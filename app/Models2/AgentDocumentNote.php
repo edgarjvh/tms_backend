@@ -19,4 +19,8 @@ class AgentDocumentNote extends Model
     public function document(){
         return $this->belongsTo(AgentDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

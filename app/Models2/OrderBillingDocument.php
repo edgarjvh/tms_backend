@@ -22,6 +22,10 @@ class OrderBillingDocument extends Model
     }
 
     public function notes(){
-        return $this->hasMany(OrderBillingDocumentNote::class, 'order_billing_document_id', 'id');
+        return $this->hasMany(OrderBillingDocumentNote::class, 'order_billing_document_id', 'id')->with(['user_code']);
+    }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

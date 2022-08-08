@@ -298,40 +298,6 @@ class AgentsController extends Controller
         }
     }
 
-    /**
-     * @param Request $request     *
-     */
-    public function loginAgent(Request $request) {
-        if (!Auth::guard('agent')->attempt(['email_work' => $request->email, 'password' => $request->password])){
-            return response([
-                'message' => 'Invalid Credentials'
-            ], \Symfony\Component\HttpFoundation\Response::HTTP_UNAUTHORIZED);
-        }
-
-        $agent = Auth::guard('agent')->user();
-
-        $token = $agent->createToken('token')->plainTextToken;
-
-        $cookie = cookie('jwt_tms', $token, 60 * 24);
-
-        return response([
-            'message' => 'success',
-            'token' => $token
-        ])->withCookie($cookie);
-    }
-
-    public function agent(){
-        return Auth::guard('agent')->user();
-    }
-
-    public function logoutAgent(){
-        $cookie = Cookie::forget('jwt_tms');
-
-        return response([
-            'message' => 'Success'
-        ])->withCookie($cookie);
-    }
-
     function random_str(
         int $length = 10,
         string $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'

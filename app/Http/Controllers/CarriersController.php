@@ -4,7 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carrier;
-use App\Models\CarrierContact;
+use App\Models\Contact;
 use App\Models\CarrierDriver;
 use App\Models\CarrierNote;
 use App\Models\Equipment;
@@ -189,7 +189,7 @@ class CarriersController extends Controller
     public function saveCarrier(Request $request): JsonResponse
     {
         $CARRIER = new Carrier();
-        $CARRIER_CONTACT = new CarrierContact();
+        $CARRIER_CONTACT = new Contact();
 
         $id = $request->id ?? '';
         $factoring_company_id = $request->factoring_company_id ?? null;
@@ -284,7 +284,7 @@ class CarriersController extends Controller
             $contact_last = trim($contact_last);
 
             if (count($contacts) === 0) {
-                $contact = new CarrierContact();
+                $contact = new Contact();
                 $contact->carrier_id = $carrier->id;
                 $contact->first_name = $contact_first;
                 $contact->last_name = $contact_last;
@@ -393,7 +393,7 @@ class CarriersController extends Controller
      */
     public function submitCarrierImport(Request $request){
         $CARRIER = new Carrier();
-        $CARRIER_CONTACT = new CarrierContact();
+        $CARRIER_CONTACT = new Contact();
 
         $id = 0;
         $code = $request->code ?? '';
@@ -484,7 +484,7 @@ class CarriersController extends Controller
             $contact_last = trim($contact_last);
 
             if (count($contacts) === 0) {
-                $contact = new CarrierContact();
+                $contact = new Contact();
                 $contact->carrier_id = $carrier->id;
                 $contact->first_name = trim($contact_first);
                 $contact->last_name = trim($contact_last);
@@ -629,7 +629,7 @@ class CarriersController extends Controller
      */
     public function getCarrierPayload(Request $request): JsonResponse
     {
-        $CARRIER_CONTACT = new CarrierContact();
+        $CARRIER_CONTACT = new Contact();
         $CARRIER_NOTE = new CarrierNote();
         $CARRIER_DRIVER = new CarrierDriver();
         $INSURANCE = new Insurance();

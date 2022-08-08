@@ -280,6 +280,8 @@ class ContactsController extends Controller
 
             $customer = $CUSTOMER->where('id', $customer_id)->first();
 
+            $carrier_id = $curContact ? $curContact->carrier_id : null;
+            $factoring_company_id = $curContact ? $curContact->factoring_company_id : null;
             $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
             $first_name = $request->first_name ?? ($curContact ? $curContact->first_name : '');
             $middle_name = $request->middle_name ?? ($curContact ? $curContact->middle_name : '');
@@ -316,7 +318,9 @@ class ContactsController extends Controller
                 'id' => $contact_id
             ],
                 [
+                    'carrier_id' => $carrier_id,
                     'customer_id' => $customer_id,
+                    'factoring_company_id' => $factoring_company_id,
                     'prefix' => $prefix,
                     'first_name' => trim($first_name),
                     'middle_name' => trim($middle_name),
@@ -496,6 +500,7 @@ class ContactsController extends Controller
         $email = $request->email ?? '';
 
         $contacts = $CARRIER_CONTACT->whereRaw("1 = 1")
+            ->has('carrier')
             ->whereRaw("LOWER(first_name) like '%$first_name%'")
             ->whereRaw("LOWER(last_name) like '%$last_name%'")
             ->whereRaw("LOWER(address1) like '%$address1%'")
@@ -586,6 +591,8 @@ class ContactsController extends Controller
         if ($carrier_id > 0){
             $curContact = $CARRIER_CONTACT->where('id', $contact_id)->first();
 
+            $customer_id = $curContact ? $curContact->customer_id : null;
+            $factoring_company_id = $curContact ? $curContact->factoring_company_id : null;
             $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
             $first_name = $request->first_name ?? ($curContact ? $curContact->first_name : '');
             $middle_name = $request->middle_name ?? ($curContact ? $curContact->middle_name : '');
@@ -623,6 +630,8 @@ class ContactsController extends Controller
             ],
                 [
                     'carrier_id' => $carrier_id,
+                    'customer_id' => $customer_id,
+                    'factoring_company_id' => $factoring_company_id,
                     'prefix' => $prefix,
                     'first_name' => trim($first_name),
                     'middle_name' => trim($middle_name),
@@ -796,6 +805,8 @@ class ContactsController extends Controller
         if ($factoring_company_id > 0){
             $curContact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
 
+            $carrier_id = $curContact ? $curContact->carrier_id : null;
+            $customer_id = $curContact ? $curContact->customer_id : null;
             $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
             $first_name = $request->first_name ?? ($curContact ? $curContact->first_name : '');
             $middle_name = $request->middle_name ?? ($curContact ? $curContact->middle_name : '');
@@ -832,6 +843,8 @@ class ContactsController extends Controller
                 'id' => $contact_id
             ],
                 [
+                    'carrier_id' => $carrier_id,
+                    'customer_id' => $customer_id,
                     'factoring_company_id' => $factoring_company_id,
                     'prefix' => $prefix,
                     'first_name' => trim($first_name),

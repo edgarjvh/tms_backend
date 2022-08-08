@@ -21,8 +21,8 @@ class DispatchNotesController extends Controller
         $NOTES_FOR_CARRIER = new NotesForCarrier();
         $INTERNAL_NOTES = new InternalNotes();
 
-        $internal_notes = $INTERNAL_NOTES->all();
-        $notes_for_carrier = $NOTES_FOR_CARRIER->all();
+        $internal_notes = $INTERNAL_NOTES->with(['user_code'])->get();
+        $notes_for_carrier = $NOTES_FOR_CARRIER->with(['user_code'])->get();
 
         return response()->json(['result' => 'OK', 'notes_for_carrier' => $notes_for_carrier, 'internal_notes' => $internal_notes]);
     }
@@ -34,9 +34,9 @@ class DispatchNotesController extends Controller
     {
         $INTERNAL_NOTES = new InternalNotes();
 
-        $internal_notes = $INTERNAL_NOTES->all();
+        $internal_notes = $INTERNAL_NOTES->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'internal_notes' => $internal_notes]);
+        return response()->json(['result' => 'OK', 'notes' => $internal_notes]);
     }
 
     /**
@@ -48,22 +48,20 @@ class DispatchNotesController extends Controller
         $INTERNAL_NOTES = new InternalNotes();
         $id = $request->id ?? 0;
         $order_id = $request->order_id ?? 0;
-        $user = $request->user ?? '';
-        $date_time = $request->date_time ?? '';
+        $user_code_id = $request->user_code_id ?? '';
         $text = $request->text ?? '';
 
         $internal_note = $INTERNAL_NOTES->updateOrCreate([
             'id' => $id
         ], [
             'order_id' => $order_id,
-            'user' => $user,
-            'date_time' => $date_time,
+            'user_code_id' => $user_code_id,
             'text' => $text
         ]);
 
-        $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->get();
+        $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'internal_note' => $internal_note, 'data' => $internal_notes]);
+        return response()->json(['result' => 'OK', 'note' => $internal_note, 'notes' => $internal_notes]);
     }
 
     /**
@@ -79,9 +77,9 @@ class DispatchNotesController extends Controller
 
         $internal_note = $INTERNAL_NOTES->where('id', $id)->delete();
 
-        $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->get();
+        $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'internal_note' => $internal_note, 'data' => $internal_notes]);
+        return response()->json(['result' => 'OK', 'note' => $internal_note, 'notes' => $internal_notes]);
     }
 
     /**
@@ -91,9 +89,9 @@ class DispatchNotesController extends Controller
     {
         $NOTES_FOR_CARRIER = new NotesForCarrier();
 
-        $notes_for_carrier = $NOTES_FOR_CARRIER->all();
+        $notes_for_carrier = $NOTES_FOR_CARRIER->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'notes_for_carrier' => $notes_for_carrier]);
+        return response()->json(['result' => 'OK', 'notes' => $notes_for_carrier]);
     }
 
     /**
@@ -106,8 +104,7 @@ class DispatchNotesController extends Controller
 
         $id = $request->id ?? 0;
         $order_id = $request->order_id ?? 0;
-        $user = $request->user ?? '';
-        $date_time = $request->date_time ?? '';
+        $user_code_id = $request->user_code_id ?? '';
         $text = $request->text ?? '';
 
         if ($order_id > 0){
@@ -115,14 +112,13 @@ class DispatchNotesController extends Controller
                 'id' => $id
             ], [
                 'order_id' => $order_id,
-                'user' => $user,
-                'date_time' => $date_time,
+                'user_code_id' => $user_code_id,
                 'text' => $text
             ]);
 
-            $notes_for_carrier = $NOTES_FOR_CARRIER->where('order_id', $order_id)->get();
+            $notes_for_carrier = $NOTES_FOR_CARRIER->where('order_id', $order_id)->with(['user_code'])->get();
 
-            return response()->json(['result' => 'OK', 'note_for_carrier' => $note_for_carrier, 'data' => $notes_for_carrier]);
+            return response()->json(['result' => 'OK', 'note' => $note_for_carrier, 'notes' => $notes_for_carrier]);
         }else{
             return response()->json(['result' => 'NO ORDER']);
         }
@@ -141,9 +137,9 @@ class DispatchNotesController extends Controller
 
         $note_for_carrier = $NOTES_FOR_CARRIER->where('id', $id)->delete();
 
-        $notes_for_carrier = $NOTES_FOR_CARRIER->where('order_id', $order_id)->get();
+        $notes_for_carrier = $NOTES_FOR_CARRIER->where('order_id', $order_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'note_for_carrier' => $note_for_carrier, 'data' => $notes_for_carrier]);
+        return response()->json(['result' => 'OK', 'note' => $note_for_carrier, 'notes' => $notes_for_carrier]);
     }
 
     /**
@@ -153,9 +149,9 @@ class DispatchNotesController extends Controller
     {
         $NOTES_FOR_DRIVER = new NotesForDriver();
 
-        $notes_for_driver = $NOTES_FOR_DRIVER->all();
+        $notes_for_driver = $NOTES_FOR_DRIVER->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'notes_for_driver' => $notes_for_driver]);
+        return response()->json(['result' => 'OK', 'notes' => $notes_for_driver]);
     }
 
     /**
@@ -168,8 +164,7 @@ class DispatchNotesController extends Controller
 
         $id = $request->id ?? 0;
         $order_id = $request->order_id ?? 0;
-        $user = $request->user ?? '';
-        $date_time = $request->date_time ?? '';
+        $user_code_id = $request->user_code_id ?? '';
         $text = $request->text ?? '';
 
         if ($order_id > 0){
@@ -177,14 +172,13 @@ class DispatchNotesController extends Controller
                 'id' => $id
             ], [
                 'order_id' => $order_id,
-                'user' => $user,
-                'date_time' => $date_time,
+                'user_code_id' => $user_code_id,
                 'text' => $text
             ]);
 
-            $notes_for_driver = $NOTES_FOR_DRIVER->where('order_id', $order_id)->get();
+            $notes_for_driver = $NOTES_FOR_DRIVER->where('order_id', $order_id)->with(['user_code'])->get();
 
-            return response()->json(['result' => 'OK', 'note_for_driver' => $note_for_driver, 'data' => $notes_for_driver]);
+            return response()->json(['result' => 'OK', 'note' => $note_for_driver, 'notes' => $notes_for_driver]);
         }else{
             return response()->json(['result' => 'NO ORDER']);
         }
@@ -203,9 +197,9 @@ class DispatchNotesController extends Controller
 
         $note_for_driver = $NOTES_FOR_DRIVER->where('id', $id)->delete();
 
-        $notes_for_driver = $NOTES_FOR_DRIVER->where('order_id', $order_id)->get();
+        $notes_for_driver = $NOTES_FOR_DRIVER->where('order_id', $order_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'note_for_driver' => $note_for_driver, 'data' => $notes_for_driver]);
+        return response()->json(['result' => 'OK', 'note' => $note_for_driver, 'notes' => $notes_for_driver]);
     }
 
     /**
@@ -215,9 +209,9 @@ class DispatchNotesController extends Controller
     {
         $INTERNAL_NOTES = OrderInvoiceInternalNote::query();
 
-        $internal_notes = $INTERNAL_NOTES->all();
+        $internal_notes = $INTERNAL_NOTES->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'order_invoice_internal_notes' => $internal_notes]);
+        return response()->json(['result' => 'OK', 'notes' => $internal_notes]);
     }
 
     /**
@@ -229,24 +223,22 @@ class DispatchNotesController extends Controller
         $INTERNAL_NOTES = OrderInvoiceInternalNote::query();
 
         $order_id = $request->order_id ?? 0;
-        $user = $request->user ?? '';
-        $date_time = $request->date_time ?? '';
+        $user_code_id = $request->user_code_id ?? '';
         $text = $request->text ?? '';
 
         $internal_note = $INTERNAL_NOTES->updateOrCreate([
             'id' => 0
         ], [
             'order_id' => $order_id,
-            'user' => $user,
-            'date_time' => $date_time,
+            'user_code_id' => $user_code_id,
             'text' => $text
         ]);
 
         $query1 = OrderInvoiceInternalNote::query();
         $query1->where('order_id', $order_id);
-        $data = $query1->get();
+        $data = $query1->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'internal_note' => $internal_note, 'data' => $data]);
+        return response()->json(['result' => 'OK', 'note' => $internal_note, 'notes' => $data]);
     }
 
     /**
@@ -256,9 +248,9 @@ class DispatchNotesController extends Controller
     {
         $BILLING_NOTES = OrderBillingNote::query();
 
-        $billing_notes = $BILLING_NOTES->all();
+        $billing_notes = $BILLING_NOTES->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'order_invoice_billing_notes' => $billing_notes]);
+        return response()->json(['result' => 'OK', 'notes' => $billing_notes]);
     }
 
     /**
@@ -270,23 +262,21 @@ class DispatchNotesController extends Controller
         $BILLING_NOTES = OrderBillingNote::query();
 
         $order_id = $request->order_id ?? 0;
-        $user = $request->user ?? '';
-        $date_time = $request->date_time ?? '';
+        $user_code_id = $request->user_code_id ?? '';
         $text = $request->text ?? '';
 
         $billing_note = $BILLING_NOTES->updateOrCreate([
             'id' => 0
         ], [
             'order_id' => $order_id,
-            'user' => $user,
-            'date_time' => $date_time,
+            'user_code_id' => $user_code_id,
             'text' => $text
         ]);
 
         $query1 = OrderBillingNote::query();
         $query1->where('order_id', $order_id);
-        $data = $query1->get();
+        $data = $query1->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'billing_note' => $billing_note, 'data' => $data]);
+        return response()->json(['result' => 'OK', 'note' => $billing_note, 'notes' => $data]);
     }
 }

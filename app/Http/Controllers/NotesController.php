@@ -9,61 +9,75 @@ use Illuminate\Http\Request;
 
 class NotesController extends Controller
 {
-    public function notes(Request $request){
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function notes(Request $request): JsonResponse
+    {
+        $NOTE = new Note();
         $customer_id = $request->customer_id;
-        $notes = Note::where('customer_id', $customer_id)->get();
+        $notes = $NOTE->where('customer_id', $customer_id)->with(['user_code'])->get();
 
         return response()->json(['result' => 'OK', 'notes' => $notes]);
     }
 
-    public function saveNote(Request $request){
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveNote(Request $request): JsonResponse
+    {
         $NOTE = new Note();
         $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
-        $note_text = $request->note;
-        $note_user = $request->user;
-        $note_datetime = $request->datetime;
+        $text = $request->text;
+        $user_code_id = $request->user_code_id;
 
-        if ($customer_id > 0){
+        if ($customer_id > 0) {
             $note = $NOTE->updateOrCreate([
                 'id' => $id
             ], [
                 'customer_id' => $customer_id,
-                'text' => $note_text,
-                'user' => $note_user,
-                'date_time' => $note_datetime
+                'text' => $text,
+                'user_code_id' => $user_code_id
             ]);
 
-            $notes = $NOTE->where('customer_id', $customer_id)->get();
+            $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();
+            $notes = $NOTE->where('customer_id', $customer_id)->with(['user_code'])->get();
 
             return response()->json(['result' => 'OK', 'note' => $note, 'notes' => $notes]);
-        }else {
+        } else {
             return response()->json(['result' => 'NO OWNER']);
         }
     }
 
-    public function saveCustomerNote(Request $request) {
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCustomerNote(Request $request): JsonResponse
+    {
         $NOTE = new Note();
         $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
-        $note_text = $request->text;
-        $note_user = $request->user;
-        $note_date_time = $request->date_time;
+        $text = $request->text;
+        $user_code_id = $request->user_code_id;
 
-        if ($customer_id > 0){
+        if ($customer_id > 0) {
             $note = $NOTE->updateOrCreate([
                 'id' => $id
             ], [
                 'customer_id' => $customer_id,
-                'text' => $note_text,
-                'user' => $note_user,
-                'date_time' => $note_date_time
+                'text' => $text,
+                'user_code_id' => $user_code_id
             ]);
 
-            $notes = $NOTE->where('customer_id', $customer_id)->get();
+            $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();
+            $notes = $NOTE->where('customer_id', $customer_id)->with(['user_code'])->get();
 
-            return response()->json(['result' => 'OK', 'note' => $note, 'data' => $notes]);
-        }else {
+            return response()->json(['result' => 'OK', 'note' => $note, 'notes' => $notes]);
+        } else {
             return response()->json(['result' => 'NO OWNER']);
         }
     }
@@ -81,40 +95,46 @@ class NotesController extends Controller
 
         $CUSTOMER_NOTE->where('id', $id)->delete();
 
-        $notes = $CUSTOMER_NOTE->where('customer_id', $customer_id)->get();
-
-        return response()->json(['result' => 'OK', 'data' => $notes]);
-    }
-
-    public function carrierNotes(Request $request){
-        $carrier_id = $request->carrier_id;
-        $notes = CarrierNote::where('carrier_id', $carrier_id)->get();
+        $notes = $CUSTOMER_NOTE->where('customer_id', $customer_id)->with(['user_code'])->get();
 
         return response()->json(['result' => 'OK', 'notes' => $notes]);
     }
 
-    public function saveCarrierNote(Request $request){
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function carrierNotes(Request $request): JsonResponse
+    {
+        $NOTE = new CarrierNote();
+        $carrier_id = $request->carrier_id;
+        $notes = $NOTE->where('carrier_id', $carrier_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'notes' => $notes]);
+    }
+
+    public function saveCarrierNote(Request $request)
+    {
         $NOTE = new CarrierNote();
         $id = $request->id ?? 0;
         $carrier_id = $request->customer_id ?? 0;
-        $note_text = $request->text;
-        $note_user = $request->user;
-        $note_date_time = $request->date_time;
+        $text = $request->text;
+        $user_code_id = $request->user_code_id;
 
-        if ($carrier_id > 0){
+        if ($carrier_id > 0) {
             $note = $NOTE->updateOrCreate([
                 'id' => $id
             ], [
                 'carrier_id' => $carrier_id,
-                'text' => $note_text,
-                'user' => $note_user,
-                'date_time' => $note_date_time
+                'text' => $text,
+                'user_code_id' => $user_code_id
             ]);
 
-            $notes = $NOTE->where('carrier_id', $carrier_id)->get();
+            $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();
+            $notes = $NOTE->where('carrier_id', $carrier_id)->with(['user_code'])->get();
 
-            return response()->json(['result' => 'OK', 'note' => $note, 'data' => $notes]);
-        }else {
+            return response()->json(['result' => 'OK', 'note' => $note, 'notes' => $notes]);
+        } else {
             return response()->json(['result' => 'NO OWNER']);
         }
     }
@@ -132,8 +152,8 @@ class NotesController extends Controller
 
         $CARRIER_NOTE->where('id', $id)->delete();
 
-        $notes = $CARRIER_NOTE->where('carrier_id', $carrier_id)->get();
+        $notes = $CARRIER_NOTE->where('carrier_id', $carrier_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'data' => $notes]);
+        return response()->json(['result' => 'OK', 'notes' => $notes]);
     }
 }

@@ -19,4 +19,8 @@ class Note extends Model
     public function customer(){
         return $this->belongsTo(Customer::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

@@ -19,4 +19,8 @@ class CarrierDocumentNote extends Model
     public function document(){
         return $this->belongsTo(CarrierDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

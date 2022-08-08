@@ -19,9 +19,9 @@ class DirectionsController extends Controller
 
         $customer_id = $request->customer_id;
 
-        $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->get();
+        $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'directions' => $directions]);
+        return response()->json(['result' => 'OK', 'notes' => $directions]);
     }
 
     /**
@@ -32,25 +32,23 @@ class DirectionsController extends Controller
     {
         $CUSTOMER_DIRECTION = new Direction();
 
-        $direction_id = $request->direction_id ?? 0;
+        $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
-        $direction_text = $request->direction ?? '';
-        $direction_user = $request->user ?? '';
-        $direction_datetime = $request->datetime ?? '';
+        $text = $request->text ?? '';
+        $user_code_id = $request->user_code_id ?? '';
 
         if ($customer_id > 0) {
             $direction = $CUSTOMER_DIRECTION->updateOrCreate([
-                'id' => $direction_id
+                'id' => $id
             ], [
                 'customer_id' => $customer_id,
-                'direction' => $direction_text,
-                'user' => $direction_user,
-                'date_time' => $direction_datetime
+                'text' => $text,
+                'user_code_id' => $user_code_id
             ]);
 
-            $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->get();
+            $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();
 
-            return response()->json(['result' => 'OK', 'direction' => $direction, 'directions' => $directions]);
+            return response()->json(['result' => 'OK', 'note' => $direction, 'notes' => $directions]);
         } else {
             return response()->json(['result' => 'NO CUSTOMER']);
         }
@@ -66,24 +64,22 @@ class DirectionsController extends Controller
 
         $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
-        $direction_text = $request->text ?? '';
-        $direction_user = $request->user ?? '';
-        $direction_datetime = $request->date_time ?? '';
+        $text = $request->text ?? '';
+        $user_code_id = $request->user_code_id ?? '';
 
-        if ($customer_id > 0){
+        if ($customer_id > 0) {
             $direction = $CUSTOMER_DIRECTION->updateOrCreate([
                 'id' => $id
             ], [
                 'customer_id' => $customer_id,
-                'text' => $direction_text,
-                'user' => $direction_user,
-                'date_time' => $direction_datetime
+                'text' => $text,
+                'user_code_id' => $user_code_id
             ]);
 
-            $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->get();
+            $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();
 
-            return response()->json(['result' => 'OK', 'direction' => $direction, 'data' => $directions]);
-        }else{
+            return response()->json(['result' => 'OK', 'note' => $direction, 'notes' => $directions]);
+        } else {
             return response()->json(['result' => 'NO CUSTOMER']);
         }
     }
@@ -96,14 +92,14 @@ class DirectionsController extends Controller
     {
         $CUSTOMER_DIRECTION = new Direction();
 
-        $direction_id = $request->direction_id ?? 0;
+        $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
 
-        $CUSTOMER_DIRECTION->where('id', $direction_id)->delete();
+        $CUSTOMER_DIRECTION->where('id', $id)->delete();
 
-        $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->get();
+        $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'directions' => $directions]);
+        return response()->json(['result' => 'OK', 'notes' => $directions]);
     }
 
     /**
@@ -114,13 +110,13 @@ class DirectionsController extends Controller
     {
         $CUSTOMER_DIRECTION = new Direction();
 
-        $direction_id = $request->id ?? 0;
+        $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
 
-        $CUSTOMER_DIRECTION->where('id', $direction_id)->delete();
+        $CUSTOMER_DIRECTION->where('id', $id)->delete();
 
-        $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->get();
+        $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'data' => $directions]);
+        return response()->json(['result' => 'OK', 'notes' => $directions]);
     }
 }

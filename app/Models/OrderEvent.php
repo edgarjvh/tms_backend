@@ -53,4 +53,8 @@ class OrderEvent extends Model
     public function event_type(){
         return $this->belongsTo(EventType::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

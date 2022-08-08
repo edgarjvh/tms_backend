@@ -36,17 +36,17 @@ class Order extends Model
 
     public function notes_for_driver()
     {
-        return $this->hasMany(NotesForDriver::class, 'order_id', 'id');
+        return $this->hasMany(NotesForDriver::class, 'order_id', 'id')->with(['user_code']);
     }
 
     public function notes_for_carrier()
     {
-        return $this->hasMany(NotesForCarrier::class, 'order_id', 'id');
+        return $this->hasMany(NotesForCarrier::class, 'order_id', 'id')->with(['user_code']);
     }
 
     public function internal_notes()
     {
-        return $this->hasMany(InternalNotes::class, 'order_id', 'id');
+        return $this->hasMany(InternalNotes::class, 'order_id', 'id')->with(['user_code']);
     }
 
     public function pickups()
@@ -66,13 +66,13 @@ class Order extends Model
 
     public function documents()
     {
-        return $this->hasMany(OrderDocument::class)->with('notes');
+        return $this->hasMany(OrderDocument::class)->with(['notes', 'user_code']);
     }
 
     public function events()
     {
         return $this->hasMany(OrderEvent::class)
-            ->with(['shipper', 'consignee', 'arrived_customer', 'departed_customer', 'old_carrier', 'new_carrier', 'event_type'])
+            ->with(['shipper', 'consignee', 'arrived_customer', 'departed_customer', 'old_carrier', 'new_carrier', 'event_type', 'user_code'])
             ->orderBy('updated_at', 'desc');
     }
 
@@ -124,11 +124,11 @@ class Order extends Model
     }
 
     public function billing_documents(){
-        return $this->hasMany(OrderBillingDocument::class)->with(['notes']);
+        return $this->hasMany(OrderBillingDocument::class)->with(['notes', 'user_code']);
     }
 
     public function billing_notes(){
-        return $this->hasMany(OrderBillingNote::class);
+        return $this->hasMany(OrderBillingNote::class)->with(['user_code']);
     }
 
     public function equipment(){
@@ -139,11 +139,7 @@ class Order extends Model
         return $this->belongsTo(Term::class);
     }
 
-    public function agent(){
-        return $this->belongsTo(Agent::class);
-    }
-
-    public function employee(){
-        return $this->belongsTo(Employee::class);
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

@@ -21,6 +21,10 @@ class OrderDocument extends Model
     }
 
     public function notes(){
-        return $this->hasMany(OrderDocumentNote::class);
+        return $this->hasMany(OrderDocumentNote::class)->with(['user_code']);
+    }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

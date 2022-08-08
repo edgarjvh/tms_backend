@@ -219,6 +219,7 @@ class CustomersController extends Controller
         $email = $request->email ?? '';
         $term_id = $request->term_id ?? null;
 
+
         $curCustomer = $CUSTOMER->where('id', $id)->first();
 
         if ($curCustomer) {

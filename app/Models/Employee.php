@@ -20,9 +20,13 @@ class Employee extends Authenticatable
     public function company(){
         return $this->belongsTo(Company::class)->with(['employees']);
     }
-    
+
     public function documents(){
-        return $this->hasMany(EmployeeDocument::class)->with(['notes']);
+        return $this->hasMany(EmployeeDocument::class)->with(['notes', 'user_code']);
+    }
+
+    public function user_code(){
+        return $this->hasOne(UserCode::class);
     }
 
     public function getAuthPassword(){

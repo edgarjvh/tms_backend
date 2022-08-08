@@ -20,7 +20,7 @@ class CarrierDocumentsController extends Controller
         $CARRIER_DOCUMENT = new CarrierDocument();
 
         $carrier_id = $request->carrier_id;
-        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with('notes')->get();
+        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -38,7 +38,7 @@ class CarrierDocumentsController extends Controller
         $title = $request->title ?? '';
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
-        $user_id = $request->user_id ?? 0;
+        $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['doc'];
         $doc_name = $fileData['name'];
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
@@ -51,14 +51,14 @@ class CarrierDocumentsController extends Controller
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
+            'user_code_id' => $user_code_id,
             'date_entered' => $date_entered,
             'title' => $title,
             'subject' => $subject,
             'tags' => $tags
         ]);
 
-        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with('notes')->get();
+        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('carrier-documents/' . $doc_id));
 
@@ -83,7 +83,7 @@ class CarrierDocumentsController extends Controller
         } catch (Throwable | Exception $e) {
         }
 
-        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with('notes')->get();
+        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -98,7 +98,7 @@ class CarrierDocumentsController extends Controller
 
         $doc_id = $request->doc_id;
 
-        $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $doc_id)->get();
+        $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $doc_id)->with(['user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
@@ -112,24 +112,22 @@ class CarrierDocumentsController extends Controller
         $CARRIER_DOCUMENT = new CarrierDocument();
         $CARRIER_DOCUMENT_NOTE = new CarrierDocumentNote();
 
-        $note_id = $request->note_id;
+        $id = $request->id;
         $carrier_id = $request->carrier_id;
         $doc_id = $request->doc_id;
-        $user = $request->user;
-        $date_time = $request->date_time;
-        $note = $request->text;
+        $user_code_id = $request->user_code_id;
+        $text = $request->text;
 
         $documentNote = $CARRIER_DOCUMENT_NOTE->updateOrCreate([
-            'id' => $note_id
+            'id' => $id
         ], [
             'carrier_document_id' => $doc_id,
-            'text' => $note,
-            'user' => $user,
-            'date_time' => $date_time
+            'text' => $text,
+            'user_code_id' => $user_code_id
         ]);
 
-        $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $doc_id)->get();
-        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with('notes')->get();
+        $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $doc_id)->with(['user_code'])->get();
+        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }

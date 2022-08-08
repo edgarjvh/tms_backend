@@ -19,4 +19,8 @@ class CustomerDocumentNote extends Model
     public function document(){
         return $this->belongsTo(CustomerDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

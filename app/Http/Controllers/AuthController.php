@@ -20,7 +20,7 @@ class AuthController extends Controller
             ], \Symfony\Component\HttpFoundation\Response::HTTP_UNAUTHORIZED);
         }
 
-        $user = Auth::guard($request->userType ?? 'employee')->user();
+        $user = Auth::guard($request->userType ?? 'employee')->user()->load('user_code');
 
         $token = $user->createToken('token')->plainTextToken;
 
@@ -32,7 +32,7 @@ class AuthController extends Controller
     }
 
     public function user(){
-        return Auth::user();
+        return Auth::user()->load('user_code');
     }
 
     public function logout(){

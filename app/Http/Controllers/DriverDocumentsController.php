@@ -20,7 +20,7 @@ class DriverDocumentsController extends Controller
         $DRIVER_DOCUMENT = new DriverDocument();
 
         $driver_id = $request->driver_id;
-        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with('notes')->get();
+        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -38,7 +38,7 @@ class DriverDocumentsController extends Controller
         $title = $request->title ?? '';
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
-        $user_id = $request->user_id ?? 0;
+        $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['doc'];
         $doc_name = $fileData['name'];
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
@@ -51,14 +51,14 @@ class DriverDocumentsController extends Controller
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
+            'user_code_id' => $user_code_id,
             'date_entered' => $date_entered,
             'title' => $title,
             'subject' => $subject,
             'tags' => $tags
         ]);
 
-        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with('notes')->get();
+        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with(['notes', 'user_code'])->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('driver-documents/' . $doc_id));
 
@@ -83,7 +83,7 @@ class DriverDocumentsController extends Controller
         } catch (Throwable | Exception $e) {
         }
 
-        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with('notes')->get();
+        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -98,9 +98,9 @@ class DriverDocumentsController extends Controller
 
         $doc_id = $request->doc_id;
 
-        $documentNotes = $DRIVER_DOCUMENT_NOTE->where('company_driver_document_id', $doc_id)->get();
+        $documentNotes = $DRIVER_DOCUMENT_NOTE->where('company_driver_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
     }
 
     /**
@@ -112,25 +112,23 @@ class DriverDocumentsController extends Controller
         $DRIVER_DOCUMENT = new DriverDocument();
         $DRIVER_DOCUMENT_NOTE = new DriverDocumentNote();
 
-        $note_id = $request->note_id;
+        $id = $request->id;
         $driver_id = $request->driver_id;
         $doc_id = $request->doc_id;
-        $user = $request->user;
-        $date_time = $request->date_time;
-        $note = $request->text;
+        $user_code_id = $request->user_code_id;
+        $text = $request->text;
 
         $documentNote = $DRIVER_DOCUMENT_NOTE->updateOrCreate([
-            'id' => $note_id
+            'id' => $id
         ], [
             'company_driver_document_id' => $doc_id,
-            'text' => $note,
-            'user' => $user,
-            'date_time' => $date_time
+            'text' => $text,
+            'user_code_id' => $user_code_id
         ]);
 
-        $documentNotes = $DRIVER_DOCUMENT_NOTE->where('company_driver_document_id', $doc_id)->get();
-        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with('notes')->get();
+        $documentNotes = $DRIVER_DOCUMENT_NOTE->where('company_driver_document_id', $doc_id)->with(['user_code'])->get();
+        $documents = $DRIVER_DOCUMENT->where('driver_id', $driver_id)->with(['notes', 'user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
+        return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
 }

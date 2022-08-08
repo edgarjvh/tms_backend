@@ -21,6 +21,10 @@ class AgentDocument extends Model
     }
 
     public function notes(){
-        return $this->hasMany(AgentDocumentNote::class, 'company_agent_document_id', 'id');
+        return $this->hasMany(AgentDocumentNote::class, 'company_agent_document_id', 'id')->with(['user_code']);
+    }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

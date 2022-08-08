@@ -20,4 +20,8 @@ class OrderBillingNote extends Model
     public function order(){
         return $this->belongsTo(Order::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

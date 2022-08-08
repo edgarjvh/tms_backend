@@ -18,4 +18,8 @@ class CarrierNote extends Model
     public function carrier(){
         return $this->belongsTo(Carrier::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

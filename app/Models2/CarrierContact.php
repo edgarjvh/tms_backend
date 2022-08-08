@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 class CarrierContact extends Model
 {
     protected array $guarded = [];
+    protected string $table = 'contacts';
 
     public function carrier(){
         return $this->belongsTo(Carrier::class)->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address']);

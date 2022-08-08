@@ -14,39 +14,44 @@ use Throwable;
 class OrderDocumentsController extends Controller
 {
     public function getDocumentsByOrder(Request $request){
+        $ORDER_DOCUMENT = new OrderDocument();
         $order_id = $request->order_id;
-        $documents = OrderDocument::query()->where('order_id', $order_id)->with('notes')->get();
+
+        $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
     public function saveOrderDocument(Request $request){
+        $ORDER_DOCUMENT = new OrderDocument();
+
         $order_id = $request->order_id;
-        $date_entered = isset($request->date_entered) ? $request->date_entered : '';
-        $title = isset($request->title) ? $request->title : '';
-        $subject = isset($request->subject) ? $request->subject : '';
-        $tags = isset($request->tags) ? $request->tags : '';
-        $user_id = isset($request->user_id) ? $request->user_id : 0;
+        $date_entered = $request->date_entered ?? '';
+        $title = $request->title ?? '';
+        $subject = $request->subject ?? '';
+        $tags = $request->tags ?? '';
+        $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['doc'];
         $doc_name = $fileData['name'];
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
         $doc_id = uniqid() . '.' . $doc_extension;
 
-        $document = OrderDocument::query()->updateOrCreate([
+        $document = $ORDER_DOCUMENT->updateOrCreate([
             'id' => 0
         ], [
             'order_id' => $order_id,
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
+            'user_code_id' => $user_code_id,
             'date_entered' => $date_entered,
             'title' => $title,
             'subject' => $subject,
             'tags' => $tags
         ]);
 
-        $documents = OrderDocument::query()->where('order_id', $order_id)->with('notes')->get();
+        $document = $ORDER_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->first();
+        $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('order-documents/' . $doc_id));
 
@@ -54,86 +59,91 @@ class OrderDocumentsController extends Controller
     }
 
     public function deleteOrderDocument(Request $request){
+        $ORDER_DOCUMENT = new OrderDocument();
         $doc_id = $request->doc_id;
         $order_id = $request->order_id;
 
-        OrderDocument::query()->where('doc_id', $doc_id)->delete();
+        $ORDER_DOCUMENT->where('doc_id', $doc_id)->delete();
         try {
             unlink(public_path('order-documents/' . $doc_id));
         } catch (Throwable $e) {
 
         }
 
-        $documents = OrderDocument::query()->where('order_id', $order_id)->with('notes')->get();
+        $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
     public function getNotesByOrderDocument(Request $request){
+        $ORDER_DOCUMENT_NOTE = new OrderDocumentNote();
         $doc_id = $request->doc_id;
 
-        $documentNotes = OrderDocumentNote::query()->where('order_document_id', $doc_id)->get();
+        $documentNotes = $ORDER_DOCUMENT_NOTE->where('order_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
     }
 
     public function saveOrderDocumentNote(Request $request){
-        $note_id = $request->note_id;
+        $ORDER_DOCUMENT_NOTE = new OrderDocumentNote();
+        $ORDER_DOCUMENT = new OrderDocument();
+        $id = $request->id;
         $order_id = $request->order_id;
         $doc_id = $request->doc_id;
-        $user = $request->user;
-        $date_time = $request->date_time;
-        $note = $request->text;
+        $user_code_id = $request->user_code_id;
+        $text = $request->text;
 
-        $documentNote = OrderDocumentNote::query()->updateOrCreate([
-            'id' => $note_id
+        $documentNote = $ORDER_DOCUMENT_NOTE->updateOrCreate([
+            'id' => $id
         ], [
             'order_document_id' => $doc_id,
-            'text' => $note,
-            'user' => $user,
-            'date_time' => $date_time
+            'text' => $text,
+            'user_code_id' => $user_code_id
         ]);
 
-        $documentNotes = OrderDocumentNote::query()->where('order_document_id', $doc_id)->get();
-        $documents = OrderDocument::query()->where('order_id', $order_id)->with('notes')->get();
+        $documentNotes = $ORDER_DOCUMENT_NOTE->where('order_document_id', $doc_id)->with(['user_code'])->get();
+        $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
+        return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
 
     public function getBillingDocumentsByOrder(Request $request){
+        $ORDER_BILLING_DOCUMENT = new OrderBillingDocument();
         $order_id = $request->order_id;
-        $documents = OrderBillingDocument::query()->where('order_id', $order_id)->with('notes')->get();
+        $documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
     public function saveOrderBillingDocument(Request $request){
+        $ORDER_BILLING_DOCUMENT = new OrderBillingDocument();
         $order_id = $request->order_id;
-        $date_entered = isset($request->date_entered) ? $request->date_entered : '';
-        $title = isset($request->title) ? $request->title : '';
-        $subject = isset($request->subject) ? $request->subject : '';
-        $tags = isset($request->tags) ? $request->tags : '';
-        $user_id = isset($request->user_id) ? $request->user_id : 0;
+        $date_entered = $request->date_entered ?? '';
+        $title = $request->title ?? '';
+        $subject = $request->subject ?? '';
+        $tags = $request->tags ?? '';
+        $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['doc'];
         $doc_name = $fileData['name'];
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
         $doc_id = uniqid() . '.' . $doc_extension;
 
-        $document = OrderBillingDocument::query()->updateOrCreate([
+        $document = $ORDER_BILLING_DOCUMENT->updateOrCreate([
             'id' => 0
         ], [
             'order_id' => $order_id,
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
+            'user_code_id' => $user_code_id,
             'date_entered' => $date_entered,
             'title' => $title,
             'subject' => $subject,
             'tags' => $tags
         ]);
 
-        $documents = OrderBillingDocument::query()->where('order_id', $order_id)->with('notes')->get();
+        $document = $ORDER_BILLING_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->first();
+        $documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('order-billing-documents/' . $doc_id));
 
@@ -142,10 +152,11 @@ class OrderDocumentsController extends Controller
     }
 
     public function deleteOrderBillingDocument(Request $request){
+        $ORDER_BILLING_DOCUMENT = new OrderBillingDocument();
         $doc_id = $request->doc_id;
         $order_id = $request->order_id;
 
-        OrderBillingDocument::query()->where('doc_id', $doc_id)->delete();
+        $ORDER_BILLING_DOCUMENT->where('doc_id', $doc_id)->delete();
 
         try {
             unlink(public_path('order-billing-documents/' . $doc_id));
@@ -153,17 +164,18 @@ class OrderDocumentsController extends Controller
 
         }
 
-        $documents = OrderBillingDocument::query()->where('order_id', $order_id)->with('notes')->get();
+        $documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
 
     public function getNotesByOrderBillingDocument(Request $request){
+        $ORDER_BILLING_DOCUMENT_NOTE = new OrderBillingDocumentNote();
         $doc_id = $request->doc_id;
 
-        $documentNotes = OrderBillingDocumentNote::query()->where('order_billing_document_id', $doc_id)->get();
+        $documentNotes = $ORDER_BILLING_DOCUMENT_NOTE->where('order_billing_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
     }
 
     public function saveOrderInvoiceCustomerDocumentNote(Request $request){

@@ -19,4 +19,8 @@ class DriverDocumentNote extends Model
     public function document(){
         return $this->belongsTo(DriverDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

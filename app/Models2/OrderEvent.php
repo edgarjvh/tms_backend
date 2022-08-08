@@ -54,11 +54,7 @@ class OrderEvent extends Model
         return $this->belongsTo(EventType::class);
     }
 
-    public function agent() {
-        return $this->belongsTo(Agent::class);
-    }
-
-    public function employee() {
-        return $this->belongsTo(Employee::class);
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

@@ -14,9 +14,17 @@ use Illuminate\Database\Eloquent\Builder;
 class Contact extends Model
 {
     protected $guarded = [];
-    protected $table = 'customer_contacts';
+    protected $table = 'contacts';
 
     public function customer(){
         return $this->belongsTo(Customer::class)->with(['contacts', 'documents', 'directions', 'hours', 'automatic_emails', 'notes']);
+    }
+
+    public function carrier(){
+        return $this->belongsTo(Carrier::class)->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address']);
+    }
+
+    public function factoring_company(){
+        return $this->belongsTo(FactoringCompany::class)->with(['documents','contacts', 'invoices', 'carriers', 'mailing_address', 'notes']);
     }
 }

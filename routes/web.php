@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\DivisionContactsController;
+use App\Http\Controllers\DivisionDocumentsController;
+use App\Http\Controllers\DivisionHoursController;
+use App\Http\Controllers\DivisionMailingAddressesController;
+use App\Http\Controllers\DivisionNotesController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderCustomerRatingsController;
 use App\Http\Controllers\OrderCarrierRatingsController;
@@ -222,6 +227,40 @@ Route::post('/submitOrderImport2', [OrdersController::class, 'submitOrderImport2
 Route::post('/arrayTest', [OrdersController::class, 'arrayTest']);
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
+Route::post('/getDivisionById', [DivisionsController::class, 'getDivisionById']);
+Route::post('/divisionSearch', [DivisionsController::class, 'divisionSearch']);
+Route::post('/getDivisionOrders', [DivisionsController::class, 'getDivisionOrders']);
+Route::post('/saveDivision', [DivisionsController::class, 'saveDivision']);
+
+Route::post('/getDivisionContacts', [DivisionContactsController::class, 'getDivisionContacts']);
+Route::post('/divisionContactsSearch', [DivisionContactsController::class, 'divisionContactsSearch']);
+Route::post('/getDivisionContactsByEmail', [DivisionContactsController::class, 'getDivisionContactsByEmail']);
+Route::post('/getDivisionContactsByEmailOrName', [DivisionContactsController::class, 'getDivisionContactsByEmailOrName']);
+Route::post('/divisionContacts', [DivisionContactsController::class, 'divisionContacts']);
+Route::post('/getDivisionContactById', [DivisionContactsController::class, 'getDivisionContactById']);
+Route::post('/getContactsByDivisionId', [DivisionContactsController::class, 'getContactsByDivisionId']);
+Route::post('/saveDivisionContact', [DivisionContactsController::class, 'saveDivisionContact']);
+Route::post('/uploadDivisionContactAvatar', [DivisionContactsController::class, 'uploadDivisionContactAvatar']);
+Route::post('/removeDivisioContactAvatar', [DivisionContactsController::class, 'removeDivisioContactAvatar']);
+Route::post('/deleteDivisionContact', [DivisionContactsController::class, 'deleteDivisionContact']);
+
+Route::post('/getDivisionNotes', [DivisionNotesController::class, 'getDivisionNotes']);
+Route::post('/getDivisionNoteById', [DivisionNotesController::class, 'getDivisionNoteById']);
+Route::post('/saveDivisionNote', [DivisionNotesController::class, 'saveDivisionNote']);
+Route::post('/deleteDivisionNote', [DivisionNotesController::class, 'deleteDivisionNote']);
+
+Route::post('/saveDivisionMailingAddress', [DivisionMailingAddressesController::class, 'saveDivisionMailingAddress']);
+Route::post('/deleteDivisionMailingAddress', [DivisionMailingAddressesController::class, 'deleteDivisionMailingAddress']);
+
+Route::post('/getDivisionHours', [DivisionHoursController::class, 'getDivisionHours']);
+Route::post('/saveDivisionHours', [DivisionHoursController::class, 'saveDivisionHours']);
+
+Route::post('/getDocumentsByDivision', [DivisionDocumentsController::class, 'getDocumentsByDivision']);
+Route::post('/saveDivisionDocument', [DivisionDocumentsController::class, 'saveDivisionDocument']);
+Route::post('/deleteDivisionDocument', [DivisionDocumentsController::class, 'deleteDivisionDocument']);
+Route::post('/getNotesByDivisionDocument', [DivisionDocumentsController::class, 'getNotesByDivisionDocument']);
+Route::post('/saveDivisionDocumentNote', [DivisionDocumentsController::class, 'saveDivisionDocumentNote']);
+
 Route::post('/getEventTypes', [EventTypesController::class, 'getEventTypes']);
 Route::post('/getLoadTypes', [LoadTypesController::class, 'getLoadTypes']);
 Route::post('/getTemplates', [TemplatesController::class, 'getTemplates']);

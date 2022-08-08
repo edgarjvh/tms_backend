@@ -21,6 +21,10 @@ class CustomerDocument extends Model
     }
 
     public function notes(){
-        return $this->hasMany(CustomerDocumentNote::class);
+        return $this->hasMany(CustomerDocumentNote::class)->with(['user_code']);
+    }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

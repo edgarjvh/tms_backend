@@ -20,4 +20,8 @@ class OrderBillingDocumentNote extends Model
     public function order(){
         return $this->belongsTo(OrderBillingDocument::class,'order_billing_document_id', 'id');
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

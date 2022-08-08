@@ -15,4 +15,8 @@ class NotesForDriver extends Model
 {
     protected $guarded = [];
     protected $table = 'order_notes_for_driver';
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

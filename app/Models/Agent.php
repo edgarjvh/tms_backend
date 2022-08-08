@@ -21,6 +21,14 @@ class Agent extends Authenticatable
         return $this->belongsTo(Company::class)->with(['agents']);
     }
 
+    public function documents(){
+        return $this->hasMany(AgentDocument::class)->with(['notes', 'user_code']);
+    }
+
+    public function user_code(){
+        return $this->hasOne(UserCode::class);
+    }
+
     public function getAuthPassword(){
         return $this->password;
     }

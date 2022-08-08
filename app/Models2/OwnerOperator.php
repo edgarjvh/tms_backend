@@ -13,4 +13,8 @@ class OwnerOperator extends Model
     public function company(){
         return $this->belongsTo(Company::class)->with(['operators']);
     }
+
+    public function documents(){
+        return $this->hasMany(OperatorDocument::class)->with(['notes', 'user_code']);
+    }
 }

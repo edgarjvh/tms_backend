@@ -19,4 +19,8 @@ class OperatorDocumentNote extends Model
     public function document(){
         return $this->belongsTo(OperatorDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

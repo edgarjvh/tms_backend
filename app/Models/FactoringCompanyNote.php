@@ -19,4 +19,8 @@ class FactoringCompanyNote extends Model
     public function factoring_company(){
         return $this->belongsTo(FactoringCompany::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

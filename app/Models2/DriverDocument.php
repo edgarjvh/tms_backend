@@ -21,6 +21,10 @@ class DriverDocument extends Model
     }
 
     public function notes(){
-        return $this->hasMany(DriverDocumentNote::class, 'company_driver_document_id', 'id');
+        return $this->hasMany(DriverDocumentNote::class, 'company_driver_document_id', 'id')->with(['user_code']);
+    }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
     }
 }

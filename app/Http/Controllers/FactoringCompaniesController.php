@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Carrier;
 use App\Models\FactoringCompany;
-use App\Models\FactoringCompanyContact;
+use App\Models\Contact;
 use App\Models\FactoringCompanyMailingAddress;
 use App\Models\FactoringCompanyNote;
 use App\Models\Order;
@@ -46,14 +46,14 @@ class FactoringCompaniesController extends Controller
         $email = $request->email ?? '';
 
         $factoring_companies = $FACTORING_COMPANY->whereRaw("1 = 1")
-            ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
-            ->whereRaw("name like '%$name%'")
-            ->whereRaw("address1 like '%$address1%'")
-            ->whereRaw("address2 like '%$address2%'")
-            ->whereRaw("city like '%$city%'")
-            ->whereRaw("state like '%$state%'")
-            ->whereRaw("zip like '%$zip%'")
-            ->whereRaw("email like '%$email%'")
+            ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
+            ->whereRaw("name like '$name%'")
+            ->whereRaw("address1 like '$address1%'")
+            ->whereRaw("address2 like '$address2%'")
+            ->whereRaw("city like '$city%'")
+            ->whereRaw("state like '$state%'")
+            ->whereRaw("zip like '$zip%'")
+            ->whereRaw("email like '$email%'")
             ->orderBy('code')
             ->orderBy('code_number')
             ->with(['documents', 'contacts', 'invoices', 'carriers', 'mailing_address', 'notes'])->get();
@@ -79,13 +79,13 @@ class FactoringCompaniesController extends Controller
 
         $factoring_companies = $FACTORING_COMPANY->whereRaw("1 = 1")
             // ->whereRaw("code like '%$code%'")
-            ->whereRaw("LOWER(name) like '%$name%'")
-            ->whereRaw("LOWER(address1) like '%$address1%'")
-            ->whereRaw("LOWER(address2) like '%$address2%'")
-            ->whereRaw("LOWER(city) like '%$city%'")
-            ->whereRaw("LOWER(state) like '%$state%'")
-            ->whereRaw("zip like '%$zip%'")
-            ->whereRaw("LOWER(email) like '%$email%'")
+            ->whereRaw("LOWER(name) like '$name%'")
+            ->whereRaw("LOWER(address1) like '$address1%'")
+            ->whereRaw("LOWER(address2) like '$address2%'")
+            ->whereRaw("LOWER(city) like '$city%'")
+            ->whereRaw("LOWER(state) like '$state%'")
+            ->whereRaw("zip like '$zip%'")
+            ->whereRaw("LOWER(email) like '$email%'")
             ->orderBy('code')
             ->orderBy('code_number')
             ->with(['documents', 'contacts', 'invoices', 'carriers', 'mailing_address', 'notes'])->get();
@@ -115,7 +115,7 @@ class FactoringCompaniesController extends Controller
     public function saveFactoringCompany(Request $request) : JsonResponse
     {
         $FACTORING_COMPANY = new FactoringCompany();
-        $FACTORING_COMPANY_CONTACT = new FactoringCompanyContact();
+        $FACTORING_COMPANY_CONTACT = new Contact();
         $CARRIER = new Carrier();
 
         $id = isset($request->id) ? (int)$request->id : 0;
@@ -203,7 +203,7 @@ class FactoringCompaniesController extends Controller
             $contact_last = trim($contact_last);
 
             if (count($contacts) === 0) {
-                $contact = new FactoringCompanyContact();
+                $contact = new Contact();
                 $contact->factoring_company_id = $factoring_company->id;
                 $contact->first_name = $contact_first;
                 $contact->last_name = $contact_last;
@@ -358,23 +358,23 @@ class FactoringCompaniesController extends Controller
     {
         $FACTORING_COMPANY_NOTE = new FactoringCompanyNote();
 
+        $id = $request->id ?? 0;
         $factoring_company_id = $request->factoring_company_id ?? 0;
-        $user = $request->user ?? '';
-        $date_time = $request->date_time ?? '';
-        $note = $request->text ?? '';
+        $user_code_id = $request->user_code_id ?? '';
+        $text = $request->text ?? '';
 
         $factoring_company_note = $FACTORING_COMPANY_NOTE->updateOrCreate([
-            'id' => 0
+            'id' => $id
         ], [
             'factoring_company_id' => $factoring_company_id,
-            'user' => $user,
-            'date_time' => $date_time,
-            'text' => $note
+            'user_code_id' => $user_code_id,
+            'text' => $text
         ]);
 
-        $factoring_company_notes = $FACTORING_COMPANY_NOTE->where('factoring_company_id', $factoring_company_id)->get();
+        $factoring_company_note = $FACTORING_COMPANY_NOTE->where('id', $factoring_company_note->id)->with(['user_code'])->get();
+        $factoring_company_notes = $FACTORING_COMPANY_NOTE->where('factoring_company_id', $factoring_company_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'factoring_company_note' => $factoring_company_note, 'data' => $factoring_company_notes]);
+        return response()->json(['result' => 'OK', 'note' => $factoring_company_note, 'notes' => $factoring_company_notes]);
     }
 
     /**

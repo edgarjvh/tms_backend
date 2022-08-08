@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 class FactoringCompanyContact extends Model
 {
     protected $guarded = [];
-    protected $table = 'factoring_company_contacts';
+    protected $table = 'contacts';
 
     public function factoring_company(){
         return $this->belongsTo(FactoringCompany::class)->with(['documents','contacts', 'invoices', 'carriers', 'mailing_address', 'notes']);

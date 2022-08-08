@@ -21,11 +21,11 @@ class FactoringCompany extends Model
     }
 
     public function notes(){
-        return $this->hasMany(FactoringCompanyNote::class);
+        return $this->hasMany(FactoringCompanyNote::class)->with(['user_code']);
     }
 
     public function contacts(){
-        return $this->hasMany(FactoringCompanyContact::class);
+        return $this->hasMany(Contact::class)->orderBy('first_name', 'asc');
     }
 
     public function invoices(){
@@ -37,6 +37,6 @@ class FactoringCompany extends Model
     }
 
     public function documents(){
-        return $this->hasMany(FactoringCompanyDocument::class);
+        return $this->hasMany(FactoringCompanyDocument::class)->with(['notes', 'user_code']);
     }
 }

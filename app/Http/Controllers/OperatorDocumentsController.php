@@ -20,7 +20,7 @@ class OperatorDocumentsController extends Controller
         $OPERATOR_DOCUMENT = new OperatorDocument();
 
         $operator_id = $request->operator_id;
-        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with('notes')->get();
+        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with(['notes','user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -38,7 +38,7 @@ class OperatorDocumentsController extends Controller
         $title = $request->title ?? '';
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
-        $user_id = $request->user_id ?? 0;
+        $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['doc'];
         $doc_name = $fileData['name'];
         $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
@@ -51,14 +51,15 @@ class OperatorDocumentsController extends Controller
             'doc_id' => $doc_id,
             'doc_name' => $doc_name,
             'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
+            'user_code_id' => $user_code_id,
             'date_entered' => $date_entered,
             'title' => $title,
             'subject' => $subject,
             'tags' => $tags
         ]);
 
-        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with('notes')->get();
+        $document = $OPERATOR_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->get();
+        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with(['notes', 'user_code'])->get();
 
         move_uploaded_file($fileData['tmp_name'], public_path('operator-documents/' . $doc_id));
 
@@ -83,7 +84,7 @@ class OperatorDocumentsController extends Controller
         } catch (Throwable | Exception $e) {
         }
 
-        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with('notes')->get();
+        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documents' => $documents]);
     }
@@ -98,7 +99,7 @@ class OperatorDocumentsController extends Controller
 
         $doc_id = $request->doc_id;
 
-        $documentNotes = $OPERATOR_DOCUMENT_NOTE->where('company_operator_document_id', $doc_id)->get();
+        $documentNotes = $OPERATOR_DOCUMENT_NOTE->where('company_operator_document_id', $doc_id)->with(['user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
@@ -112,24 +113,22 @@ class OperatorDocumentsController extends Controller
         $OPERATOR_DOCUMENT = new OperatorDocument();
         $OPERATOR_DOCUMENT_NOTE = new OperatorDocumentNote();
 
-        $note_id = $request->note_id;
+        $id = $request->id;
         $operator_id = $request->operator_id;
         $doc_id = $request->doc_id;
-        $user = $request->user;
-        $date_time = $request->date_time;
-        $note = $request->text;
+        $user_code_id = $request->user_code_id;
+        $text = $request->text;
 
         $documentNote = $OPERATOR_DOCUMENT_NOTE->updateOrCreate([
-            'id' => $note_id
+            'id' => $id
         ], [
             'company_operator_document_id' => $doc_id,
-            'text' => $note,
-            'user' => $user,
-            'date_time' => $date_time
+            'text' => $text,
+            'user_code_id' => $user_code_id
         ]);
 
-        $documentNotes = $OPERATOR_DOCUMENT_NOTE->where('company_operator_document_id', $doc_id)->get();
-        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with('notes')->get();
+        $documentNotes = $OPERATOR_DOCUMENT_NOTE->where('company_operator_document_id', $doc_id)->with(['user_code'])->get();
+        $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }

@@ -15,6 +15,6 @@ class CompanyDriver extends Model
     }
 
     public function documents(){
-        return $this->hasMany(DriverDocument::class)->with(['notes']);
+        return $this->hasMany(DriverDocument::class)->with(['notes', 'user_code']);
     }
 }

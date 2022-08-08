@@ -15,9 +15,8 @@ class Carrier extends Model
 {
     protected $guarded = [];
 
-    public function contacts()
-    {
-        return $this->hasMany(CarrierContact::class);
+    public function contacts(){
+        return $this->hasMany(Contact::class)->orderBy('first_name', 'asc');
     }
 
     public function drivers()
@@ -44,7 +43,7 @@ class Carrier extends Model
 
     public function notes()
     {
-        return $this->hasMany(CarrierNote::class);
+        return $this->hasMany(CarrierNote::class)->with(['user_code']);
     }
 
     public function insurances()
@@ -53,7 +52,7 @@ class Carrier extends Model
     }
 
     public function documents(){
-        return $this->hasMany(CarrierDocument::class)->with(['notes']);
+        return $this->hasMany(CarrierDocument::class)->with(['notes', 'user_code']);
     }
 
     public function equipments_information(){

@@ -19,4 +19,8 @@ class OrderDocumentNote extends Model
     public function document(){
         return $this->belongsTo(OrderDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

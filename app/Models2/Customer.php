@@ -34,11 +34,11 @@ class Customer extends Model
     }
 
     public function documents(){
-        return $this->hasMany(CustomerDocument::class)->with('notes');
+        return $this->hasMany(CustomerDocument::class)->with(['notes', 'user_code']);
     }
 
     public function directions(){
-        return $this->hasMany(Direction::class);
+        return $this->hasMany(Direction::class)->with(['user_code']);
     }
 
     public function hours(){
@@ -50,7 +50,7 @@ class Customer extends Model
     }
 
     public function notes(){
-        return $this->hasMany(Note::class);
+        return $this->hasMany(Note::class)->with(['user_code']);
     }
 
     public function zip_data(){

@@ -19,4 +19,8 @@ class FactoringCompanyDocumentNote extends Model
     public function document(){
         return $this->belongsTo(FactoringCompanyDocument::class);
     }
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

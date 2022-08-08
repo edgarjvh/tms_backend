@@ -42,6 +42,7 @@ class OrdersController extends Controller
             'routing',
 //            'documents',
             'events',
+            'user_code'
 //            'division',
 //            'load_type',
 //            'template',
@@ -117,6 +118,7 @@ class OrdersController extends Controller
             'deliveries',
             'order_customer_ratings',
             'order_carrier_ratings',
+            'user_code'
         ]);
 
         $orders = $ORDER->get();
@@ -183,6 +185,7 @@ class OrdersController extends Controller
             'deliveries',
             'order_customer_ratings',
             'order_carrier_ratings',
+            'user_code'
         ]);
 
         $orders = $ORDER->get();
@@ -263,6 +266,7 @@ class OrdersController extends Controller
             'deliveries',
             'order_customer_ratings',
             'order_carrier_ratings',
+            'user_code'
         ]);
 
         $orders = $ORDER->get();
@@ -329,6 +333,7 @@ class OrdersController extends Controller
             'deliveries',
             'order_customer_ratings',
             'order_carrier_ratings',
+            'user_code'
         ]);
 
         $orders = $ORDER->get();
@@ -368,8 +373,7 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'agent',
-                'employee'
+                'user_code'
             ])
             ->first();
 
@@ -410,8 +414,7 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'agent',
-                'employee'
+                'user_code'
             ])
             ->first();
 
@@ -452,8 +455,7 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'agent',
-                'employee'
+                'user_code'
             ])
             ->first();
 
@@ -487,8 +489,7 @@ class OrdersController extends Controller
         $ORDER = new Order();
 
         $order_number = (int)($request->order_number ?? 0);
-        $agent_id = $request->agent_id ?? null;
-        $employee_id = $request->employee_id ?? null;
+        $user_code_id = $request->user_code_id ?? null;
         $trip_number = (int)($request->trip_number ?? 0);
         $division_id = isset($request->division_id) ? $request->division_id > 0 ? $request->division_id : null : null;
         $load_type_id = isset($request->load_type_id) ? $request->load_type_id > 0 ? $request->load_type_id : null : null;
@@ -561,8 +562,7 @@ class OrdersController extends Controller
         $order = $ORDER->updateOrCreate([
             'order_number' => $order_number
         ], [
-            'agent_id' => $agent_id,
-            'employee_id' => $employee_id,
+            'user_code_id' => $user_code_id,
             'trip_number' => $trip_number,
             'division_id' => $division_id,
             'load_type_id' => $load_type_id,
@@ -652,8 +652,7 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'agent',
-                'employee'
+                'user_code'
             ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $newOrder, 'order_number' => $order_number]);
@@ -678,8 +677,7 @@ class OrdersController extends Controller
         $event_time = $request->event_time ?? '';
         $date = $request->date ?? '';
         $event_date = $request->event_date ?? '';
-        $agent_id = $request->agent_id ?? null;
-        $employee_id = $request->employee_id ?? null;
+        $user_code_id = $request->user_code_id ?? null;
         $event_location = $request->event_location ?? '';
         $event_notes = $request->event_notes ?? '';
 
@@ -709,14 +707,13 @@ class OrdersController extends Controller
             'event_time' => $event_time,
             'date' => $date,
             'event_date' => $event_date,
-            'agent_id' => $agent_id,
-            'employee_id' => $employee_id,
+            'user_code_id' => $user_code_id,
             'event_location' => $event_location,
             'event_notes' => $event_notes
         ]);
 
         $order_events = $ORDER_EVENT->where('order_id', $order_id)
-            ->with(['shipper', 'consignee', 'arrived_customer', 'departed_customer', 'old_carrier', 'new_carrier', 'event_type'])
+            ->with(['shipper', 'consignee', 'arrived_customer', 'departed_customer', 'old_carrier', 'new_carrier', 'event_type', 'user_code'])
             ->orderBy('updated_at', 'desc')->get();
 
         return response()->json(['result' => 'OK', 'order_event' => $order_event, 'order_events' => $order_events]);
@@ -786,7 +783,8 @@ class OrdersController extends Controller
                     'order_carrier_ratings',
                     'billing_documents',
                     'billing_notes',
-                    'term'
+                    'term',
+                    'user_code'
                 ])->first();
 
                 return response()->json(['result' => 'OK', 'pickup' => $pickup, 'order' => $order]);
@@ -923,7 +921,8 @@ class OrdersController extends Controller
                     'order_carrier_ratings',
                     'billing_documents',
                     'billing_notes',
-                    'term'
+                    'term',
+                    'user_code'
                 ])->first();
 
                 return response()->json(['result' => 'OK', 'delivery' => $delivery, 'order' => $order]);
@@ -1028,7 +1027,8 @@ class OrdersController extends Controller
             'order_carrier_ratings',
             'billing_documents',
             'billing_notes',
-            'term'
+            'term',
+            'user_code'
         ])->first();
 
         return response()->json(['result' => 'OK', 'pickup' => $pickup, 'order' => $order]);
@@ -1066,7 +1066,8 @@ class OrdersController extends Controller
             'order_carrier_ratings',
             'billing_documents',
             'billing_notes',
-            'term'
+            'term',
+            'user_code'
         ])->first();
 
         return response()->json(['result' => 'OK', 'delivery' => $delivery, 'order' => $order]);
@@ -1120,7 +1121,8 @@ class OrdersController extends Controller
                 'order_carrier_ratings',
                 'billing_documents',
                 'billing_notes',
-                'term'
+                'term',
+                'user_code'
             ])->first();
 
             return response()->json(['result' => 'OK', 'order' => $order]);
@@ -1241,8 +1243,7 @@ class OrdersController extends Controller
         $carrier_rating = $request->carrierRating ?? null;
         $loaded_event = $request->loadedEvent ?? null;
         $delivered_event = $request->deliveredEvent ?? null;
-        $agent_id = $request->agent_id ?? null;
-        $employee_id = $request->employee_id ?? null;
+        $user_code_id = $request->user_code_id ?? null;
 
         $ORDER = new Order();
 
@@ -1251,8 +1252,7 @@ class OrdersController extends Controller
         ], [
             'order_number' => $order_number,
             'trip_number' => $trip_number,
-            'agent_id' => $agent_id,
-            'employee_id' => $employee_id,
+            'user_code_id' => $user_code_id,
             'order_date_time' => $order_date_time,
             'load_type_id' => $load_type_id,
             'bill_to_customer_id' => $bill_to_customer_id,
@@ -1360,7 +1360,8 @@ class OrdersController extends Controller
             'date' => $loaded_event['date'],
             'event_date' => $loaded_event['eventDate'],
             'event_location' => $loaded_event['eventLocation'],
-            'event_notes' => $loaded_event['eventNotes']
+            'event_notes' => $loaded_event['eventNotes'],
+            'user_code_id' => $user_code_id
         ]);
 
         $ORDER_EVENT->updateOrCreate([
@@ -1373,7 +1374,8 @@ class OrdersController extends Controller
             'date' => $delivered_event['date'],
             'event_date' => $delivered_event['eventDate'],
             'event_location' => $delivered_event['eventLocation'],
-            'event_notes' => $delivered_event['eventNotes']
+            'event_notes' => $delivered_event['eventNotes'],
+            'user_code_id' => $user_code_id
         ]);
 
         $newOrder = $ORDER->where('id', $order_id)->with([
@@ -1382,7 +1384,8 @@ class OrdersController extends Controller
             'events',
             'order_customer_ratings',
             'order_carrier_ratings',
-            'routing'
+            'routing',
+            'user_code'
         ]);
 
         return response()->json([
@@ -1428,6 +1431,7 @@ class OrdersController extends Controller
                 $order_carrier_rating = $item['carrierRating'] ?? null;
                 $loaded_event = $item['loadedEvent'] ?? null;
                 $delivered_event = $item['deliveredEvent'] ?? null;
+                $user_code_id = $item['user_code_id'] ?? null;
 
                 $order_id = 0;
 
@@ -1445,7 +1449,8 @@ class OrdersController extends Controller
                         'bill_to_customer_id' => $bill_to_customer_id,
                         'carrier_id' => $carrier_id,
                         'equipment_id' => $equipment_id,
-                        'is_imported' => 1
+                        'is_imported' => 1,
+                        'user_code_id' => $user_code_id
                     ]);
 
                     $order_id = $saved_order->id;
@@ -1569,7 +1574,8 @@ class OrdersController extends Controller
                             'date' => $loaded_event['date'],
                             'event_date' => $loaded_event['eventDate'],
                             'event_location' => $loaded_event['eventLocation'],
-                            'event_notes' => $loaded_event['eventNotes']
+                            'event_notes' => $loaded_event['eventNotes'],
+                            'user_code_id' => $user_code_id
                         ]);
                     }catch (Throwable | Exception $e){
 
@@ -1586,7 +1592,8 @@ class OrdersController extends Controller
                             'date' => $delivered_event['date'],
                             'event_date' => $delivered_event['eventDate'],
                             'event_location' => $delivered_event['eventLocation'],
-                            'event_notes' => $delivered_event['eventNotes']
+                            'event_notes' => $delivered_event['eventNotes'],
+                            'user_code_id' => $user_code_id
                         ]);
                     }catch (Throwable | Exception $e){
 
@@ -1605,7 +1612,6 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-
     public function arrayTest(): JsonResponse{
         $arr = [];
 
