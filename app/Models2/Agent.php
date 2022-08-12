@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Agent extends Authenticatable
+class Agent extends Model
 {
     use HasApiTokens;
 
@@ -17,19 +17,39 @@ class Agent extends Authenticatable
         'password'
     ];
 
-    public function company(){
+    public function company()
+    {
         return $this->belongsTo(Company::class)->with(['agents']);
     }
 
-    public function documents(){
+    public function documents()
+    {
         return $this->hasMany(AgentDocument::class)->with(['notes', 'user_code']);
     }
 
-    public function user_code(){
-        return $this->hasOne(UserCode::class);
+    public function contacts()
+    {
+        return $this->hasMany(AgentContact::class)->orderBy('first_name');
     }
 
-    public function getAuthPassword(){
-        return $this->password;
+    public function mailing_address(){
+        return $this->hasOne(AgentMailingAddress::class)->with(['mailing_contact']);
+    }
+
+    public function notes(){
+        return $this->hasMany(AgentNote::class)->with(['user_code']);
+    }
+
+    public function hours(){
+        return $this->hasOne(AgentHour::class);
+    }
+
+    public function division(){
+        return $this->belongsTo(Division::class);
+    }
+
+    public function user_code()
+    {
+        return $this->hasOne(UserCode::class);
     }
 }

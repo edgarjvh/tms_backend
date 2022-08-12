@@ -82,7 +82,7 @@ return [
 
         'agents' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Agent::class,
+            'model' => App\Models\AgentContact::class,
         ]
         // 'users' => [
         //     'driver' => 'database',

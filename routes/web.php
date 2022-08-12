@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\AgentContactsController;
+use App\Http\Controllers\AgentHoursController;
+use App\Http\Controllers\AgentMailingAddressesController;
+use App\Http\Controllers\AgentNotesController;
 use App\Http\Controllers\DivisionContactsController;
 use App\Http\Controllers\DivisionDocumentsController;
 use App\Http\Controllers\DivisionHoursController;
@@ -206,6 +210,9 @@ Route::post('/deleteCustomerMailingAddress', [CustomerMailingAddressesController
 Route::post('/saveCarrierMailingAddress', [CarrierMailingAddressesController::class, 'saveCarrierMailingAddress']);
 Route::post('/deleteCarrierMailingAddress', [CarrierMailingAddressesController::class, 'deleteCarrierMailingAddress']);
 
+Route::post('/getAgentHours', [AgentHoursController::class, 'getAgentHours']);
+Route::post('/saveAgentHours', [AgentHoursController::class, 'saveAgentHours']);
+
 Route::post('/getOrders', [OrdersController::class, 'getOrders']);
 Route::post('/getOrderById', [OrdersController::class, 'getOrderById']);
 Route::post('/getOrderByOrderNumber', [OrdersController::class, 'getOrderByOrderNumber']);
@@ -303,12 +310,34 @@ Route::post('/removeEmployeeAvatar', [EmployeesController::class, 'removeAvatar'
 Route::post('/companyEmployeesSearch', [EmployeesController::class, 'companyEmployeesSearch']);
 Route::post('/resetEmployeePassword', [EmployeesController::class, 'resetEmployeePassword']);
 
+Route::post('/getAgentById', [AgentsController::class, 'getAgentById']);
+Route::post('/getAgents', [AgentsController::class, 'getAgents']);
+Route::post('/agentSearch', [AgentsController::class, 'agentSearch']);
+Route::post('/getAgentOrders', [AgentsController::class, 'getAgentOrders']);
 Route::post('/saveAgent', [AgentsController::class, 'saveAgent']);
-Route::post('/deleteAgent', [AgentsController::class, 'deleteAgent']);
-Route::post('/uploadAgentAvatar', [AgentsController::class, 'uploadAvatar']);
-Route::post('/removeAgentAvatar', [AgentsController::class, 'removeAvatar']);
-Route::post('/companyAgentsSearch', [AgentsController::class, 'companyAgentsSearch']);
-Route::post('/resetAgentPassword', [AgentsController::class, 'resetAgentPassword']);
+
+Route::post('/saveAgentMailingAddress', [AgentMailingAddressesController::class, 'saveAgentMailingAddress']);
+Route::post('/deleteAgentMailingAddress', [AgentMailingAddressesController::class, 'deleteAgentMailingAddress']);
+
+Route::post('/getAgentNotes', [AgentNotesController::class, 'getAgentNotes']);
+Route::post('/getAgentNoteById', [AgentNotesController::class, 'getAgentNoteById']);
+Route::post('/saveAgentNote', [AgentNotesController::class, 'saveAgentNote']);
+Route::post('/deleteAgentNote', [AgentNotesController::class, 'deleteAgentNote']);
+
+Route::post('/getAgentContacts', [AgentContactsController::class, 'getAgentContacts']);
+Route::post('/agentContactsSearch', [AgentContactsController::class, 'agentContactsSearch']);
+Route::post('/getAgentContactsByEmail', [AgentContactsController::class, 'getAgentContactsByEmail']);
+Route::post('/getAgentContactsByEmailOrName', [AgentContactsController::class, 'getAgentContactsByEmailOrName']);
+Route::post('/agentContacts', [AgentContactsController::class, 'agentContacts']);
+Route::post('/getAgentContactById', [AgentContactsController::class, 'getAgentContactById']);
+Route::post('/getContactsByAgentId', [AgentContactsController::class, 'getContactsByAgentId']);
+Route::post('/saveAgentContact', [AgentContactsController::class, 'saveAgentContact']);
+Route::post('/uploadAgentContactAvatar', [AgentContactsController::class, 'uploadAgentContactAvatar']);
+Route::post('/removeDivisioContactAvatar', [AgentContactsController::class, 'removeDivisioContactAvatar']);
+Route::post('/deleteAgentContact', [AgentContactsController::class, 'deleteAgentContact']);
+Route::post('/resetAgentContactPassword', [AgentContactsController::class, 'resetAgentContactPassword']);
+
+
 
 Route::post('/saveDriver', [CompanyDriversController::class, 'saveDriver']);
 Route::post('/deleteDriver', [CompanyDriversController::class, 'deleteDriver']);

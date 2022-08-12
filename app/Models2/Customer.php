@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Awobaz\Compoships\Compoships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Staudenmeir\EloquentHasManyDeep\HasRelationships;
@@ -15,11 +16,11 @@ use Staudenmeir\EloquentHasManyDeep\HasRelationships;
 class Customer extends Model
 {
     use HasRelationships;
-    use \Awobaz\Compoships\Compoships;
+    use Compoships;
 
     protected array $guarded = [];
     protected string $table = 'customers';
-    protected array $appends = ['total_customer_order'];
+    protected $appends = ['total_customer_order'];
 
     public function total_customer_ratings(){
         return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id']);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Awobaz\Compoships\Compoships;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Staudenmeir\EloquentHasManyDeep\HasRelationships;
@@ -15,7 +16,7 @@ use Staudenmeir\EloquentHasManyDeep\HasRelationships;
 class Customer extends Model
 {
     use HasRelationships;
-    use \Awobaz\Compoships\Compoships;
+    use Compoships;
 
     protected $guarded = [];
     protected $table = 'customers';

@@ -11,18 +11,18 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @mixin Builder
  */
-class DivisionMailingAddress extends Model
+class AgentMailingAddress extends Model
 {
     use Compoships;
 
     protected array $guarded = [];
-    protected string $table = 'division_mailing_addresses';
+    protected string $table = 'company_agent_mailing_addresses';
 
-    public function division(){
-        return $this->belongsTo(Division::class);
+    public function agent(){
+        return $this->belongsTo(Agent::class);
     }
 
     public function mailing_contact(){
-        return $this->belongsTo(DivisionContact::class,'mailing_contact_id', 'id', 'contacts');
+        return $this->belongsTo(AgentContact::class,'mailing_contact_id', 'id', 'contacts');
     }
 }

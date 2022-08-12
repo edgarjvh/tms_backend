@@ -80,7 +80,8 @@ class DivisionsController extends Controller
                 ->whereRaw("LOWER(city) like '$city%'")
                 ->whereRaw("LOWER(state) like '$state%'")
                 ->whereRaw("zip like '$zip%'")
-                ->whereRaw("LOWER(contact_name) like '$contact_name%'")
+                ->whereRaw("LOWER(contact_first_name) like '$contact_first_name%'")
+                ->whereRaw("LOWER(contact_last_name) like '$contact_last_name%'")
                 ->whereRaw("contact_phone like '$contact_phone%'")
                 ->whereRaw("LOWER(email) like '$email%'")
                 ->orderBy('code')
@@ -243,7 +244,7 @@ class DivisionsController extends Controller
             $contacts = $DIVISION_CONTACT->where('division_id', $division->id)->get();
 
             if (count($contacts) === 0) {
-                $contact = new Contact();
+                $contact = new DivisionContact();
                 $contact->division_id = $division->id;
                 $contact->first_name = trim($contact_first_name);
                 $contact->last_name = trim($contact_last_name);

@@ -100,7 +100,7 @@ class AgentDocumentsController extends Controller
 
         $documentNotes = $AGENT_DOCUMENT_NOTE->where('company_agent_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
     }
 
     /**
@@ -129,6 +129,6 @@ class AgentDocumentsController extends Controller
         $documentNotes = $AGENT_DOCUMENT_NOTE->where('company_agent_document_id', $doc_id)->with(['user_code'])->get();
         $documents = $AGENT_DOCUMENT->where('agent_id', $agent_id)->with(['notes', 'user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
+        return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
 }

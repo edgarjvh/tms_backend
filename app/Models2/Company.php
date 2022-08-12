@@ -15,18 +15,18 @@ class Company extends Model
     }
 
     public function employees() {
-        return $this->hasMany(Employee::class, 'company_id', 'id')->with(['documents']);
+        return $this->hasMany(Employee::class, 'company_id', 'id')->with(['documents'])->orderBy('id');
     }
 
     public function agents(){
-        return $this->hasMany(Agent::class, 'company_id', 'id');
+        return $this->hasMany(Agent::class, 'company_id', 'id')->with(['contacts'])->orderBy('id');
     }
 
     public function drivers(){
-        return $this->hasMany(CompanyDriver::class, 'company_id', 'id');
+        return $this->hasMany(CompanyDriver::class, 'company_id', 'id')->orderBy('id');
     }
 
     public function operators(){
-        return $this->hasMany(OwnerOperator::class, 'company_id', 'id');
+        return $this->hasMany(OwnerOperator::class, 'company_id', 'id')->orderBy('id');
     }
 }
