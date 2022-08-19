@@ -20,7 +20,7 @@ class Customer extends Model
 
     protected array $guarded = [];
     protected string $table = 'customers';
-    protected $appends = ['total_customer_order'];
+    protected array $appends = ['total_customer_order'];
 
     public function total_customer_ratings(){
         return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id']);

@@ -25,36 +25,33 @@ use Throwable;
 
 class OrdersController extends Controller
 {
-    public function getOrders(): JsonResponse
+    public function getOrders(Request $request): JsonResponse
     {
-        $ORDER = new Order();
+        $ORDER = Order::query();
 
-        $orders = $ORDER->where('is_imported', 0)->with([
+        $user_code = $request->user_code ?? '';
+
+        $ORDER->where('is_imported', 0);
+
+        if ($user_code !== ''){
+            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
+                return $query1->where('code', $user_code);
+            });
+        }
+
+        $ORDER->with([
             'bill_to_company',
             'carrier',
-//            'equipment',
-//            'driver',
-//            'notes_for_driver',
-//            'notes_for_carrier',
-//            'internal_notes',
             'pickups',
             'deliveries',
             'routing',
-//            'documents',
             'events',
             'user_code'
-//            'division',
-//            'load_type',
-//            'template',
-//            'order_customer_ratings',
-//            'order_carrier_ratings',
-//            'billing_documents',
-//            'billing_notes',
-//            'term'
-        ])
+        ]);
 
-            ->orderBy('order_number')
-            ->get();
+        $ORDER->orderBy('order_number');
+
+        $orders = $ORDER->get();
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -881,6 +878,10 @@ class OrdersController extends Controller
         $delivery_date2 = $request->delivery_date2 ?? '';
         $delivery_time1 = $request->delivery_time1 ?? '';
         $delivery_time2 = $request->delivery_time2 ?? '';
+        $bol_numbers = $request->bol_numbers ?? '';
+        $po_numbers = $request->po_numbers ?? '';
+        $ref_numbers = $request->ref_numbers ?? '';
+        $seal_number = $request->seal_number ?? '';
         $special_instructions = $request->special_instructions ?? null;
         $type = $request->type ?? 'delivery';
 
@@ -896,6 +897,10 @@ class OrdersController extends Controller
                     'delivery_date2' => $delivery_date2,
                     'delivery_time1' => $delivery_time1,
                     'delivery_time2' => $delivery_time2,
+                    'bol_numbers' => $bol_numbers,
+                    'po_numbers' => $po_numbers,
+                    'ref_numbers' => $ref_numbers,
+                    'seal_number' => $seal_number,
                     'special_instructions' => $special_instructions
                 ]);
 
@@ -1398,11 +1403,12 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function submitOrderImport2(Request $request): JsonResponse{
+    public function submitOrderImport2(Request $request): JsonResponse
+    {
         $list = $request->list ?? [];
 
-        if (count($list) > 0){
-            for ($i = 0; $i < count($list); $i++){
+        if (count($list) > 0) {
+            for ($i = 0; $i < count($list); $i++) {
                 $item = $list[$i];
 
                 $order = $item['order'];
@@ -1438,7 +1444,7 @@ class OrdersController extends Controller
                 try {
                     $saved_order = Order::updateOrCreate([
                         'id' => 0
-                    ],[
+                    ], [
                         'order_number' => $order,
                         'trip_number' => $trip,
                         'load_type_id' => $load_type_id,
@@ -1454,15 +1460,15 @@ class OrdersController extends Controller
                     ]);
 
                     $order_id = $saved_order->id;
-                } catch (Throwable | Exception $e) {
+                } catch (Throwable|Exception $e) {
 
                 }
 
-                if ($order_id > 0){
+                if ($order_id > 0) {
                     $pickup = null;
                     $delivery = null;
 
-                    if ($shipper_customer_id > 0){
+                    if ($shipper_customer_id > 0) {
                         try {
                             $pickup = Pickup::updateOrCreate([
                                 'id' => 0
@@ -1475,7 +1481,7 @@ class OrdersController extends Controller
                                 'pu_time2' => $pu_time2,
                                 'ref_numbers' => $ref_numbers
                             ]);
-                        }catch (Throwable | Exception $e){
+                        } catch (Throwable|Exception $e) {
 
                         }
                     }
@@ -1492,14 +1498,14 @@ class OrdersController extends Controller
                                 'delivery_date2' => $delivery_date2,
                                 'delivery_time2' => $delivery_time2
                             ]);
-                        }catch (Throwable | Exception $e){
+                        } catch (Throwable|Exception $e) {
 
                         }
                     }
 
                     if ($shipper_customer_id > 0 && $consignee_customer_id > 0) {
-                        try{
-                            if (($pickup->id ?? 0) > 0){
+                        try {
+                            if (($pickup->id ?? 0) > 0) {
                                 Route::updateOrCreate([
                                     'id' => 0
                                 ], [
@@ -1508,12 +1514,12 @@ class OrdersController extends Controller
                                     'type' => 'pickup'
                                 ]);
                             }
-                        }catch (Throwable | Exception $e){
+                        } catch (Throwable|Exception $e) {
 
                         }
 
                         try {
-                            if (($delivery->id ?? 0) > 0){
+                            if (($delivery->id ?? 0) > 0) {
                                 Route::updateOrCreate([
                                     'id' => 0
                                 ], [
@@ -1522,7 +1528,7 @@ class OrdersController extends Controller
                                     'type' => 'delivery'
                                 ]);
                             }
-                        }catch (Throwable | Exception $e){
+                        } catch (Throwable|Exception $e) {
 
                         }
                     }
@@ -1541,7 +1547,7 @@ class OrdersController extends Controller
                                 'total_charges' => $order_customer_rating['total_charges']
                             ]);
                         }
-                    }catch (Throwable | Exception $e){
+                    } catch (Throwable|Exception $e) {
 
                     }
 
@@ -1559,7 +1565,7 @@ class OrdersController extends Controller
                                 'total_charges' => $order_carrier_rating['total_charges']
                             ]);
                         }
-                    }catch (Throwable | Exception $e){
+                    } catch (Throwable|Exception $e) {
 
                     }
 
@@ -1577,7 +1583,7 @@ class OrdersController extends Controller
                             'event_notes' => $loaded_event['eventNotes'],
                             'user_code_id' => $user_code_id
                         ]);
-                    }catch (Throwable | Exception $e){
+                    } catch (Throwable|Exception $e) {
 
                     }
 
@@ -1595,7 +1601,7 @@ class OrdersController extends Controller
                             'event_notes' => $delivered_event['eventNotes'],
                             'user_code_id' => $user_code_id
                         ]);
-                    }catch (Throwable | Exception $e){
+                    } catch (Throwable|Exception $e) {
 
                     }
                 }
@@ -1603,7 +1609,7 @@ class OrdersController extends Controller
             }
 
             return response()->json(['result' => 'OK']);
-        }else{
+        } else {
             return response()->json(['result' => 'NO LIST']);
         }
     }
@@ -1612,10 +1618,11 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function arrayTest(): JsonResponse{
+    public function arrayTest(): JsonResponse
+    {
         $arr = [];
 
-        for ($i = 0; $i < 10; $i++){
+        for ($i = 0; $i < 10; $i++) {
             $obj = (object)[];
             $obj->order_number = $i;
 

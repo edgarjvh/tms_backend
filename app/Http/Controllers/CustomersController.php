@@ -49,7 +49,7 @@ class CustomersController extends Controller
      */
     public function customers(Request $request): JsonResponse
     {
-        $CUSTOMER = new Customer();
+        $CUSTOMER = Customer::query();
 
         $code = $request->code ?? '';
         $name = $request->name ?? '';
@@ -60,49 +60,46 @@ class CustomersController extends Controller
         $contact_phone = $request->contact_phone ?? '';
         $email = $request->email ?? '';
         $with_relations = $request->with_relations ?? 1;
+        $user_code = $request->user_code ?? '';
 
-        if ($with_relations === 1) {
-            $customers = $CUSTOMER->whereRaw("1 = 1")
-                ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
-                ->whereRaw("LOWER(name) like '%$name%'")
-                ->whereRaw("LOWER(city) like '%$city%'")
-                ->whereRaw("LOWER(state) like '%$state%'")
-                ->whereRaw("zip like '%$zip%'")
-                ->whereRaw("LOWER(contact_name) like '%$contact_name%'")
-                ->whereRaw("contact_phone like '%$contact_phone%'")
-                ->whereRaw("LOWER(email) like '%$email%'")
-                ->orderBy('code')
-                ->orderBy('code_number')
-                ->with([
-                    'contacts',
-                    'documents',
-                    'directions',
-                    'hours',
-                    'automatic_emails',
-                    'notes',
-                    'zip_data',
-                    'mailing_address',
-                    'term'
-                ])
-                ->get();
-        } else {
-            $customers = $CUSTOMER->whereRaw("1 = 1")
-                ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
-                ->whereRaw("LOWER(name) like '%$name%'")
-                ->whereRaw("LOWER(city) like '%$city%'")
-                ->whereRaw("LOWER(state) like '%$state%'")
-                ->whereRaw("zip like '%$zip%'")
-                ->whereRaw("LOWER(contact_name) like '%$contact_name%'")
-                ->whereRaw("contact_phone like '%$contact_phone%'")
-                ->whereRaw("LOWER(email) like '%$email%'")
-                ->orderBy('code')
-                ->orderBy('code_number')
-                ->with([
-                    'contacts'
-                ])
-                ->get();
+        $CUSTOMER->whereRaw("1 = 1")
+            ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
+            ->whereRaw("LOWER(name) like '%$name%'")
+            ->whereRaw("LOWER(city) like '%$city%'")
+            ->whereRaw("LOWER(state) like '%$state%'")
+            ->whereRaw("zip like '%$zip%'")
+            ->whereRaw("LOWER(contact_name) like '%$contact_name%'")
+            ->whereRaw("contact_phone like '%$contact_phone%'")
+            ->whereRaw("LOWER(email) like '%$email%'");
+
+        if ($user_code !== ''){
+            $CUSTOMER->whereHas('mailing_address', function ($query1) use ($user_code) {
+                return $query1->where('agent_code', $user_code);
+            });
         }
 
+        $CUSTOMER->orderBy('code');
+        $CUSTOMER->orderBy('code_number');
+
+        if ($with_relations === 1) {
+            $CUSTOMER->with([
+                'contacts',
+                'documents',
+                'directions',
+                'hours',
+                'automatic_emails',
+                'notes',
+                'zip_data',
+                'mailing_address',
+                'term'
+            ]);
+        } else {
+            $CUSTOMER->with([
+                'contacts'
+            ]);
+        }
+
+        $customers = $CUSTOMER->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
@@ -113,7 +110,7 @@ class CustomersController extends Controller
      */
     public function customerSearch(Request $request): JsonResponse
     {
-        $CUSTOMER = new Customer();
+        $CUSTOMER = Customer::query();
 
         $code = $request->search[0]['data'] ?? '';
         $name = $request->search[1]['data'] ?? '';
@@ -123,8 +120,9 @@ class CustomersController extends Controller
         $contact_name = $request->search[5]['data'] ?? '';
         $contact_phone = $request->search[6]['data'] ?? '';
         $email = $request->search[7]['data'] ?? '';
+        $user_code = $request->search[8]['data'] ?? '';
 
-        $customers = $CUSTOMER->whereRaw("1 = 1")
+        $CUSTOMER->whereRaw("1 = 1")
             ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
             ->whereRaw("LOWER(name) like '$name%'")
             ->whereRaw("LOWER(city) like '$city%'")
@@ -132,20 +130,18 @@ class CustomersController extends Controller
             ->whereRaw("zip like '$zip%'")
             ->whereRaw("LOWER(contact_name) like '$contact_name%'")
             ->whereRaw("contact_phone like '$contact_phone%'")
-            ->whereRaw("LOWER(email) like '$email%'")
-            ->orderBy('code')
-            ->orderBy('code_number')
-//            ->with([
-//                'contacts',
-//                'documents',
-//                'directions',
-//                'hours',
-//                'automatic_emails',
-//                'notes',
-//                'zip_data',
-//                'mailing_address'
-//            ])
-            ->get();
+            ->whereRaw("LOWER(email) like '$email%'");
+
+        if ($user_code !== '') {
+            $CUSTOMER->whereHas('mailing_address', function ($query1) use ($user_code) {
+                return $query1->where('agent_code', $user_code);
+            });
+        }
+
+        $CUSTOMER->orderBy('code');
+        $CUSTOMER->orderBy('code_number');
+
+        $customers = $CUSTOMER->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
@@ -218,7 +214,6 @@ class CustomersController extends Controller
         $contact_phone_ext = $request->contact_phone_ext ?? ($request->ext ?? '');
         $email = $request->email ?? '';
         $term_id = $request->term_id ?? null;
-
 
         $curCustomer = $CUSTOMER->where('id', $id)->first();
 

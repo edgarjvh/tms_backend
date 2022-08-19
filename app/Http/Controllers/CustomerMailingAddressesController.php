@@ -33,7 +33,7 @@ class CustomerMailingAddressesController extends Controller
         $bill_to_code = $request->bill_to_code ?? null;
         $bill_to_code_number = $request->bill_to_code_number ?? null;
         $division = $request->division ?? '';
-        $agent_code = $request->agent_code ?? '';
+        $agent_code = strtoupper($request->agent_code ?? '');
         $salesman = $request->salesman ?? '';
         $fid = $request->fid ?? '';
         $mailing_contact_id = $request->mailing_contact_id ?? null;
