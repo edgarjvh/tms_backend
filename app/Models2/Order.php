@@ -15,7 +15,23 @@ class Order extends Model
 
     protected array $guarded = [];
     protected string $table = 'orders';
-    protected array $appends = ['total_customer_rating', 'total_carrier_rating', 'distance_mi', 'distance_km'];
+    protected array $appends = ['total_loaded_events', 'total_delivered_events', 'total_customer_rating', 'total_carrier_rating', 'distance_mi', 'distance_km'];
+
+    public function scopeTotalDeliveries($query){
+        return $this->getTotalDeliveredEventsAttribute() > 1;
+    }
+
+    public function getTotalLoadedEventsAttribute(){
+        return $this->events()->whereHas('event_type', function ($query){
+            return $query->where('name', 'loaded');
+        })->count();
+    }
+
+    public function getTotalDeliveredEventsAttribute(){
+        return $this->events()->whereHas('event_type', function ($query){
+            return $query->where('name', 'delivered');
+        })->count();
+    }
 
     public function bill_to_company()
     {

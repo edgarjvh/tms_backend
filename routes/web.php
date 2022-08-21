@@ -214,6 +214,7 @@ Route::post('/getAgentHours', [AgentHoursController::class, 'getAgentHours']);
 Route::post('/saveAgentHours', [AgentHoursController::class, 'saveAgentHours']);
 
 Route::post('/getOrders', [OrdersController::class, 'getOrders']);
+Route::post('/getOrders2', [OrdersController::class, 'getOrders2']);
 Route::post('/getOrderById', [OrdersController::class, 'getOrderById']);
 Route::post('/getOrderByOrderNumber', [OrdersController::class, 'getOrderByOrderNumber']);
 Route::post('/getOrderByTripNumber', [OrdersController::class, 'getOrderByTripNumber']);

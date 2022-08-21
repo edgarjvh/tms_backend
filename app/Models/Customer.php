@@ -20,10 +20,43 @@ class Customer extends Model
 
     protected $guarded = [];
     protected $table = 'customers';
-    protected $appends = ['total_customer_order'];
+    protected $appends = ['total_customer_order', 'credit_ordered', 'credit_invoiced', 'credit_paid'];
 
     public function total_customer_ratings(){
-        return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id']);
+        return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id'])
+            ->whereRaw('orders.is_imported = 0');
+    }
+
+    public function total_credit_ordered_ratings(){
+        return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id'])
+            ->whereRaw('orders.is_imported = 0')
+            ->whereRaw('orders.customer_check_number IS NULL')
+            ->whereRaw('orders.order_invoiced = 0');
+    }
+
+    public function getCreditOrderedAttribute(){
+        return $this->total_credit_ordered_ratings()->sum('total_charges');
+    }
+
+    public function total_credit_invoiced_ratings(){
+        return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id'])
+            ->whereRaw('orders.is_imported = 0')
+            ->whereRaw('orders.customer_check_number IS NULL')
+            ->whereRaw('orders.order_invoiced = 1');
+    }
+
+    public function getCreditInvoicedAttribute(){
+        return $this->total_credit_invoiced_ratings()->sum('total_charges');
+    }
+
+    public function total_credit_paid_ratings(){
+        return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id'])
+            ->whereRaw('orders.is_imported = 0')
+            ->whereRaw('orders.customer_check_number IS NOT NULL');
+    }
+
+    public function getCreditPaidAttribute(){
+        return $this->total_credit_paid_ratings()->sum('total_charges');
     }
 
     public function getTotalCustomerOrderAttribute(){

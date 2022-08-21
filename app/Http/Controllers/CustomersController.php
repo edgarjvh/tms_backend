@@ -214,6 +214,8 @@ class CustomersController extends Controller
         $contact_phone_ext = $request->contact_phone_ext ?? ($request->ext ?? '');
         $email = $request->email ?? '';
         $term_id = $request->term_id ?? null;
+        $credit_limit_total = $request->credit_limit_total ?? 0.00;
+        $user_code = $request->user_code ?? '';
 
         $curCustomer = $CUSTOMER->where('id', $id)->first();
 
@@ -262,8 +264,19 @@ class CustomersController extends Controller
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email),
-                'term_id' => $term_id
+                'term_id' => $term_id,
+                'credit_limit_total' => $credit_limit_total
             ]);
+
+        if ($user_code !== ''){
+            $CUSTOMER_MAILING_ADDRESS = new CustomerMailingAddress();
+
+            $CUSTOMER_MAILING_ADDRESS->updateOrCreate([
+                'customer_id' => $customer->id
+            ],[
+                'agent_code' => strtoupper($user_code)
+            ]);
+        }
 
         if ($with_contact) {
             $contacts = $CUSTOMER_CONTACT->where('customer_id', $customer->id)->get();

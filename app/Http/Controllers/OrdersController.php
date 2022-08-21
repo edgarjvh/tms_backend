@@ -25,6 +25,59 @@ use Throwable;
 
 class OrdersController extends Controller
 {
+    public function getOrders2(Request $request): JsonResponse
+    {
+        $ORDER = Order::query();
+
+        $user_code = $request->user_code ?? '';
+
+        $ORDER->where('is_imported', 0);
+//        $ORDER->select([
+//            'id',
+//            'order_number',
+//            'total_loaded_events',
+//            'total_delivered_events',
+//            'total_deliveries'
+//        ]);
+        // AVAILABLE ===========================
+//        $ORDER->whereDoesntHave('carrier');
+
+        // BOOKED
+//        $ORDER->whereHas('carrier');
+//        $ORDER->whereDoesntHave('events', function ($query1){
+//           return $query1->whereHas('event_type', function($query2){
+//              return $query2->where('name', 'loaded');
+//           });
+//        });
+
+        // IN TRANSIT
+        $ORDER->whereHas('carrier');
+        $ORDER->totalDeliveries();
+//        $ORDER->whereColumn('total_delivered_events', '<', 'total_deliveries');
+
+        if ($user_code !== ''){
+            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
+                return $query1->where('code', $user_code);
+            });
+        }
+
+        $ORDER->with([
+            'bill_to_company',
+            'carrier',
+            'pickups',
+            'deliveries',
+            'routing',
+            'events',
+            'user_code'
+        ]);
+
+        $ORDER->orderBy('order_number');
+
+        $orders = $ORDER->get();
+
+        return response()->json(['result' => 'OK', 'orders' => $orders]);
+    }
+
     public function getOrders(Request $request): JsonResponse
     {
         $ORDER = Order::query();
