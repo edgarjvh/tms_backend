@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\OrderCustomerRating;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,9 +52,22 @@ class OrderCustomerRatingsController extends Controller
             return response()->json(['result' => 'NO ORDER']);
         }
 
-//        if ($rate_type_id === 0){
-//            return response()->json(['result' => 'NO RATE TYPE']);
-//        }
+        $order = Order::query()->where('id', $order_id)
+            ->whereHas('bill_to_company')
+            ->with('bill_to_company', function ($query){
+                return $query->without(['contacts', 'term']);
+            })
+            ->first();
+
+        $credit_limit = $order->bill_to_company->credit_limit_total;
+        $credit_ordered = $order->bill_to_company->credit_ordered;
+        $credit_invoiced = $order->bill_to_company->credit_invoiced;
+
+        $available_credit = $credit_limit - $credit_ordered - $credit_invoiced - $total_charges;
+
+        if ($available_credit < 0){
+            return response()->json(['result' => 'OVERDRAWN']);
+        }
 
         $order_customer_rating = $ORDER_CUSTOMER_RATING->updateOrCreate([
             'id' => $id

@@ -91,7 +91,9 @@ class CustomersController extends Controller
                 'notes',
                 'zip_data',
                 'mailing_address',
-                'term'
+                'term',
+                'division',
+                'salesman'
             ]);
         } else {
             $CUSTOMER->with([
@@ -154,26 +156,29 @@ class CustomersController extends Controller
     {
         $id = $request->id ?? 0;
 
-        $ORDER = Order::query();
+        $ORDER = Order::query()->whereRaw('orders.is_imported = 0');
 
-        $ORDER->whereRaw("1 = 1");
-        $ORDER->whereHas('bill_to_company', function ($query1) use ($id) {
-            $query1->where('id', $id);
-        });
-        $ORDER->orWhereHas('pickups', function ($query1) use ($id) {
-            $query1->whereHas('customer', function ($query2) use ($id) {
-                $query2->where('id', $id);
+        $ORDER->where(function ($query) use ($id){
+            $query->whereHas('bill_to_company', function ($query1) use ($id) {
+                $query1->where('id', $id);
+            });
+            $query->orWhereHas('pickups', function ($query1) use ($id) {
+                $query1->whereHas('customer', function ($query2) use ($id) {
+                    $query2->where('id', $id);
+                });
+            });
+            $query->orWhereHas('deliveries', function ($query1) use ($id) {
+                $query1->whereHas('customer', function ($query2) use ($id) {
+                    $query2->where('id', $id);
+                });
             });
         });
-        $ORDER->orWhereHas('deliveries', function ($query1) use ($id) {
-            $query1->whereHas('customer', function ($query2) use ($id) {
-                $query2->where('id', $id);
-            });
-        });
+
 
         $ORDER->select([
             'id',
-            'order_number'
+            'order_number',
+            'is_imported'
         ]);
 
         $ORDER->with([
@@ -213,8 +218,13 @@ class CustomersController extends Controller
         $contact_phone = $request->contact_phone ?? '';
         $contact_phone_ext = $request->contact_phone_ext ?? ($request->ext ?? '');
         $email = $request->email ?? '';
+        $bill_to_code = $request->bill_to_code ?? null;
         $term_id = $request->term_id ?? null;
         $credit_limit_total = $request->credit_limit_total ?? 0.00;
+        $division_id = $request->division_id ?? null;
+        $salesman_id = $request->salesman_id ?? null;
+        $agent_code = strtoupper($request->agent_code ?? '');
+        $fid = $request->fid ?? '';
         $user_code = $request->user_code ?? '';
 
         $curCustomer = $CUSTOMER->where('id', $id)->first();
@@ -264,6 +274,11 @@ class CustomersController extends Controller
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email),
+                'bill_to_code' => $bill_to_code,
+                'division_id' => $division_id,
+                'agent_code' => $agent_code,
+                'salesman_id' => $salesman_id,
+                'fid' => $fid,
                 'term_id' => $term_id,
                 'credit_limit_total' => $credit_limit_total
             ]);
@@ -342,7 +357,9 @@ class CustomersController extends Controller
                 'notes',
                 'zip_data',
                 'mailing_address',
-                'term'
+                'term',
+                'division',
+                'salesman'
             ])->first();
 
         return response()->json(['result' => 'OK', 'customer' => $newCustomer]);
@@ -671,7 +688,9 @@ class CustomersController extends Controller
             'notes',
             'zip_data',
             'mailing_address',
-            'term'
+            'term',
+            'division',
+            'salesman'
         ])->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);

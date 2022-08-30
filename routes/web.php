@@ -9,6 +9,7 @@ use App\Http\Controllers\DivisionDocumentsController;
 use App\Http\Controllers\DivisionHoursController;
 use App\Http\Controllers\DivisionMailingAddressesController;
 use App\Http\Controllers\DivisionNotesController;
+use App\Http\Controllers\SalesmenController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderCustomerRatingsController;
 use App\Http\Controllers\OrderCarrierRatingsController;
@@ -235,6 +236,7 @@ Route::post('/submitOrderImport2', [OrdersController::class, 'submitOrderImport2
 Route::post('/arrayTest', [OrdersController::class, 'arrayTest']);
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
+Route::post('/getSalesmen', [SalesmenController::class, 'getSalesmen']);
 Route::post('/getDivisionById', [DivisionsController::class, 'getDivisionById']);
 Route::post('/divisionSearch', [DivisionsController::class, 'divisionSearch']);
 Route::post('/getDivisionOrders', [DivisionsController::class, 'getDivisionOrders']);

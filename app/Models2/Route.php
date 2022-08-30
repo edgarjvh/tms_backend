@@ -19,4 +19,12 @@ class Route extends Model
         return $this->belongsTo(Customer::class)
             ->with(['contacts', 'zip_data']);
     }
+
+    public function pickup(){
+        return $this->belongsTo(Pickup::class);
+    }
+
+    public function delivery(){
+        return $this->belongsTo(Delivery::class);
+    }
 }
