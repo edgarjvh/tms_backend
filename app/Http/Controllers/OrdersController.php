@@ -1160,7 +1160,7 @@ class OrdersController extends Controller
             if ($last_order_number) {
                 $order_number = $last_order_number + 1;
             } else {
-                $order_number = 1;
+                $order_number = 32000;
             }
 
             if ($carrier_id > 0) {

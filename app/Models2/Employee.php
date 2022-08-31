@@ -26,7 +26,7 @@ class Employee extends Authenticatable
     }
 
     public function user_code(){
-        return $this->hasOne(UserCode::class);
+        return $this->hasOne(UserCode::class)->with('permissions');
     }
 
     public function getAuthPassword(){

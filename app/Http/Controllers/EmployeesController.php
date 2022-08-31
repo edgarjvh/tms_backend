@@ -109,6 +109,12 @@ class EmployeesController extends Controller
                     'is_online' => $is_online
                 ]);
 
+            if ($is_primary_admin > 0){
+                Employee::query()->where('id','<>', $employee->id)->update([
+                   'is_primary_admin' => 0
+                ]);
+            }
+
             $newEmployee = $EMPLOYEE->where('id', $employee->id)
                 ->with('company')
                 ->has('company')

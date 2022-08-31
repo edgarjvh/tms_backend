@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
@@ -15,9 +16,7 @@ class AuthController extends Controller
     public function login(Request $request) {
 
         if (!Auth::guard($request->userType ?? 'employee')->attempt(['email_work' => $request->email, 'password' => $request->password])){
-            return response([
-                'message' => 'Invalid Credentials'
-            ], \Symfony\Component\HttpFoundation\Response::HTTP_UNAUTHORIZED);
+            return response(['message' => 'Invalid Credentials'], Response::HTTP_UNAUTHORIZED);
         }
 
         $user = Auth::guard($request->userType ?? 'employee')->user()->load('user_code');

@@ -23,4 +23,8 @@ class UserCode extends Model
     public function agent(){
         return $this->belongsTo(Agent::class);
     }
+
+    function permissions(){
+        return $this->belongsToMany(Permission::class)->withPivot(['read','save','edit','delete']);
+    }
 }
