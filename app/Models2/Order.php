@@ -17,18 +17,21 @@ class Order extends Model
     protected string $table = 'orders';
     protected array $appends = ['total_loaded_events', 'total_delivered_events', 'total_customer_rating', 'total_carrier_rating', 'distance_mi', 'distance_km'];
 
-    public function scopeTotalDeliveries($query){
+    public function scopeTotalDeliveries($query)
+    {
         return $this->getTotalDeliveredEventsAttribute() > 1;
     }
 
-    public function getTotalLoadedEventsAttribute(){
-        return $this->events()->whereHas('event_type', function ($query){
+    public function getTotalLoadedEventsAttribute()
+    {
+        return $this->events()->whereHas('event_type', function ($query) {
             return $query->where('name', 'loaded');
         })->count();
     }
 
-    public function getTotalDeliveredEventsAttribute(){
-        return $this->events()->whereHas('event_type', function ($query){
+    public function getTotalDeliveredEventsAttribute()
+    {
+        return $this->events()->whereHas('event_type', function ($query) {
             return $query->where('name', 'delivered');
         })->count();
     }
@@ -139,23 +142,34 @@ class Order extends Model
         return (float)str_replace(',', '', number_format($this->miles > 0 ? $this->miles / 1000 : 0));
     }
 
-    public function billing_documents(){
+    public function billing_documents()
+    {
         return $this->hasMany(OrderBillingDocument::class)->with(['notes', 'user_code']);
     }
 
-    public function billing_notes(){
+    public function billing_notes()
+    {
         return $this->hasMany(OrderBillingNote::class)->with(['user_code']);
     }
 
-    public function equipment(){
+    public function equipment()
+    {
         return $this->belongsTo(Equipment::class);
     }
 
-    public function term(){
+    public function term()
+    {
         return $this->belongsTo(Term::class);
     }
 
-    public function user_code(){
-        return $this->belongsTo(UserCode::class);
+    public function user_code()
+    {
+        $agent_contact_id = $this->agent_contact_id ?? 0;
+
+        return $this->belongsTo(UserCode::class)
+            ->with('agent', function ($query) use ($agent_contact_id) {
+                return $query->with('contacts');
+            })
+            ->with('employee');
     }
 }

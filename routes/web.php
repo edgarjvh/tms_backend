@@ -81,6 +81,8 @@ Route::post('/getCarrierPayload', [CarriersController::class, 'getCarrierPayload
 Route::post('/getCarrierPopupItems', [CarriersController::class, 'getCarrierPopupItems']);
 Route::post('/saveCarrierAchWiringInfo', [CarriersController::class, 'saveCarrierAchWiringInfo']);
 Route::post('/saveCarrierEquipment', [CarrierEquipmentsController::class, 'saveCarrierEquipment']);
+Route::post('/deleteCarrierEquipment', [CarrierEquipmentsController::class, 'deleteCarrierEquipment']);
+Route::post('/getCarrierEquipments', [CarrierEquipmentsController::class, 'getCarrierEquipments']);
 
 Route::post('/getContacts', [ContactsController::class, 'getContacts']);
 Route::post('/customerContactsSearch', [ContactsController::class, 'customerContactsSearch']);

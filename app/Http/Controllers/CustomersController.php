@@ -73,9 +73,7 @@ class CustomersController extends Controller
             ->whereRaw("LOWER(email) like '%$email%'");
 
         if ($user_code !== ''){
-            $CUSTOMER->whereHas('mailing_address', function ($query1) use ($user_code) {
-                return $query1->where('agent_code', $user_code);
-            });
+            $CUSTOMER->where('agent_code', $user_code);
         }
 
         $CUSTOMER->orderBy('code');

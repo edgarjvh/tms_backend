@@ -13,6 +13,20 @@ class CarrierEquipmentsController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getCarrierEquipments(Request $request) : JsonResponse{
+        $CARRIER_EQUIPMENT = new CarrierEquipment();
+        $carrier_id = $request->carrier_id ?? 0;
+
+        $equipments_information = $CARRIER_EQUIPMENT->where('carrier_id', $carrier_id)->with(['equipment'])->get();
+
+        return response()->json(['result' => 'OK', 'equipments_information' => $equipments_information]);
+    }
+
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function saveCarrierEquipment(Request $request) : JsonResponse
     {
         $CARRIER_EQUIPMENT = new CarrierEquipment();
@@ -45,5 +59,22 @@ class CarrierEquipmentsController extends Controller
         $equipments_information = $CARRIER_EQUIPMENT->where('carrier_id', $carrier_id)->with(['equipment'])->get();
 
         return response()->json(['result' => 'OK', 'equipment_information' => $equipment_information, 'equipments_information' => $equipments_information]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCarrierEquipment(Request $request): JsonResponse{
+        $CARRIER_EQUIPMENT = new CarrierEquipment();
+
+        $id = $request->id ?? null;
+        $carrier_id = $request->carrier_id ?? 0;
+
+        $CARRIER_EQUIPMENT->where('id', $id)->delete();
+
+        $equipments_information = $CARRIER_EQUIPMENT->where('carrier_id', $carrier_id)->with(['equipment'])->get();
+
+        return response()->json(['result' => 'OK', 'equipments_information' => $equipments_information]);
     }
 }
