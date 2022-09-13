@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carrier;
+use App\Models\CarrierContact;
 use App\Models\Contact;
 use App\Models\CarrierDriver;
 use App\Models\CarrierNote;
@@ -322,6 +323,14 @@ class CarriersController extends Controller
             }
         }
 
+        $CARRIER_CONTACT->where('carrier_id', $carrier->id)->update([
+            'address1' => $carrier->address1,
+            'address2' => $carrier->address2,
+            'city' => $carrier->city,
+            'state' => $carrier->state,
+            'zip_code' => $carrier->zip,
+        ]);
+
         $carrier = $CARRIER->where('id', $carrier->id)
             ->with([
                 'contacts',
@@ -559,6 +568,10 @@ class CarriersController extends Controller
                 $do_not_use = $item['doNotUse'] ?? 0;
 
                 $carrier_id = 0;
+
+                if (strlen($zip) < 5){
+                    $zip = str_pad($zip,5, '0', STR_PAD_LEFT);
+                }
 
                 try {
                     $saved_carrier = Carrier::updateOrCreate([

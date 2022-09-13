@@ -78,9 +78,12 @@ class CustomerDocumentsController extends Controller
         $customer_id = $request->customer_id;
 
         $CUSTOMER_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('customer-documents/' . $doc_id));
-        } catch (Throwable | Exception $e) {
+
+        if (file_exists(public_path('customer-documents/' . $doc_id))){
+            try {
+                unlink(public_path('customer-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $CUSTOMER_DOCUMENT->where('customer_id', $customer_id)->with(['notes', 'user_code'])->get();

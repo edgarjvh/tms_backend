@@ -331,9 +331,11 @@ class DivisionContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -370,9 +372,11 @@ class DivisionContactsController extends Controller
 
         $contact = $DIVISION_CONTACT->where('id', $id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $contact->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))){
+            try {
+                unlink(public_path('avatars/' . $contact->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $DIVISION_CONTACT->where('id', $id)->update([

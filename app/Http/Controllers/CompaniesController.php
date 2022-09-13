@@ -123,10 +123,11 @@ class CompaniesController extends Controller
         $new_company_logo = uniqid() . '.' . $extension;
 
         if ($cur_company_logo) {
-            try {
-                unlink(public_path('company-logo/' . $cur_company_logo));
-            } catch (Throwable|Exception $e) {
-            }
+        	if (file_exists(public_path('company-logo/' . $cur_company_logo))) {
+     			try {
+                	unlink(public_path('company-logo/' . $cur_company_logo));
+            	} catch (Throwable|Exception $e) {}
+ 			}
         }
 
         $COMPANY->where('id', $id)->update([
@@ -158,9 +159,10 @@ class CompaniesController extends Controller
 
         $company = $COMPANY->where('id', $id)->first();
 
-        try {
-            unlink(public_path('company-logo/' . $company->logo));
-        } catch (Throwable|Exception $e) {
+        if (file_exists(public_path('company-logo/' . $company->logo))) {
+            try {
+                unlink(public_path('company-logo/' . $company->logo));
+            } catch (Throwable|Exception $e) {}
         }
 
         $COMPANY->where('id', $id)->update([

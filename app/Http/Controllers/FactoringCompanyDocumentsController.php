@@ -75,12 +75,12 @@ class FactoringCompanyDocumentsController extends Controller
         $factoring_company_id = $request->factoring_company_id;
 
         $document = $FACTORING_COMPANY_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('factoring_company-documents/' . $doc_id));
-        } catch (\Throwable $e) {
 
-        } catch (\Exception $e) {
-
+        if (file_exists(public_path('factoring-company-documents/' . $doc_id))){
+            try {
+                unlink(public_path('factoring-company-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $FACTORING_COMPANY_DOCUMENT->where('factoring_company_id', $factoring_company_id)->with(['notes', 'user_code'])->get();
@@ -89,15 +89,16 @@ class FactoringCompanyDocumentsController extends Controller
     }
 
     public function getNotesByFactoringCompanyDocument(Request $request){
-        $FACTORING_COMPANY_DOCUMENT = new FactoringCompanyDocument();
+        $FACTORING_COMPANY_DOCUMENT_NOTE = new FactoringCompanyDocumentNote();
         $doc_id = $request->doc_id;
 
-        $documentNotes = $FACTORING_COMPANY_DOCUMENT->where('factoring_company_document_id', $doc_id)->with(['user_code'])->get();
+        $documentNotes = $FACTORING_COMPANY_DOCUMENT_NOTE->where('factoring_company_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
 
     public function saveFactoringCompanyDocumentNote(Request $request){
+        $FACTORING_COMPANY_DOCUMENT_NOTE = new FactoringCompanyDocumentNote();
         $FACTORING_COMPANY_DOCUMENT = new FactoringCompanyDocument();
         $id = $request->id;
         $factoring_company_id = $request->factoring_company_id;
@@ -105,7 +106,7 @@ class FactoringCompanyDocumentsController extends Controller
         $user_code_id = $request->user_code_id;
         $text = $request->text;
 
-        $documentNote = $FACTORING_COMPANY_DOCUMENT->updateOrCreate([
+        $documentNote = $FACTORING_COMPANY_DOCUMENT_NOTE->updateOrCreate([
             'id' => $id
         ], [
             'factoring_company_document_id' => $doc_id,
@@ -113,9 +114,9 @@ class FactoringCompanyDocumentsController extends Controller
             'user_code_id' => $user_code_id
         ]);
 
-        $documentNotes = $FACTORING_COMPANY_DOCUMENT->where('factoring_company_document_id', $doc_id)->with(['user_code'])->get();
+        $documentNotes = $FACTORING_COMPANY_DOCUMENT_NOTE->where('factoring_company_document_id', $doc_id)->with(['user_code'])->get();
         $documents = $FACTORING_COMPANY_DOCUMENT->where('factoring_company_id', $factoring_company_id)->with(['notes', 'user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
+        return response()->json(['result' => 'OK', 'note' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }
 }

@@ -26,7 +26,7 @@ class AgentContact extends Authenticatable
     }
 
     public function user_code(){
-        return $this->hasOne(UserCode::class)->with('permissions');
+        return $this->hasOne(UserCode::class)->with(['permissions']);
     }
 
     public function getAuthPassword()

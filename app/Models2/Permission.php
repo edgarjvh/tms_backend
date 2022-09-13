@@ -14,7 +14,7 @@ class Permission extends Model
     protected array $guarded = [];
     protected string $table = 'permissions';
 
-    function user_codes(){
+    public function user_codes(){
         return $this->belongsToMany(UserCode::class)->withPivot(['read','save','edit','delete']);
     }
 }

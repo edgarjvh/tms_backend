@@ -2,10 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class PermissionUserCode extends Model
+class PermissionUserCode extends Pivot
 {
-    use HasFactory;
+    protected array $guarded = [];
+
+    public function user_code()
+    {
+        return $this->belongsTo(UserCode::class);
+    }
+
+    public function permission()
+    {
+        return $this->belongsTo(Permission::class);
+    }
 }

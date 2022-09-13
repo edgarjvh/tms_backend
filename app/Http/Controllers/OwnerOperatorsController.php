@@ -162,9 +162,11 @@ class OwnerOperatorsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -201,9 +203,11 @@ class OwnerOperatorsController extends Controller
 
         $operator = $OPERATOR->where('id', $operator_id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $operator->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . $operator->avatar))){
+            try {
+                unlink(public_path('avatars/' . $operator->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $OPERATOR->where('id', $operator_id)->update([

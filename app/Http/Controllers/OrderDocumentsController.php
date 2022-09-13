@@ -64,10 +64,12 @@ class OrderDocumentsController extends Controller
         $order_id = $request->order_id;
 
         $ORDER_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('order-documents/' . $doc_id));
-        } catch (Throwable $e) {
 
+        if (file_exists(public_path('order-documents/' . $doc_id))){
+            try {
+                unlink(public_path('order-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();

@@ -79,9 +79,12 @@ class OperatorDocumentsController extends Controller
         $operator_id = $request->operator_id;
 
         $OPERATOR_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('operator-documents/' . $doc_id));
-        } catch (Throwable | Exception $e) {
+
+        if (file_exists(public_path('operator-documents/' . $doc_id))){
+            try {
+                unlink(public_path('operator-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $OPERATOR_DOCUMENT->where('operator_id', $operator_id)->with(['notes', 'user_code'])->get();

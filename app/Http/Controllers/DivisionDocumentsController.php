@@ -76,9 +76,12 @@ class DivisionDocumentsController extends Controller
         $division_id = $request->division_id;
 
         $DIVISION_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('division-documents/' . $doc_id));
-        } catch (Throwable | Exception $e) {
+
+        if (file_exists(public_path('division-documents/' . $doc_id))){
+            try {
+                unlink(public_path('division-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $DIVISION_DOCUMENT->where('division_id', $division_id)->with(['notes', 'user_code'])->get();

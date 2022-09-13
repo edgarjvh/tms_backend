@@ -29,7 +29,7 @@ class Agent extends Model
 
     public function contacts()
     {
-        return $this->hasMany(AgentContact::class)->orderBy('first_name');
+        return $this->hasMany(AgentContact::class)->orderBy('first_name')->orderBy('last_name');
     }
 
     public function mailing_address(){

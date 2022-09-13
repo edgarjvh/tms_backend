@@ -78,9 +78,12 @@ class AgentDocumentsController extends Controller
         $agent_id = $request->agent_id;
 
         $AGENT_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('agent-documents/' . $doc_id));
-        } catch (Throwable | Exception $e) {
+
+        if (file_exists(public_path('agent-documents/' . $doc_id))){
+            try {
+                unlink(public_path('agent-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $AGENT_DOCUMENT->where('agent_id', $agent_id)->with(['notes', 'user_code'])->get();

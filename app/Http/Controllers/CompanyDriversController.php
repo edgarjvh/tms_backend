@@ -170,9 +170,11 @@ class CompanyDriversController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -209,9 +211,11 @@ class CompanyDriversController extends Controller
 
         $driver = $DRIVER->where('id', $driver_id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $driver->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . $driver->avatar))){
+            try {
+                unlink(public_path('avatars/' . $driver->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $DRIVER->where('id', $driver_id)->update([

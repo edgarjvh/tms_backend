@@ -248,6 +248,14 @@ class FactoringCompaniesController extends Controller
             ]);
         }
 
+        $FACTORING_COMPANY_CONTACT->where('factoring_company_id', $factoring_company->id)->update([
+            'address1' => $factoring_company->address1,
+            'address2' => $factoring_company->address2,
+            'city' => $factoring_company->city,
+            'state' => $factoring_company->state,
+            'zip_code' => $factoring_company->zip,
+        ]);
+
         $new_factoring_company = $FACTORING_COMPANY->where('id', $factoring_company->id)
             ->with(['documents', 'contacts', 'invoices', 'carriers', 'mailing_address', 'notes'])->first();
 

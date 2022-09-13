@@ -25,7 +25,7 @@ class FactoringCompany extends Model
     }
 
     public function contacts(){
-        return $this->hasMany(Contact::class)->orderBy('first_name', 'asc');
+        return $this->hasMany(Contact::class)->orderBy('first_name')->orderBy('last_name');
     }
 
     public function invoices(){

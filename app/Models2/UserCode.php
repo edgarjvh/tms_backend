@@ -24,7 +24,7 @@ class UserCode extends Model
         return $this->belongsTo(Agent::class);
     }
 
-    function permissions(){
+    public function permissions(){
         return $this->belongsToMany(Permission::class)->withPivot(['read','save','edit','delete']);
     }
 }

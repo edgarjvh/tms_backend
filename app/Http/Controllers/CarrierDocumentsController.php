@@ -78,9 +78,11 @@ class CarrierDocumentsController extends Controller
 
         $CARRIER_DOCUMENT->where('doc_id', $doc_id)->delete();
 
-        try {
-            unlink(public_path('carrier-documents/' . $doc_id));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('carrier-documents/' . $doc_id))){
+            try {
+                unlink(public_path('carrier-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();

@@ -398,9 +398,11 @@ class ContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -437,9 +439,11 @@ class ContactsController extends Controller
 
         $contact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $contact->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))){
+            try {
+                unlink(public_path('avatars/' . $contact->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $CUSTOMER_CONTACT->where('id', $contact_id)->update([
@@ -705,9 +709,11 @@ class ContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -744,9 +750,11 @@ class ContactsController extends Controller
 
         $contact = $CARRIER_CONTACT->where('id', $contact_id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $contact->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))){
+            try {
+                unlink(public_path('avatars/' . $contact->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $CARRIER_CONTACT->where('id', $contact_id)->update([
@@ -919,9 +927,11 @@ class ContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -958,9 +968,11 @@ class ContactsController extends Controller
 
         $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $contact->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))){
+            try {
+                unlink(public_path('avatars/' . $contact->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->update([

@@ -151,9 +151,11 @@ class EmployeesController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -190,9 +192,11 @@ class EmployeesController extends Controller
 
         $employee = $EMPLOYEE->where('id', $employee_id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $employee->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' .$employee->avatar))){
+            try {
+                unlink(public_path('avatars/' . $employee->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $EMPLOYEE->where('id', $employee_id)->update([

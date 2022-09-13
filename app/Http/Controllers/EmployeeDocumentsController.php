@@ -78,9 +78,12 @@ class EmployeeDocumentsController extends Controller
         $employee_id = $request->employee_id;
 
         $EMPLOYEE_DOCUMENT->where('doc_id', $doc_id)->delete();
-        try {
-            unlink(public_path('employee-documents/' . $doc_id));
-        } catch (Throwable | Exception $e) {
+
+        if (file_exists(public_path('employee-documents/' . $doc_id))){
+            try {
+                unlink(public_path('employee-documents/' . $doc_id));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();

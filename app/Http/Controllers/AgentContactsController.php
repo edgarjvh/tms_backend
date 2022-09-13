@@ -332,9 +332,11 @@ class AgentContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            try {
-                unlink(public_path('avatars/' . $cur_avatar));
-            } catch (Throwable | Exception $e) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))){
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
             }
         }
 
@@ -371,9 +373,11 @@ class AgentContactsController extends Controller
 
         $contact = $AGENT_CONTACT->where('id', $id)->first();
 
-        try {
-            unlink(public_path('avatars/' . $contact->avatar));
-        } catch (Throwable | Exception $e) {
+        if (file_exists(public_path('avatars/' . contact->avatar))){
+            try {
+                unlink(public_path('avatars/' . contact->avatar));
+            } catch (Throwable | Exception $e) {
+            }
         }
 
         $AGENT_CONTACT->where('id', $id)->update([

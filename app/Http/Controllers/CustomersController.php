@@ -345,6 +345,14 @@ class CustomersController extends Controller
             }
         }
 
+        $CUSTOMER_CONTACT->where('customer_id', $customer->id)->update([
+           'address1' => $customer->address1,
+           'address2' => $customer->address2,
+           'city' => $customer->city,
+           'state' => $customer->state,
+           'zip_code' => $customer->zip,
+        ]);
+
         $newCustomer = $CUSTOMER->where('id', $customer->id)
             ->with([
                 'contacts',
@@ -552,6 +560,10 @@ class CustomersController extends Controller
                 $bill_to_code_number = $item['billToCodeNumber'] ?? 0;
 
                 $customer_id = 0;
+
+                if (strlen($zip) < 5){
+                    $zip = str_pad($zip,5, '0', STR_PAD_LEFT);
+                }
 
                 try {
                     $saved_customer = Customer::updateOrCreate([
