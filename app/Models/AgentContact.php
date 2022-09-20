@@ -2,15 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * Post
- *
- * @mixin Builder
- */
 class AgentContact extends Authenticatable
 {
     use HasApiTokens;

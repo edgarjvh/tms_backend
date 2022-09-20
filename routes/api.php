@@ -384,6 +384,7 @@ Route::post('/saveOperatorDocumentNote', [OperatorDocumentsController::class, 's
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/generatePass', [AuthController::class, 'generatePass']);
+Route::post('/checkPass', [AuthController::class, 'checkPass']);
 Route::middleware('auth:sanctum')->group(function (){
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);

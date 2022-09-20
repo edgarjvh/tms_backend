@@ -15,8 +15,24 @@ class AuthController extends Controller
      */
     public function login(Request $request) {
 
-        if (!Auth::guard($request->userType ?? 'employee')->attempt(['email_work' => $request->email, 'password' => $request->password])){
-            return response(['message' => 'Invalid Credentials'], Response::HTTP_UNAUTHORIZED);
+        $user_type = $request->userType ?? 'employee';
+        $user = null;
+
+        if ($user_type === 'employee'){
+            if (!Auth::guard('employee')->attempt([
+                'email_work' => $request->email,
+                'password' => $request->password
+            ])){
+                return response(['message' => 'Invalid Credentials'], Response::HTTP_UNAUTHORIZED);
+            }
+        }elseif($user_type === 'agent'){
+            if (!Auth::guard('agent')->attempt([
+                'email_work' => $request->email,
+                'password' => $request->password,
+                'agent_id' => !null
+            ])){
+                return response(['message' => 'Invalid Credentials'], Response::HTTP_UNAUTHORIZED);
+            }
         }
 
         $user = Auth::guard($request->userType ?? 'employee')->user()->load('user_code');
@@ -53,6 +69,13 @@ class AuthController extends Controller
         }
 
         return response()->json(['result' => 'OK', 'newpass' => $myPass === '' ? $newPassword : $myPass, 'hashed' => $hashed]);
+    }
+
+    public function checkPass(Request $request){
+        $pass = $request->pass ?? '';
+        $hashed = $request->hashed ?? '';
+
+        return response()->json(['result' => Hash::check($pass, $hashed)]);
     }
 
     function random_str(

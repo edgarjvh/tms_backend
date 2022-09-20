@@ -121,6 +121,10 @@ class CarriersController extends Controller
         $contact_name = $request->search[5]['data'] ?? '';
         $contact_phone = $request->search[6]['data'] ?? '';
         $email = $request->search[7]['data'] ?? '';
+        $mc_number = $request->search[8]['data'] ?? '';
+        $dot_number = $request->search[9]['data'] ?? '';
+        $scac = $request->search[10]['data'] ?? '';
+        $fid = $request->search[11]['data'] ?? '';
 
         $carriers = $CARRIER->whereRaw("1 = 1")
             ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
@@ -131,9 +135,13 @@ class CarriersController extends Controller
             ->whereRaw("LOWER(contact_name) like '$contact_name%'")
             ->whereRaw("contact_phone like '$contact_phone%'")
             ->whereRaw("LOWER(email) like '$email%'")
+            ->whereRaw("LOWER(mc_number) like '$mc_number%'")
+            ->whereRaw("LOWER(dot_number) like '$dot_number%'")
+            ->whereRaw("LOWER(scac) like '$scac%'")
+            ->whereRaw("LOWER(fid) like '$fid%'")
             ->orderBy('code')
             ->orderBy('code_number')
-            ->with([
+            ->without([
                 'contacts',
                 'drivers',
                 'notes',
