@@ -100,7 +100,7 @@ class DriverDocumentsController extends Controller
 
         $documentNotes = $DRIVER_DOCUMENT_NOTE->where('company_driver_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
 
     /**

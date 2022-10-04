@@ -36,8 +36,9 @@ class CustomersController extends Controller
                 'notes',
                 'zip_data',
                 'mailing_address',
-                'orders',
-                'term'
+                'term',
+                'division',
+                'salesman'
             ])
             ->first();
 
@@ -557,8 +558,26 @@ class CustomersController extends Controller
 
                 $customer_id = 0;
 
-                if (strlen($zip) < 5){
-                    $zip = str_pad($zip,5, '0', STR_PAD_LEFT);
+                $zip = str_replace(" ", "", $zip);
+
+                if (preg_match('/[a-z]/i', $zip)){
+                    $zip = str_replace("-", "", $zip);
+                    $len = strlen($zip);
+                    $rem = $len - 6;
+
+                    if ($rem > 0){
+                        $zip = substr_replace($zip, "", 0, $rem);
+                    }
+
+                    $zip = substr_replace($zip, " ", 3, 0);
+                }else if (preg_match('/[0-9]/', $zip)){
+                    $zip = explode("-", $zip)[0];
+
+                    $len = strlen($zip);
+
+                    if ($len < 5){
+                        $zip = str_pad($zip, 5, "0", STR_PAD_LEFT);
+                    }
                 }
 
                 try {

@@ -19,4 +19,8 @@ class InternalNotes extends Model
     public function user_code(){
         return $this->belongsTo(UserCode::class);
     }
+
+    public function order(){
+        return $this->belongsTo(Order::class);
+    }
 }

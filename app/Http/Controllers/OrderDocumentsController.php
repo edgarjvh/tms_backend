@@ -83,7 +83,7 @@ class OrderDocumentsController extends Controller
 
         $documentNotes = $ORDER_DOCUMENT_NOTE->where('order_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
 
     public function saveOrderDocumentNote(Request $request){
@@ -177,7 +177,7 @@ class OrderDocumentsController extends Controller
 
         $documentNotes = $ORDER_BILLING_DOCUMENT_NOTE->where('order_billing_document_id', $doc_id)->with(['user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'notes' => $documentNotes]);
+        return response()->json(['result' => 'OK', 'documentNotes' => $documentNotes]);
     }
 
     public function saveOrderInvoiceCustomerDocumentNote(Request $request){

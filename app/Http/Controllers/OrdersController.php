@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Carrier;
 use App\Models\Customer;
 use App\Models\Delivery;
+use App\Models\InternalNotes;
 use App\Models\TemplateDelivery;
 use App\Models\Equipment;
 use App\Models\EventType;
@@ -1389,6 +1390,7 @@ class OrdersController extends Controller
         $order_id = $request->order_id ?? 0;
         $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
+        $contact_id = $request->contact_id ?? null;
         $contact_name = $request->contact_name ?? '';
         $contact_phone = $request->contact_phone ?? '';
         $contact_phone_ext = $request->contact_phone_ext ?? '';
@@ -1412,6 +1414,7 @@ class OrdersController extends Controller
                     'order_id' => $order_id,
                     'customer_id' => $customer_id,
                     'type' => $type,
+                    'contact_id' => $contact_id,
                     'contact_name' => $contact_name,
                     'contact_phone' => $contact_phone,
                     'contact_phone_ext' => $contact_phone_ext,
@@ -1543,6 +1546,7 @@ class OrdersController extends Controller
         $order_id = $request->order_id ?? 0;
         $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
+        $contact_id = $request->contact_id ?? null;
         $contact_name = $request->contact_name ?? '';
         $contact_phone = $request->contact_phone ?? '';
         $contact_phone_ext = $request->contact_phone_ext ?? '';
@@ -1566,6 +1570,7 @@ class OrdersController extends Controller
                     'order_id' => $order_id,
                     'customer_id' => $customer_id,
                     'type' => $type,
+                    'contact_id' => $contact_id,
                     'contact_name' => $contact_name,
                     'contact_phone' => $contact_phone,
                     'contact_phone_ext' => $contact_phone_ext,
@@ -2088,201 +2093,180 @@ class OrdersController extends Controller
             for ($i = 0; $i < count($list); $i++) {
                 $item = $list[$i];
 
-                $order = $item['order'];
-
-                $trip = $item['trip'];
-                $load_type_id = ($item['loadTypeId'] ?? 0) === 0 ? null : $item['loadTypeId'];
-                $haz_mat = $item['hazMat'];
+                $user_code_id = $item['user_code_id'] ?? null;
+                $order_number = $item['order_number'];
+                $trip_number = $item['trip_number'];
+                $load_type_id = ($item['load_type_id'] ?? 0) === 0 ? null : $item['load_type_id'];
+                $haz_mat = $item['haz_mat'];
                 $expedited = $item['expedited'];
                 $miles = ($item['miles'] ?? 0) * 1609.34;
-                $order_date_time = $item['orderDateTime'];
-                $bill_to_customer_id = ($item['billToCustomerId'] ?? 0) === 0 ? null : $item['billToCustomerId'];
-                $carrier_id = ($item['carrierId'] ?? 0) === 0 ? null : $item['carrierId'];
-                $equipment_id = ($item['equipmentTypeId'] ?? 0) === 0 ? null : $item['equipmentTypeId'];
-                $shipper_customer_id = $item['shipperCustomerId'] ?? 0;
-                $pu_date1 = $item['pu_date1'] ?? '';
-                $pu_date2 = $item['pu_date2'] ?? '';
-                $pu_time1 = $item['pu_time1'] ?? '';
-                $pu_time2 = $item['pu_time2'] ?? '';
-                $ref_numbers = $item['ref_numbers'] ?? '';
-                $consignee_customer_id = $item['consigneeCustomerId'] ?? 0;
-                $delivery_date1 = $item['delivery_date1'] ?? '';
-                $delivery_date2 = $item['delivery_date2'] ?? '';
-                $delivery_time1 = $item['delivery_time1'] ?? '';
-                $delivery_time2 = $item['delivery_time2'] ?? '';
-                $order_customer_rating = $item['customerRating'] ?? null;
-                $order_carrier_rating = $item['carrierRating'] ?? null;
-                $loaded_event = $item['loadedEvent'] ?? null;
-                $delivered_event = $item['deliveredEvent'] ?? null;
-                $user_code_id = $item['user_code_id'] ?? null;
+                $order_date_time = $item['order_date_time'];
+                $bill_to_customer_id = ($item['bill_to_customer_id'] ?? 0) === 0 ? null : $item['bill_to_customer_id'];
+                $carrier_id = ($item['carrier_id'] ?? 0) === 0 ? null : $item['carrier_id'];
+                $equipment_id = ($item['equipment_id'] ?? 0) === 0 ? null : $item['equipment_id'];
+                $order_pickups = $item['pickups'] ?? [];
+                $order_deliveries = $item['deliveries'] ?? [];
+                $order_customer_rating = $item['customer_rating'] ?? [];
+                $order_carrier_rating = $item['carrier_rating'] ?? [];
+                $order_events = $item['events'] ?? [];
+                $order_internal_notes = $item['internal_notes'] ?? [];
 
-                $order_id = 0;
+                $order = Order::updateOrCreate([
+                    'id' => 0
+                ], [
+                    'order_number' => $order_number,
+                    'trip_number' => $trip_number,
+                    'load_type_id' => $load_type_id,
+                    'haz_mat' => $haz_mat,
+                    'expedited' => $expedited,
+                    'miles' => $miles,
+                    'order_date_time' => $order_date_time,
+                    'bill_to_customer_id' => $bill_to_customer_id,
+                    'carrier_id' => $carrier_id,
+                    'equipment_id' => $equipment_id,
+                    'is_imported' => 1,
+                    'user_code_id' => $user_code_id
+                ]);
 
-                try {
-                    $saved_order = Order::updateOrCreate([
-                        'id' => 0
-                    ], [
-                        'order_number' => $order,
-                        'trip_number' => $trip,
-                        'load_type_id' => $load_type_id,
-                        'haz_mat' => $haz_mat,
-                        'expedited' => $expedited,
-                        'miles' => $miles,
-                        'order_date_time' => $order_date_time,
-                        'bill_to_customer_id' => $bill_to_customer_id,
-                        'carrier_id' => $carrier_id,
-                        'equipment_id' => $equipment_id,
-                        'is_imported' => 1,
-                        'user_code_id' => $user_code_id
-                    ]);
-
-                    $order_id = $saved_order->id;
-                } catch (Throwable|Exception $e) {
-
-                }
+                $order_id = $order->id;
 
                 if ($order_id > 0) {
-                    $pickup = null;
-                    $delivery = null;
+                    $routing = [];
 
-                    if ($shipper_customer_id > 0) {
-                        try {
-                            $pickup = Pickup::updateOrCreate([
-                                'id' => 0
-                            ], [
-                                'order_id' => $order_id,
-                                'customer_id' => $shipper_customer_id,
-                                'pu_date1' => $pu_date1,
-                                'pu_time1' => $pu_time1,
-                                'pu_date2' => $pu_date2,
-                                'pu_time2' => $pu_time2,
-                                'ref_numbers' => $ref_numbers
-                            ]);
-                        } catch (Throwable|Exception $e) {
+                    for ($p = 0; $p < count($order_pickups); $p++){
+                        $pickup_item = $order_pickups[$p];
 
-                        }
+                        $pickup = Pickup::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'customer_id' => $pickup_item['customer_id'],
+                            'pu_date1' => $pickup_item['pu_date1'] ?? '',
+                            'pu_time1' => $pickup_item['pu_time1'] ?? '',
+                            'pu_date2' => $pickup_item['pu_date2'] ?? '',
+                            'pu_time2' => $pickup_item['pu_time2'] ?? '',
+                            'po_numbers' => $pickup_item['po_numbers'] ?? '',
+                            'bol_numbers' => $pickup_item['bol_numbers'] ?? '',
+                            'ref_numbers' => $pickup_item['ref_numbers'] ?? '',
+                            'seal_number' => $pickup_item['seal_number'] ?? ''
+                        ]);
+
+                        $routing[] = array(
+                            'pickup_id' => $pickup->id,
+                            'delivery_id' => null,
+                            'type' => 'pickup',
+                            'position' => $pickup_item['routing_position']
+                        );
                     }
 
-                    if ($consignee_customer_id > 0) {
-                        try {
-                            $delivery = Delivery::updateOrCreate([
-                                'id' => 0
-                            ], [
-                                'order_id' => $order_id,
-                                'customer_id' => $consignee_customer_id,
-                                'delivery_date1' => $delivery_date1,
-                                'delivery_time1' => $delivery_time1,
-                                'delivery_date2' => $delivery_date2,
-                                'delivery_time2' => $delivery_time2
-                            ]);
-                        } catch (Throwable|Exception $e) {
+                    for ($d = 0; $d < count($order_deliveries); $d++){
+                        $delivery_item = $order_deliveries[$d];
 
-                        }
+                        $delivery = Delivery::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'customer_id' => $delivery_item['customer_id'],
+                            'delivery_date1' => $delivery_item['delivery_date1'] ?? '',
+                            'delivery_time1' => $delivery_item['delivery_time1'] ?? '',
+                            'delivery_date2' => $delivery_item['delivery_date2'] ?? '',
+                            'delivery_time2' => $delivery_item['delivery_time2'] ?? '',
+                            'po_numbers' => $delivery_item['po_numbers'] ?? '',
+                            'bol_numbers' => $delivery_item['bol_numbers'] ?? '',
+                            'ref_numbers' => $delivery_item['ref_numbers'] ?? '',
+                            'seal_number' => $delivery_item['seal_number'] ?? ''
+                        ]);
+
+                        $routing[] = array(
+                            'pickup_id' => null,
+                            'delivery_id' => $delivery->id,
+                            'type' => 'delivery',
+                            'position' => $delivery_item['routing_position']
+                        );
                     }
 
-                    if ($shipper_customer_id > 0 && $consignee_customer_id > 0) {
-                        try {
-                            if (($pickup->id ?? 0) > 0) {
-                                Route::updateOrCreate([
-                                    'id' => 0
-                                ], [
-                                    'order_id' => $order_id,
-                                    'pickup_id' => $pickup->id,
-                                    'type' => 'pickup'
-                                ]);
-                            }
-                        } catch (Throwable|Exception $e) {
+                    $routing = array_orderby($routing, 'position', SORT_ASC);
 
-                        }
+                    for ($r = 0; $r < count($routing); $r++){
+                        $routing_item = $routing[$r];
 
-                        try {
-                            if (($delivery->id ?? 0) > 0) {
-                                Route::updateOrCreate([
-                                    'id' => 0
-                                ], [
-                                    'order_id' => $order_id,
-                                    'delivery_id' => $delivery->id,
-                                    'type' => 'delivery'
-                                ]);
-                            }
-                        } catch (Throwable|Exception $e) {
-
-                        }
+                        Route::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'pickup_id' => $routing_item['pickup_id'],
+                            'delivery_id' => $routing_item['delivery_id'],
+                            'type' => $routing_item['type'],
+                        ]);
                     }
 
-                    try {
-                        if ($order_customer_rating['total_charges'] > 0) {
-                            OrderCustomerRating::updateOrCreate([
-                                'id' => 0
-                            ], [
-                                'order_id' => $order_id,
-                                'rate_type_id' => $order_customer_rating['rateTypeId'],
-                                'description' => $order_customer_rating['description'],
-                                'pieces' => $order_customer_rating['pieces'],
-                                'pieces_unit' => 'sk',
-                                'weight' => $order_customer_rating['weight'],
-                                'total_charges' => $order_customer_rating['total_charges']
-                            ]);
-                        }
-                    } catch (Throwable|Exception $e) {
+                    for ($cus = 0; $cus < count($order_customer_rating); $cus++){
+                        $customer_rating_item = $order_customer_rating[$cus];
 
+                        OrderCustomerRating::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'rate_type_id' => $customer_rating_item['rate_type_id'],
+                            'description' => $customer_rating_item['description'],
+                            'pieces' => $customer_rating_item['pieces'] ?? 0.00,
+                            'pieces_unit' => $item['pieces_unit'] ?? 'sk',
+                            'weight' => $customer_rating_item['weight'] ?? 0.00,
+                            'total_charges' => $customer_rating_item['total_charges'] ?? 0.00
+                        ]);
                     }
 
-                    try {
-                        if ($order_carrier_rating['total_charges'] > 0) {
-                            OrderCarrierRating::updateOrCreate([
-                                'id' => 0
-                            ], [
-                                'order_id' => $order_id,
-                                'rate_type_id' => $order_carrier_rating['rateTypeId'],
-                                'description' => $order_carrier_rating['description'],
-                                'pieces' => $order_carrier_rating['pieces'],
-                                'pieces_unit' => 'sk',
-                                'weight' => $order_carrier_rating['weight'],
-                                'total_charges' => $order_carrier_rating['total_charges']
-                            ]);
-                        }
-                    } catch (Throwable|Exception $e) {
+                    for ($car = 0; $car < count($order_carrier_rating); $car++){
+                        $carrier_rating_item = $order_carrier_rating[$car];
 
+                        OrderCarrierRating::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'rate_type_id' => $carrier_rating_item['rate_type_id'],
+                            'description' => $carrier_rating_item['description'],
+                            'pieces' => $carrier_rating_item['pieces'] ?? 0.00,
+                            'pieces_unit' => $carrier_rating_item['pieces_unit'] ?? 'sk',
+                            'weight' => $carrier_rating_item['weight'] ?? 0.00,
+                            'total_charges' => $carrier_rating_item['total_charges'] ?? 0.00
+                        ]);
                     }
 
-                    try {
+                    for ($e = 0; $e < count($order_events); $e++){
+                        $event_item = $order_events[$e];
+
                         OrderEvent::updateOrCreate([
                             'id' => 0
-                        ], [
+                        ],[
                             'order_id' => $order_id,
-                            'event_type_id' => $loaded_event['eventTypeId'],
-                            'time' => $loaded_event['time'],
-                            'event_time' => $loaded_event['eventTime'],
-                            'date' => $loaded_event['date'],
-                            'event_date' => $loaded_event['eventDate'],
-                            'event_location' => $loaded_event['eventLocation'],
-                            'event_notes' => $loaded_event['eventNotes'],
-                            'user_code_id' => $user_code_id
+                            'user_code_id' => $event_item['user_code_id'] ?? null,
+                            'event_type_id' => $event_item['event_type_id'],
+                            'shipper_id' => $event_item['shipper_id'] ?? null,
+                            'consignee_id' => $event_item['consignee_id'] ?? null,
+                            'old_carrier_id' => $event_item['old_carrier_id'] ?? null,
+                            'new_carrier_id' => $event_item['new_carrier_id'] ?? null,
+                            'time' => $event_item['time'] ?? '',
+                            'date' => $event_item['date'] ?? '',
+                            'event_time' => $event_item['event_time'] ?? '',
+                            'event_date' => $event_item['event_date'] ?? '',
+                            'event_location' => $event_item['event_location'] ?? '',
+                            'event_notes' => $event_item['event_notes'] ?? ''
                         ]);
-                    } catch (Throwable|Exception $e) {
-
                     }
 
-                    try {
-                        OrderEvent::updateOrCreate([
-                            'id' => 0
-                        ], [
-                            'order_id' => $order_id,
-                            'event_type_id' => $delivered_event['eventTypeId'],
-                            'time' => $delivered_event['time'],
-                            'event_time' => $delivered_event['eventTime'],
-                            'date' => $delivered_event['date'],
-                            'event_date' => $delivered_event['eventDate'],
-                            'event_location' => $delivered_event['eventLocation'],
-                            'event_notes' => $delivered_event['eventNotes'],
-                            'user_code_id' => $user_code_id
-                        ]);
-                    } catch (Throwable|Exception $e) {
+                    for ($n = 0; $n < count($order_internal_notes); $n++){
+                        $internal_note = $order_internal_notes[$n];
 
+                        InternalNotes::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'user_code_id' => $internal_note['user_code_id'] ?? null,
+                            'date_time' => $internal_note['date_time'] ?? null,
+                            'text' => $internal_note['text'] ?? '',
+                        ]);
                     }
                 }
-
             }
 
             return response()->json(['result' => 'OK']);
@@ -2316,4 +2300,29 @@ class OrdersController extends Controller
 
         return response()->json($arr);
     }
+
+
+}
+
+
+class OrderRouting
+{
+
+}
+
+function array_orderby()
+{
+    $args = func_get_args();
+    $data = array_shift($args);
+    foreach ($args as $n => $field) {
+        if (is_string($field)) {
+            $tmp = array();
+            foreach ($data as $key => $row)
+                $tmp[$key] = $row[$field];
+            $args[$n] = $tmp;
+        }
+    }
+    $args[] = &$data;
+    call_user_func_array('array_multisort', $args);
+    return array_pop($args);
 }
