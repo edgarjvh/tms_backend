@@ -132,4 +132,20 @@ class DivisionDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteDivisionDocumentNote(Request $request) : JsonResponse{
+        $DIVISION_DOCUMENT_NOTE = new DivisionDocumentNote();
+        $id = $request->id ?? null;
+        $division_document_id = $request->division_document_id ?? null;
+
+        $DIVISION_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $DIVISION_DOCUMENT_NOTE->where('division_document_id', $division_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

@@ -203,6 +203,7 @@ class CustomersController extends Controller
         $id = $request->id ?? '';
         $code = $request->code ?? '';
         $code_number = $request->code_number ?? 0;
+        $full_code = $code . $code_number;
         $name = $request->name ?? '';
         $address1 = $request->address1 ?? '';
         $address2 = $request->address2 ?? '';
@@ -221,27 +222,36 @@ class CustomersController extends Controller
         $agent_code = strtoupper($request->agent_code ?? '');
         $fid = $request->fid ?? '';
         $user_code = $request->user_code ?? '';
+        $codeExist = [];
 
-        $curCustomer = $CUSTOMER->where('id', $id)->first();
+        // get incoming customer by id, code and code_number
+        $curCustomer = $CUSTOMER
+            ->where('id',$id)
+            ->whereRaw("CONCAT(code,code_number) = '$full_code'")
+            ->first();
 
-        if ($curCustomer) {
-            if ($curCustomer->code !== $code) {
-                $codeExist = $CUSTOMER->where('id', '<>', $id)
-                    ->where('code', $code)->get();
+        if ($curCustomer) { // if customer exists (to update)
+            if ($curCustomer->code !== $code) { // if code has been changed
+                $codeExist = $CUSTOMER
+                    ->where('id', '<>', $id)
+                    ->where('code', $code)
+                    ->orderBy('code_number', 'desc')
+                    ->get();
 
                 if (count($codeExist) > 0) {
-                    $max_code_number = $CUSTOMER->where('code', $code)->max('code_number');
-                    $code_number = $max_code_number + 1;
+                    $code_number = $codeExist[0]->code_number + 1;
                 } else {
                     $code_number = 0;
                 }
             }
-        } else {
-            $codeExist = $CUSTOMER->where('code', $code)->get();
+        } else { // if customer doesn't exist (to add new)
+            $codeExist = $CUSTOMER
+                ->where('code', $code)
+                ->orderBy('code_number', 'desc')
+                ->get();
 
             if (count($codeExist) > 0) {
-                $max_code_number = $CUSTOMER->where('code', $code)->max('code_number');
-                $code_number = $max_code_number + 1;
+                $code_number = $codeExist[0]->code_number + 1;
             } else {
                 $code_number = 0;
             }
@@ -259,13 +269,13 @@ class CustomersController extends Controller
             [
                 'code' => strtoupper($code),
                 'code_number' => $code_number,
-                'name' => $name,
+                'name' => ucwords($name),
                 'address1' => $address1,
                 'address2' => $address2,
-                'city' => $city,
+                'city' => ucwords($city),
                 'state' => strtoupper($state),
                 'zip' => $zip,
-                'contact_name' => $contact_name,
+                'contact_name' => ucwords($contact_name),
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email),

@@ -80,15 +80,15 @@ class CompaniesController extends Controller
         ], [
             'code' => strtoupper($code),
             'code_number' => $code_number,
-            'name' => $name,
+            'name' => ucwords($name),
             'address1' => $address1,
             'address2' => $address2,
-            'city' => $city,
+            'city' => ucwords($city),
             'state' => strtoupper($state),
             'zip' => $zip,
             'main_phone_number' => $main_phone_number,
             'main_fax_number' => $main_fax_number,
-            'website' => $website,
+            'website' => strtolower($website),
             'ein' => $ein,
             'zulip_name' => $zulip_name,
             'jitsi_name' => $jitsi_name

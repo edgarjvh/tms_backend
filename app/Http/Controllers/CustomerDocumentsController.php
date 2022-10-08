@@ -134,4 +134,20 @@ class CustomerDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCustomerDocumentNote(Request $request) : JsonResponse{
+        $CUSTOMER_DOCUMENT_NOTE = new CustomerDocumentNote();
+        $id = $request->id ?? null;
+        $customer_document_id = $request->customer_document_id ?? null;
+
+        $CUSTOMER_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $CUSTOMER_DOCUMENT_NOTE->where('customer_document_id', $customer_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

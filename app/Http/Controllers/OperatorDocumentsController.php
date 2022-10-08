@@ -135,4 +135,20 @@ class OperatorDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteOperatorDocumentNote(Request $request) : JsonResponse{
+        $OPERATOR_DOCUMENT_NOTE = new OperatorDocumentNote();
+        $id = $request->id ?? null;
+        $company_operator_document_id = $request->company_operator_document_id ?? null;
+
+        $OPERATOR_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $OPERATOR_DOCUMENT_NOTE->where('company_operator_document_id', $company_operator_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

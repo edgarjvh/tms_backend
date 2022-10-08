@@ -207,14 +207,14 @@ class AgentsController extends Controller
         ],
             [
                 'company_id' => $company_id,
-                'name' => $name,
+                'name' => ucwords($name),
                 'address1' => $address1,
                 'address2' => $address2,
-                'city' => $city,
+                'city' => ucwords($city),
                 'state' => strtoupper($state),
                 'zip' => $zip,
-                'contact_first_name' => $contact_first_name,
-                'contact_last_name' => $contact_last_name,
+                'contact_first_name' => ucwords($contact_first_name),
+                'contact_last_name' => ucwords($contact_last_name),
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email),
@@ -235,15 +235,15 @@ class AgentsController extends Controller
             if (count($contacts) === 0) {
                 $contact = new AgentContact();
                 $contact->agent_id = $agent->id;
-                $contact->first_name = trim($contact_first_name);
-                $contact->last_name = trim($contact_last_name);
+                $contact->first_name = ucwords(trim($contact_first_name));
+                $contact->last_name = ucwords(trim($contact_last_name));
                 $contact->phone_work = $contact_phone;
                 $contact->phone_ext = $contact_phone_ext;
-                $contact->email_work = $email;
+                $contact->email_work = strtolower($email);
                 $contact->address1 = $address1;
                 $contact->address2 = $address2;
-                $contact->city = $city;
-                $contact->state = $state;
+                $contact->city = ucwords($city);
+                $contact->state = strtoupper($state);
                 $contact->zip_code = $zip;
                 $contact->is_primary = 1;
                 $contact->save();

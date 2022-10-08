@@ -37,17 +37,17 @@ class AgentMailingAddressesController extends Controller
                 'agent_id' => $agent_id
             ],
                 [
-                    'code' => $code,
-                    'name' => $name,
+                    'code' => strtoupper($code),
+                    'name' => ucwords($name),
                     'address1' => $address1,
                     'address2' => $address2,
-                    'city' => $city,
-                    'state' => $state,
+                    'city' => ucwords($city),
+                    'state' => strtoupper($state),
                     'zip' => $zip,
-                    'contact_name' => $contact_name,
+                    'contact_name' => ucwords($contact_name),
                     'contact_phone' => $contact_phone,
                     'ext' => $ext,
-                    'email' => $email,
+                    'email' => strtolower($email),
                     'mailing_contact_id' => $mailing_contact_id,
                     'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
                     'mailing_contact_primary_email' => $mailing_contact_primary_email

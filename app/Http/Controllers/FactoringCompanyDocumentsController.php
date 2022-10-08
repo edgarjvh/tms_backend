@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FactoringCompanyDocument;
 use App\Models\FactoringCompanyDocumentNote;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -118,5 +119,21 @@ class FactoringCompanyDocumentsController extends Controller
         $documents = $FACTORING_COMPANY_DOCUMENT->where('factoring_company_id', $factoring_company_id)->with(['notes', 'user_code'])->get();
 
         return response()->json(['result' => 'OK', 'note' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteFactoringCompanyDocumentNote(Request $request) : JsonResponse{
+        $FACTORING_COMPANY_DOCUMENT_NOTE = new FactoringCompanyDocumentNote();
+        $id = $request->id ?? null;
+        $factoring_company_document_id = $request->factoring_company_document_id ?? null;
+
+        $FACTORING_COMPANY_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $FACTORING_COMPANY_DOCUMENT_NOTE->where('factoring_company_document_id', $factoring_company_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
     }
 }

@@ -133,4 +133,20 @@ class CarrierDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCarrierDocumentNote(Request $request) : JsonResponse{
+        $CARRIER_DOCUMENT_NOTE = new CarrierDocumentNote();
+        $id = $request->id ?? null;
+        $carrier_document_id = $request->carrier_document_id ?? null;
+
+        $CARRIER_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $carrier_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

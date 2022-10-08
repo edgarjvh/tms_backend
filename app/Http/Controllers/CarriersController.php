@@ -204,6 +204,7 @@ class CarriersController extends Controller
         $factoring_company_id = $request->factoring_company_id ?? null;
         $code = $request->code ?? '';
         $code_number = $request->code_number ?? 0;
+        $full_code = $code . $code_number;
         $name = $request->name ?? '';
         $address1 = $request->address1 ?? '';
         $address2 = $request->address2 ?? '';
@@ -220,27 +221,35 @@ class CarriersController extends Controller
         $fid = $request->fid ?? '';
         $do_not_use = $request->do_not_use ?? 0;
         $rating = $request->rating ?? 0;
+        $codeExist = [];
 
-        $curCarrier = $CARRIER->where('id', $id)->first();
+        $curCarrier = $CARRIER
+            ->where('id',$id)
+            ->whereRaw("CONCAT(code,code_number) = '$full_code'")
+            ->first();
 
         if ($curCarrier) {
             if ($curCarrier->code !== $code) {
-                $codeExist = $CARRIER->where('id', '<>', $id)
-                    ->where('code', $code)->get();
+                $codeExist = $CARRIER
+                    ->where('id', '<>', $id)
+                    ->where('code', $code)
+                    ->orderBy('code_number', 'desc')
+                    ->get();
 
                 if (count($codeExist) > 0) {
-                    $max_code_number = $CARRIER->where('code', $code)->max('code_number');
-                    $code_number = $max_code_number + 1;
+                    $code_number = $codeExist[0]->code_number + 1;
                 } else {
                     $code_number = 0;
                 }
             }
         } else {
-            $codeExist = $CARRIER->where('code', $code)->get();
+            $codeExist = $CARRIER
+                ->where('code', $code)
+                ->orderBy('code_number', 'desc')
+                ->get();
 
             if (count($codeExist) > 0) {
-                $max_code_number = $CARRIER->where('code', $code)->max('code_number');
-                $code_number = $max_code_number + 1;
+                $code_number = $codeExist[0]->code_number + 1;
             } else {
                 $code_number = 0;
             }
@@ -259,13 +268,13 @@ class CarriersController extends Controller
                 'factoring_company_id' => empty($factoring_company_id) ? null : $factoring_company_id,
                 'code' => strtoupper($code),
                 'code_number' => $code_number,
-                'name' => $name,
+                'name' => ucwords($name),
                 'address1' => $address1,
                 'address2' => $address2,
-                'city' => $city,
+                'city' => ucwords($city),
                 'state' => strtoupper($state),
                 'zip' => $zip,
-                'contact_name' => $contact_name,
+                'contact_name' => ucwords($contact_name),
                 'contact_phone' => $contact_phone,
                 'ext' => $ext,
                 'email' => strtolower($email),

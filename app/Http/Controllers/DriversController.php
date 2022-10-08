@@ -60,10 +60,10 @@ class DriversController extends Controller
 
         $existDriver = $CARRIER_DRIVER->where([
             'carrier_id' => $carrier_id,
-            'first_name' => trim($first_name),
-            'last_name' => trim($last_name),
+            'first_name' => ucwords(trim($first_name)),
+            'last_name' => ucwords(trim($last_name)),
             'phone' => $phone,
-            'email' => $email,
+            'email' => strtolower($email),
             'equipment_id' => $equipment_id,
             'truck' => $truck,
             'trailer' => $trailer,
@@ -78,10 +78,10 @@ class DriversController extends Controller
                 'id' => $driver_id
             ], [
                 'carrier_id' => $carrier_id,
-                'first_name' => trim($first_name),
-                'last_name' => trim($last_name),
+                'first_name' => ucwords(trim($first_name)),
+                'last_name' => ucwords(trim($last_name)),
                 'phone' => $phone,
-                'email' => $email,
+                'email' => strtolower($email),
                 'equipment_id' => $equipment_id,
                 'truck' => $truck,
                 'trailer' => $trailer,

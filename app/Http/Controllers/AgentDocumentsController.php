@@ -134,4 +134,20 @@ class AgentDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteAgentDocumentNote(Request $request) : JsonResponse{
+        $AGENT_DOCUMENT_NOTE = new AgentDocumentNote();
+        $id = $request->id ?? null;
+        $company_agent_document_id = $request->company_agent_document_id ?? null;
+
+        $AGENT_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $AGENT_DOCUMENT_NOTE->where('company_agent_document_id', $company_agent_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

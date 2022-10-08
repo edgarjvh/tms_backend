@@ -122,6 +122,7 @@ class FactoringCompaniesController extends Controller
         $carrier_id = $request->carrier_id ?? null;
         $code = $request->code ?? '';
         $code_number = $request->code_number ?? 0;
+        $full_code = $code . $code_number;
         $name = $request->name ?? '';
         $address1 = $request->address1 ?? '';
         $address2 = $request->address2 ?? '';
@@ -132,32 +133,35 @@ class FactoringCompaniesController extends Controller
         $contact_phone = $request->contact_phone ?? '';
         $ext = $request->ext ?? '';
         $email = $request->email ?? '';
+        $codeExist = [];
 
-        $curFactoringCompany = $FACTORING_COMPANY->where('id', $id)->first();
+        $curFactoringCompany = $FACTORING_COMPANY
+            ->where('id',$id)
+            ->whereRaw("CONCAT(code,code_number) = '$full_code'")
+            ->first();
 
         if ($curFactoringCompany) {
-            // si no es el mismo codigo
             if ($curFactoringCompany->code !== $code) {
-                // verificamos si hay otro registro con el nuevo codigo
-                // para asignarle el code_number
-                $codeExist = $FACTORING_COMPANY->where('id', '<>', $id)
-                    ->where('code', $code)->get();
+                $codeExist = $FACTORING_COMPANY
+                    ->where('id', '<>', $id)
+                    ->where('code', $code)
+                    ->orderBy('code_number', 'desc')
+                    ->get();
 
                 if (count($codeExist) > 0) {
-                    $max_code_number = $FACTORING_COMPANY->where('code', $code)->max('code_number');
-                    $code_number = $max_code_number + 1;
+                    $code_number = $codeExist[0]->code_number + 1;
                 } else {
                     $code_number = 0;
                 }
             }
         } else {
-            // verificamos si hay otro registro con el nuevo codigo
-            // para asignarle el code_number
-            $codeExist = $FACTORING_COMPANY->where('code', $code)->get();
+            $codeExist = $FACTORING_COMPANY
+                ->where('code', $code)
+                ->orderBy('code_number', 'desc')
+                ->get();
 
             if (count($codeExist) > 0) {
-                $max_code_number = $FACTORING_COMPANY->where('code', $code)->max('code_number');
-                $code_number = $max_code_number + 1;
+                $code_number = $codeExist[0]->code_number + 1;
             } else {
                 $code_number = 0;
             }
@@ -173,18 +177,18 @@ class FactoringCompaniesController extends Controller
             'id' => $id
         ],
             [
-                'code' => $code,
+                'code' => strtoupper($code),
                 'code_number' => $code_number,
-                'name' => $name,
+                'name' => ucwords($name),
                 'address1' => $address1,
                 'address2' => $address2,
-                'city' => $city,
-                'state' => $state,
+                'city' => ucwords($city),
+                'state' => strtoupper($state),
                 'zip' => $zip,
-                'contact_name' => $contact_name,
+                'contact_name' => ucwords($contact_name),
                 'contact_phone' => $contact_phone,
                 'ext' => $ext,
-                'email' => $email
+                'email' => strtolower($email)
             ]);
 
         if ($with_contact) {
@@ -205,15 +209,15 @@ class FactoringCompaniesController extends Controller
             if (count($contacts) === 0) {
                 $contact = new Contact();
                 $contact->factoring_company_id = $factoring_company->id;
-                $contact->first_name = $contact_first;
-                $contact->last_name = $contact_last;
+                $contact->first_name = ucwords($contact_first);
+                $contact->last_name = ucwords($contact_last);
                 $contact->phone_work = $contact_phone;
                 $contact->phone_ext = $ext;
-                $contact->email_work = $email;
+                $contact->email_work = strtolower($email);
                 $contact->address1 = $address1;
                 $contact->address2 = $address2;
-                $contact->city = $city;
-                $contact->state = $state;
+                $contact->city = ucwords($city);
+                $contact->state = strtoupper($state);
                 $contact->zip_code = $zip;
                 $contact->is_primary = 1;
                 $contact->save();

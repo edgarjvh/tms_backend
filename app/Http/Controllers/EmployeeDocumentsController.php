@@ -134,4 +134,20 @@ class EmployeeDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteEmployeeDocumentNote(Request $request) : JsonResponse{
+        $EMPLOYEE_DOCUMENT_NOTE = new EmployeeDocumentNote();
+        $id = $request->id ?? null;
+        $company_employee_document_id = $request->company_employee_document_id ?? null;
+
+        $EMPLOYEE_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $EMPLOYEE_DOCUMENT_NOTE->where('company_employee_document_id', $company_employee_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

@@ -131,4 +131,20 @@ class DriverDocumentsController extends Controller
 
         return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteDriverDocumentNote(Request $request) : JsonResponse{
+        $DRIVER_DOCUMENT_NOTE = new DriverDocumentNote();
+        $id = $request->id ?? null;
+        $company_driver_document_id = $request->company_driver_document_id ?? null;
+
+        $DRIVER_DOCUMENT_NOTE->where('id',$id)->delete();
+
+        $documentNotes = $DRIVER_DOCUMENT_NOTE->where('company_driver_document_id', $company_driver_document_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'data' => $documentNotes]);
+    }
 }

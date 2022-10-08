@@ -61,7 +61,7 @@ Route::post('/customers', [CustomersController::class, 'customers'])->name('cust
 Route::post('/getCustomerById', [CustomersController::class, 'getCustomerById']);
 Route::post('/customerSearch', [CustomersController::class, 'customerSearch']);
 Route::post('/getFullCustomers', [CustomersController::class, 'getFullCustomers'])->name('customers');
-Route::post('/saveCustomer', [CustomersController::class, 'SaveCustomer']);
+Route::post('/saveCustomer', [CustomersController::class, 'saveCustomer']);
 Route::post('/submitCustomerImport', [CustomersController::class, 'submitCustomerImport']);
 Route::post('/submitCustomerImport2', [CustomersController::class, 'submitCustomerImport2']);
 Route::post('/getCustomerPayload', [CustomersController::class, 'getCustomerPayload']);
@@ -163,30 +163,35 @@ Route::post('/getDocumentsByCustomer', [CustomerDocumentsController::class, 'get
 Route::post('/deleteCustomerDocument', [CustomerDocumentsController::class, 'deleteCustomerDocument']);
 Route::post('/getNotesByCustomerDocument', [CustomerDocumentsController::class, 'getNotesByCustomerDocument']);
 Route::post('/saveCustomerDocumentNote', [CustomerDocumentsController::class, 'saveCustomerDocumentNote']);
+Route::post('/deleteCustomerDocumentNote', [CustomerDocumentsController::class, 'deleteCustomerDocumentNote']);
 
 Route::post('/saveCarrierDocument', [CarrierDocumentsController::class, 'saveCarrierDocument']);
 Route::post('/getDocumentsByCarrier', [CarrierDocumentsController::class, 'getDocumentsByCarrier']);
 Route::post('/deleteCarrierDocument', [CarrierDocumentsController::class, 'deleteCarrierDocument']);
 Route::post('/getNotesByCarrierDocument', [CarrierDocumentsController::class, 'getNotesByCarrierDocument']);
 Route::post('/saveCarrierDocumentNote', [CarrierDocumentsController::class, 'saveCarrierDocumentNote']);
+Route::post('/deleteCarrierDocumentNote', [CarrierDocumentsController::class, 'deleteCarrierDocumentNote']);
 
 Route::post('/saveFactoringCompanyDocument', [FactoringCompanyDocumentsController::class, 'saveFactoringCompanyDocument']);
 Route::post('/getDocumentsByFactoringCompany', [FactoringCompanyDocumentsController::class, 'getDocumentsByFactoringCompany']);
 Route::post('/deleteFactoringCompanyDocument', [FactoringCompanyDocumentsController::class, 'deleteFactoringCompanyDocument']);
 Route::post('/getNotesByFactoringCompanyDocument', [FactoringCompanyDocumentsController::class, 'getNotesByFactoringCompanyDocument']);
 Route::post('/saveFactoringCompanyDocumentNote', [FactoringCompanyDocumentsController::class, 'saveFactoringCompanyDocumentNote']);
+Route::post('/deleteFactoringCompanyDocumentNote', [FactoringCompanyDocumentsController::class, 'deleteFactoringCompanyDocumentNote']);
 
 Route::post('/saveOrderDocument', [OrderDocumentsController::class, 'saveOrderDocument']);
 Route::post('/getDocumentsByOrder', [OrderDocumentsController::class, 'getDocumentsByOrder']);
 Route::post('/deleteOrderDocument', [OrderDocumentsController::class, 'deleteOrderDocument']);
 Route::post('/getNotesByOrderDocument', [OrderDocumentsController::class, 'getNotesByOrderDocument']);
 Route::post('/saveOrderDocumentNote', [OrderDocumentsController::class, 'saveOrderDocumentNote']);
+Route::post('/deleteOrderDocumentNote', [OrderDocumentsController::class, 'deleteOrderDocumentNote']);
 
 Route::post('/saveOrderBillingDocument', [OrderDocumentsController::class, 'saveOrderBillingDocument']);
 Route::post('/getOrderBillingDocumentsByOrder', [OrderDocumentsController::class, 'getOrderBillingDocumentsByOrder']);
 Route::post('/deleteOrderBillingDocument', [OrderDocumentsController::class, 'deleteOrderBillingDocument']);
 Route::post('/getNotesByOrderBillingDocument', [OrderDocumentsController::class, 'getNotesByOrderBillingDocument']);
 Route::post('/saveOrderBillingDocumentNote', [OrderDocumentsController::class, 'saveOrderBillingDocumentNote']);
+Route::post('/deleteOrderBillingDocumentNote', [OrderDocumentsController::class, 'deleteOrderBillingDocumentNote']);
 
 Route::post('/saveOrderInvoiceCarrierDocument', [OrderDocumentsController::class, 'saveOrderInvoiceCarrierDocument']);
 Route::post('/getInvoiceCarrierDocumentsByOrder', [OrderDocumentsController::class, 'getInvoiceCarrierDocumentsByOrder']);
@@ -274,6 +279,7 @@ Route::post('/saveDivisionDocument', [DivisionDocumentsController::class, 'saveD
 Route::post('/deleteDivisionDocument', [DivisionDocumentsController::class, 'deleteDivisionDocument']);
 Route::post('/getNotesByDivisionDocument', [DivisionDocumentsController::class, 'getNotesByDivisionDocument']);
 Route::post('/saveDivisionDocumentNote', [DivisionDocumentsController::class, 'saveDivisionDocumentNote']);
+Route::post('/deleteDivisionDocumentNote', [DivisionDocumentsController::class, 'deleteDivisionDocumentNote']);
 
 Route::post('/getEventTypes', [EventTypesController::class, 'getEventTypes']);
 Route::post('/getLoadTypes', [LoadTypesController::class, 'getLoadTypes']);
@@ -363,24 +369,28 @@ Route::post('/getDocumentsByEmployee', [EmployeeDocumentsController::class, 'get
 Route::post('/deleteEmployeeDocument', [EmployeeDocumentsController::class, 'deleteEmployeeDocument']);
 Route::post('/getNotesByEmployeeDocument', [EmployeeDocumentsController::class, 'getNotesByEmployeeDocument']);
 Route::post('/saveEmployeeDocumentNote', [EmployeeDocumentsController::class, 'saveEmployeeDocumentNote']);
+Route::post('/deleteEmployeeDocumentNote', [EmployeeDocumentsController::class, 'deleteEmployeeDocumentNote']);
 
 Route::post('/saveAgentDocument', [AgentDocumentsController::class, 'saveAgentDocument']);
 Route::post('/getDocumentsByAgent', [AgentDocumentsController::class, 'getDocumentsByAgent']);
 Route::post('/deleteAgentDocument', [AgentDocumentsController::class, 'deleteAgentDocument']);
 Route::post('/getNotesByAgentDocument', [AgentDocumentsController::class, 'getNotesByAgentDocument']);
 Route::post('/saveAgentDocumentNote', [AgentDocumentsController::class, 'saveAgentDocumentNote']);
+Route::post('/deleteAgentDocumentNote', [AgentDocumentsController::class, 'deleteAgentDocumentNote']);
 
 Route::post('/saveDriverDocument', [DriverDocumentsController::class, 'saveDriverDocument']);
 Route::post('/getDocumentsByDriver', [DriverDocumentsController::class, 'getDocumentsByDriver']);
 Route::post('/deleteDriverDocument', [DriverDocumentsController::class, 'deleteDriverDocument']);
 Route::post('/getNotesByDriverDocument', [DriverDocumentsController::class, 'getNotesByDriverDocument']);
 Route::post('/saveDriverDocumentNote', [DriverDocumentsController::class, 'saveDriverDocumentNote']);
+Route::post('/deleteDriverDocumentNote', [DriverDocumentsController::class, 'deleteDriverDocumentNote']);
 
 Route::post('/saveOperatorDocument', [OperatorDocumentsController::class, 'saveOperatorDocument']);
 Route::post('/getDocumentsByOperator', [OperatorDocumentsController::class, 'getDocumentsByOperator']);
 Route::post('/deleteOperatorDocument', [OperatorDocumentsController::class, 'deleteOperatorDocument']);
 Route::post('/getNotesByOperatorDocument', [OperatorDocumentsController::class, 'getNotesByOperatorDocument']);
 Route::post('/saveOperatorDocumentNote', [OperatorDocumentsController::class, 'saveOperatorDocumentNote']);
+Route::post('/deleteOperatorDocumentNote', [OperatorDocumentsController::class, 'deleteOperatorDocumentNote']);
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/generatePass', [AuthController::class, 'generatePass']);

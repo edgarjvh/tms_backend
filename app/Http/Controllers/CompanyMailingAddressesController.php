@@ -60,17 +60,17 @@ class CompanyMailingAddressesController extends Controller
                 'company_id' => $company_id
             ],
                 [
-                    'code' => $code,
+                    'code' => strtoupper($code),
                     'code_number' => $code_number,
-                    'name' => $name,
+                    'name' => ucwords($name),
                     'address1' => $address1,
                     'address2' => $address2,
-                    'city' => $city,
-                    'state' => $state,
+                    'city' => ucwords($city),
+                    'state' => strtoupper($state),
                     'zip' => $zip,
                     'main_phone_number' => $main_phone_number,
                     'main_fax_number' => $main_fax_number,
-                    'website' => $website,
+                    'website' => strtolower($website),
                 ]);
 
             $newMailingAddress = $COMPANY_MAILING_ADDRESS->where('company_id', $company_id)->first();

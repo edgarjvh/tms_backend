@@ -19,6 +19,7 @@ use App\Models\TemplatePickup;
 use App\Models\RateType;
 use App\Models\Route;
 use App\Models\TemplateRoute;
+use DateTime;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -1195,7 +1196,7 @@ class OrdersController extends Controller
         $last_trip_number = $ORDER->max('trip_number');
 
         if ($order_number === 0) {
-            if ($last_order_number) {
+            if ($last_order_number && $last_order_number >= 32000) {
                 $order_number = $last_order_number + 1;
             } else {
                 $order_number = 32000;
@@ -1414,7 +1415,7 @@ class OrdersController extends Controller
                     'order_id' => $order_id,
                     'customer_id' => $customer_id,
                     'type' => $type,
-                    'contact_id' => $contact_id,
+                    'contact_id' => $contact_id === '' ? null : $contact_id,
                     'contact_name' => $contact_name,
                     'contact_phone' => $contact_phone,
                     'contact_phone_ext' => $contact_phone_ext,
@@ -1570,7 +1571,7 @@ class OrdersController extends Controller
                     'order_id' => $order_id,
                     'customer_id' => $customer_id,
                     'type' => $type,
-                    'contact_id' => $contact_id,
+                    'contact_id' => $contact_id === '' ? null : $contact_id,
                     'contact_name' => $contact_name,
                     'contact_phone' => $contact_phone,
                     'contact_phone_ext' => $contact_phone_ext,
@@ -2104,8 +2105,9 @@ class OrdersController extends Controller
                 $bill_to_customer_id = ($item['bill_to_customer_id'] ?? 0) === 0 ? null : $item['bill_to_customer_id'];
                 $carrier_id = ($item['carrier_id'] ?? 0) === 0 ? null : $item['carrier_id'];
                 $equipment_id = ($item['equipment_id'] ?? 0) === 0 ? null : $item['equipment_id'];
-                $order_pickups = $item['pickups'] ?? [];
-                $order_deliveries = $item['deliveries'] ?? [];
+//                $order_pickups = $item['pickups'] ?? [];
+//                $order_deliveries = $item['deliveries'] ?? [];
+                $order_routing = $item['routing'] ?? [];
                 $order_customer_rating = $item['customer_rating'] ?? [];
                 $order_carrier_rating = $item['carrier_rating'] ?? [];
                 $order_events = $item['events'] ?? [];
@@ -2131,73 +2133,59 @@ class OrdersController extends Controller
                 $order_id = $order->id;
 
                 if ($order_id > 0) {
-                    $routing = [];
+                    for ($p = 0; $p < count($order_routing); $p++){
+                        $route_item = $order_routing[$p];
+                        $route_type = $route_item['type'];
 
-                    for ($p = 0; $p < count($order_pickups); $p++){
-                        $pickup_item = $order_pickups[$p];
+                        if ($route_type === 'pickup'){
+                            $pickup = Pickup::updateOrCreate([
+                                'id' => 0
+                            ],[
+                                'order_id' => $order_id,
+                                'customer_id' => $route_item['customer_id'],
+                                'pu_date1' => $route_item['pu_date1'] ?? '',
+                                'pu_time1' => $route_item['pu_time1'] ?? '',
+                                'pu_date2' => $route_item['pu_date2'] ?? '',
+                                'pu_time2' => $route_item['pu_time2'] ?? '',
+                                'po_numbers' => $route_item['po_numbers'] ?? '',
+                                'bol_numbers' => $route_item['bol_numbers'] ?? '',
+                                'ref_numbers' => $route_item['ref_numbers'] ?? '',
+                                'seal_number' => $route_item['seal_number'] ?? ''
+                            ]);
 
-                        $pickup = Pickup::updateOrCreate([
-                            'id' => 0
-                        ],[
-                            'order_id' => $order_id,
-                            'customer_id' => $pickup_item['customer_id'],
-                            'pu_date1' => $pickup_item['pu_date1'] ?? '',
-                            'pu_time1' => $pickup_item['pu_time1'] ?? '',
-                            'pu_date2' => $pickup_item['pu_date2'] ?? '',
-                            'pu_time2' => $pickup_item['pu_time2'] ?? '',
-                            'po_numbers' => $pickup_item['po_numbers'] ?? '',
-                            'bol_numbers' => $pickup_item['bol_numbers'] ?? '',
-                            'ref_numbers' => $pickup_item['ref_numbers'] ?? '',
-                            'seal_number' => $pickup_item['seal_number'] ?? ''
-                        ]);
+                            Route::updateOrCreate([
+                                'id' => 0
+                            ],[
+                                'order_id' => $order_id,
+                                'pickup_id' => $pickup->id,
+                                'delivery_id' => null,
+                                'type' => $route_type
+                            ]);
+                        }else{
+                            $delivery = Delivery::updateOrCreate([
+                                'id' => 0
+                            ],[
+                                'order_id' => $order_id,
+                                'customer_id' => $route_item['customer_id'],
+                                'delivery_date1' => $route_item['delivery_date1'] ?? '',
+                                'delivery_time1' => $route_item['delivery_time1'] ?? '',
+                                'delivery_date2' => $route_item['delivery_date2'] ?? '',
+                                'delivery_time2' => $route_item['delivery_time2'] ?? '',
+                                'po_numbers' => $route_item['po_numbers'] ?? '',
+                                'bol_numbers' => $route_item['bol_numbers'] ?? '',
+                                'ref_numbers' => $route_item['ref_numbers'] ?? '',
+                                'seal_number' => $route_item['seal_number'] ?? ''
+                            ]);
 
-                        $routing[] = array(
-                            'pickup_id' => $pickup->id,
-                            'delivery_id' => null,
-                            'type' => 'pickup',
-                            'position' => $pickup_item['routing_position']
-                        );
-                    }
-
-                    for ($d = 0; $d < count($order_deliveries); $d++){
-                        $delivery_item = $order_deliveries[$d];
-
-                        $delivery = Delivery::updateOrCreate([
-                            'id' => 0
-                        ],[
-                            'order_id' => $order_id,
-                            'customer_id' => $delivery_item['customer_id'],
-                            'delivery_date1' => $delivery_item['delivery_date1'] ?? '',
-                            'delivery_time1' => $delivery_item['delivery_time1'] ?? '',
-                            'delivery_date2' => $delivery_item['delivery_date2'] ?? '',
-                            'delivery_time2' => $delivery_item['delivery_time2'] ?? '',
-                            'po_numbers' => $delivery_item['po_numbers'] ?? '',
-                            'bol_numbers' => $delivery_item['bol_numbers'] ?? '',
-                            'ref_numbers' => $delivery_item['ref_numbers'] ?? '',
-                            'seal_number' => $delivery_item['seal_number'] ?? ''
-                        ]);
-
-                        $routing[] = array(
-                            'pickup_id' => null,
-                            'delivery_id' => $delivery->id,
-                            'type' => 'delivery',
-                            'position' => $delivery_item['routing_position']
-                        );
-                    }
-
-                    $routing = array_orderby($routing, 'position', SORT_ASC);
-
-                    for ($r = 0; $r < count($routing); $r++){
-                        $routing_item = $routing[$r];
-
-                        Route::updateOrCreate([
-                            'id' => 0
-                        ],[
-                            'order_id' => $order_id,
-                            'pickup_id' => $routing_item['pickup_id'],
-                            'delivery_id' => $routing_item['delivery_id'],
-                            'type' => $routing_item['type'],
-                        ]);
+                            Route::updateOrCreate([
+                                'id' => 0
+                            ],[
+                                'order_id' => $order_id,
+                                'pickup_id' => null,
+                                'delivery_id' => $delivery->id,
+                                'type' => $route_type
+                            ]);
+                        }
                     }
 
                     for ($cus = 0; $cus < count($order_customer_rating); $cus++){
@@ -2281,24 +2269,22 @@ class OrdersController extends Controller
      */
     public function arrayTest(): JsonResponse
     {
-        $arr = [];
+        $date_time1 = '08/20/2015 09:58:11';
+        $date_time2 = '08/20/2015 09:58:11';
+        $date_time3 = '11/06/2021 07:45:00';
+        $date_time4 = '11/06/2021 07:45:00';
 
-        for ($i = 0; $i < 10; $i++) {
-            $obj = (object)[];
-            $obj->order_number = $i;
+        $date1 = DateTime::createFromFormat('m/d/Y H:i:s', $date_time1)->getTimestamp();
+        $date2 = strtotime($date_time2);
+        $date3 = DateTime::createFromFormat('m/d/Y H:i:s', $date_time3)->getTimestamp();
+        $date4 = strtotime($date_time4);
 
-            $msg = [];
-            $msg[] = 'first';
-            $msg[] = 'second';
-            $msg[] = 'third';
-            $msg[] = 'fourth';
-
-            $obj->messages = $msg;
-
-            $arr[] = $obj;
-        }
-
-        return response()->json($arr);
+        return response()->json([
+            'date1' => $date1,
+            'date2' => $date2,
+            'date3' => $date3,
+            'date4' => $date4
+        ]);
     }
 
 
