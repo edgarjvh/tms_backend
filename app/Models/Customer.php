@@ -20,7 +20,7 @@ class Customer extends Model
 
     protected $guarded = [];
     protected $table = 'customers';
-    protected $appends = ['total_customer_order', 'credit_ordered', 'credit_invoiced', 'credit_paid'];
+    protected $appends = ['total_customer_order', 'credit_ordered', 'credit_invoiced', 'credit_paid', 'contacts'];
 
     public function mailing_address()
     {
@@ -94,9 +94,20 @@ class Customer extends Model
         return $this->total_customer_ratings()->sum('total_charges');
     }
 
-    public function contacts()
+    public function getContactsAttribute()
     {
-        return $this->hasMany(Contact::class)->orderBy('first_name')->orderBy('last_name');
+        $contacts = $this->hasMany(Contact::class)->get();
+        $ext_contacts = $this->belongsToMany(Contact::class)->with(['customer' => function($query){
+            $query->select('id', 'code', 'code_number', 'name')
+                ->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
+        }])->withPivot(['id', 'is_primary'])->get();
+
+        $contacts = $contacts->merge($ext_contacts)->toArray();
+
+        usort($contacts, function ($a, $b) {
+            return strcmp(strtolower($a['first_name']), strtolower($b['first_name']));
+        });
+        return $contacts;
     }
 
     public function documents()
@@ -163,5 +174,23 @@ class Customer extends Model
 
     public function salesman(){
         return $this->belongsTo(Salesman::class, 'salesman_id', 'id')->select(['id', DB::raw("CONCAT(`first_name`, ' ', `last_name`) AS name")]);
+    }
+
+    public function ext_contacts(){
+        return $this->belongsToMany(Contact::class)
+            ->with('customer', function ($query){
+                return $query->select([
+                    'id',
+                    'name',
+                    'address1',
+                    'address2',
+                    'city',
+                    'state',
+                    'zip'
+                ])->without([
+                    'documents', 'directions', 'hours', 'automatic_emails', 'notes'
+                ]);
+            })
+            ->withPivot(['id', 'is_primary']);
     }
 }

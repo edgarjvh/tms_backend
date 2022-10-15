@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Carrier;
 use App\Models\Contact;
 use App\Models\CarrierContact;
+use App\Models\ContactCustomer;
 use App\Models\Customer;
 use App\Models\FactoringCompany;
 use App\Models\FactoringCompanyContact;
@@ -271,9 +272,12 @@ class ContactsController extends Controller
     {
         $CUSTOMER_CONTACT = new Contact();
         $CUSTOMER = new Customer();
+        $EXT_CONTACT = new ContactCustomer();
 
         $contact_id = $request->contact_id ?? ($request->id ?? 0);
         $customer_id = $request->customer_id ?? 0;
+        $main_customer_id = $request->main_customer_id ?? 0;
+        $pivot = $request->pivot ?? null;
 
         if ($customer_id > 0) {
             $curContact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
@@ -352,14 +356,26 @@ class ContactsController extends Controller
                     'is_online' => $is_online
                 ]);
 
-            if ($is_primary === 1) {
-                $CUSTOMER->where('id', $customer_id)->update([
-                    'primary_contact_id' => $contact->id
-                ]);
+            if ($pivot) {
+                if (($pivot['is_primary'] ?? 0) === 1) {
+                    $CUSTOMER->where('id', $main_customer_id)->update([
+                        'primary_contact_id' => $contact->id
+                    ]);
+                } else {
+                    $CUSTOMER->where(['id' => $main_customer_id, 'primary_contact_id' => $contact->id])->update([
+                        'primary_contact_id' => null
+                    ]);
+                }
             } else {
-                $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
-                    'primary_contact_id' => null
-                ]);
+                if ($is_primary === 1) {
+                    $CUSTOMER->where('id', $customer_id)->update([
+                        'primary_contact_id' => $contact->id
+                    ]);
+                } else {
+                    $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
+                        'primary_contact_id' => null
+                    ]);
+                }
             }
 
             $newContact = $CUSTOMER_CONTACT->where('id', $contact->id)
@@ -367,13 +383,19 @@ class ContactsController extends Controller
                 ->has('customer')
                 ->first();
 
-            $contacts = $CUSTOMER_CONTACT->where('customer_id', $customer_id)
-                ->with('customer')
-                ->has('customer')
-                ->orderBy('first_name')
-                ->get();
+//            $contacts = $CUSTOMER_CONTACT->where('customer_id', $main_customer_id)
+//                ->with('customer')
+//                ->has('customer')
+//                ->orderBy('first_name')
+//                ->get();
 
-            return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts, 'work' => $request->phone_work]);
+            $newCustomer = $CUSTOMER->where('id', $main_customer_id)->first();
+
+            return response()->json([
+                'result' => 'OK',
+                'contact' => $newContact,
+                'contacts' => $newCustomer->contacts
+            ]);
         } else {
             return response()->json(['result' => 'NO CUSTOMER']);
         }
@@ -398,10 +420,10 @@ class ContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            if (file_exists(public_path('avatars/' . $cur_avatar))){
+            if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable | Exception $e) {
+                } catch (Throwable|Exception $e) {
                 }
             }
         }
@@ -439,10 +461,10 @@ class ContactsController extends Controller
 
         $contact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))){
+        if (file_exists(public_path('avatars/' . $contact->avatar))) {
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
-            } catch (Throwable | Exception $e) {
+            } catch (Throwable|Exception $e) {
             }
         }
 
@@ -470,20 +492,29 @@ class ContactsController extends Controller
      */
     public function deleteContact(Request $request): JsonResponse
     {
-        $CUSTOMER_CONTACT = new Contact();
+        $CONTACT = new Contact();
+        $CUSTOMER = new Customer();
+        $CONTACT_CUSTOMER = new ContactCustomer();
 
         $contact_id = $request->contact_id ?? ($request->id ?? 0);
+        $main_customer_id = $request->main_customer_id ?? 0;
+        $customer_id = $request->customer_id ?? 0;
 
-        $contact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
+        if ($main_customer_id > 0 && ($main_customer_id !== $customer_id )){
+            $CONTACT_CUSTOMER->where([
+                'contact_id' => $contact_id,
+                'customer_id' => $main_customer_id
+            ])->delete();
+        }else{
+            $CONTACT->where('id', $contact_id)->delete();
+        }
 
-        $CUSTOMER_CONTACT->where('id', $contact_id)->delete();
-        $contacts = $CUSTOMER_CONTACT->where('customer_id', $contact->customer_id)
-            ->with('customer')
-            ->has('customer')
-            ->orderBy('first_name')
-            ->get();
+        $customer = $CUSTOMER->where('id', $main_customer_id)
+            ->select('id', 'code', 'code_number', 'name')
+            ->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes'])
+            ->first();
 
-        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+        return response()->json(['result' => 'OK', 'contacts' => $customer->contacts]);
     }
 
     /**
@@ -592,7 +623,7 @@ class ContactsController extends Controller
         $contact_id = $request->contact_id ?? ($request->id ?? 0);
         $carrier_id = $request->carrier_id ?? 0;
 
-        if ($carrier_id > 0){
+        if ($carrier_id > 0) {
             $curContact = $CARRIER_CONTACT->where('id', $contact_id)->first();
 
             $customer_id = $curContact ? $curContact->customer_id : null;
@@ -685,7 +716,7 @@ class ContactsController extends Controller
                 ->get();
 
             return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
-        }else{
+        } else {
             return response()->json(['result' => 'NO CARRIER']);
         }
     }
@@ -709,10 +740,10 @@ class ContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            if (file_exists(public_path('avatars/' . $cur_avatar))){
+            if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable | Exception $e) {
+                } catch (Throwable|Exception $e) {
                 }
             }
         }
@@ -750,10 +781,10 @@ class ContactsController extends Controller
 
         $contact = $CARRIER_CONTACT->where('id', $contact_id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))){
+        if (file_exists(public_path('avatars/' . $contact->avatar))) {
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
-            } catch (Throwable | Exception $e) {
+            } catch (Throwable|Exception $e) {
             }
         }
 
@@ -810,7 +841,7 @@ class ContactsController extends Controller
         $contact_id = $request->contact_id ?? ($request->id ?? 0);
         $factoring_company_id = $request->factoring_company_id;
 
-        if ($factoring_company_id > 0){
+        if ($factoring_company_id > 0) {
             $curContact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
 
             $carrier_id = $curContact ? $curContact->carrier_id : null;
@@ -903,7 +934,7 @@ class ContactsController extends Controller
                 ->get();
 
             return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
-        }else{
+        } else {
             return response()->json(['result' => 'NO FACTORING COMPANY']);
         }
     }
@@ -927,10 +958,10 @@ class ContactsController extends Controller
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            if (file_exists(public_path('avatars/' . $cur_avatar))){
+            if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable | Exception $e) {
+                } catch (Throwable|Exception $e) {
                 }
             }
         }
@@ -968,10 +999,10 @@ class ContactsController extends Controller
 
         $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))){
+        if (file_exists(public_path('avatars/' . $contact->avatar))) {
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
-            } catch (Throwable | Exception $e) {
+            } catch (Throwable|Exception $e) {
             }
         }
 
@@ -1008,10 +1039,10 @@ class ContactsController extends Controller
         $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->delete();
 
         $contacts = $FACTORING_COMPANY_CONTACT->where('factoring_company_id', $contact->factoring_company_id)
-        ->with('factoring_company')
-        ->has('factoring_company')
-        ->orderBy('first_name')
-        ->get();
+            ->with('factoring_company')
+            ->has('factoring_company')
+            ->orderBy('first_name')
+            ->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
@@ -1066,5 +1097,91 @@ class ContactsController extends Controller
         }
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getContactList(Request $request): JsonResponse
+    {
+        $customer_id = $request->customer_id ?? 0;
+        $user_code = $request->user_code ?? '';
+        $user_type = $request->user_type ?? 'employee';
+
+        if ($user_type === 'agent' && $user_code === '') {
+            return response()->json(['result' => 'NO USER', 'count' => 0, 'contacts' => []]);
+        }
+
+        if ($customer_id === 0) {
+            return response()->json(['result' => 'NO CUSTOMER', 'count' => 0, 'contacts' => []]);
+        }
+
+        $CONTACT = Contact::query();
+
+        $CONTACT->whereRaw("first_name <> '' AND last_name <> ''");
+
+        $CONTACT->where(function ($query) use ($user_type, $user_code, $customer_id) {
+            $query->where(function ($query1) use ($user_type, $user_code) {
+                if ($user_type === 'employee') {
+                    $query1->where('employee_code', $user_code);
+                } elseif ($user_type === 'agent') {
+                    $query1->orWhere('agent_code', $user_code);
+                }
+            });
+
+            $query->orWhere(function ($query1) use ($user_type, $user_code, $customer_id) {
+                $query1->whereRaw("customer_id IS NOT NULL");
+                $query1->where('customer_id', '<>', $customer_id);
+
+                $query1->whereDoesntHave('ext_customers', function ($query2) use ($customer_id) {
+                    $query2->where('customer_id', $customer_id);
+                });
+
+                if ($user_type === 'agent' && $user_code !== '') {
+                    $query1->whereHas('customer', function ($query2) use ($user_code) {
+                        $query2->where('agent_code', $user_code);
+                    });
+                }
+            });
+        });
+
+        $CONTACT->with(['customer' => function ($query) {
+            $query->select('id', 'code', 'code_number', 'name')->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
+        }]);
+
+        $CONTACT->orderBy('first_name');
+        $CONTACT->orderBy('last_name');
+
+        $contacts = $CONTACT->get();
+
+        return response()->json(['result' => 'OK', 'count' => count($contacts), 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveExtCustomerContact(Request $request): JsonResponse
+    {
+        $customer_id = $request->customer_id ?? 0;
+        $contact_id = $request->contact_id ?? 0;
+
+        $CUSTOMER_CONTACT = new ContactCustomer();
+        $CUSTOMER = new Customer();
+
+        $CUSTOMER_CONTACT->updateOrCreate([
+            'id' => 0
+        ], [
+            'customer_id' => $customer_id,
+            'contact_id' => $contact_id
+        ]);
+
+        $customer = $CUSTOMER->where('id', $customer_id)
+            ->select('id', 'code', 'code_number', 'name')
+            ->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes'])
+            ->first();
+
+        return response()->json(['result' => 'OK', 'customer' => $customer]);
     }
 }

@@ -27,8 +27,7 @@ class CustomerMailingAddress extends Model
     }
 
     public function bill_to_contact(){
-        return $this->belongsTo(Customer::class, ['bill_to_code', 'bill_to_code_number'], ['code', 'code_number'], 'customers')
-            ->with(['contacts']);
+        return $this->belongsTo(Customer::class, ['bill_to_code', 'bill_to_code_number'], ['code', 'code_number'], 'customers');
     }
 
     public function division(){

@@ -66,6 +66,7 @@ Route::post('/submitCustomerImport', [CustomersController::class, 'submitCustome
 Route::post('/submitCustomerImport2', [CustomersController::class, 'submitCustomerImport2']);
 Route::post('/getCustomerPayload', [CustomersController::class, 'getCustomerPayload']);
 Route::post('/getCustomerOrders', [CustomersController::class, 'getCustomerOrders']);
+Route::post('/customerTest', [CustomersController::class, 'customerTest']);
 
 Route::post('/getAutomaticEmails', [AutomaticEmailsController::class, 'getAutomaticEmails']);
 Route::post('/saveAutomaticEmails', [AutomaticEmailsController::class, 'saveAutomaticEmails']);
@@ -113,6 +114,9 @@ Route::post('/deleteFactoringCompanyContact', [ContactsController::class, 'delet
 Route::post('/uploadFactoringCompanyAvatar', [ContactsController::class, 'uploadFactoringCompanyAvatar']);
 Route::post('/removeFactoringCompanyAvatar', [ContactsController::class, 'removeFactoringCompanyAvatar']);
 Route::post('/factoringCompanyContactsSearch', [ContactsController::class, 'factoringCompanyContactsSearch']);
+
+Route::post('/getContactList', [ContactsController::class, 'getContactList']);
+Route::post('/saveExtCustomerContact', [ContactsController::class, 'saveExtCustomerContact']);
 
 Route::post('/notes', [NotesController::class, 'notes'])->name('notes');
 Route::post('/saveNote', [NotesController::class, 'saveNote']);

@@ -17,7 +17,7 @@ class Pickup extends Model
 
     public function customer(){
         return $this->belongsTo(Customer::class)
-            ->with(['contacts', 'zip_data', 'directions']);
+            ->with(['zip_data', 'directions']);
     }
 
     public function order(){

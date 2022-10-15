@@ -28,7 +28,6 @@ class CustomersController extends Controller
 
         $customer = $CUSTOMER->where('id', $id)
             ->with([
-                'contacts',
                 'documents',
                 'directions',
                 'hours',
@@ -83,7 +82,6 @@ class CustomersController extends Controller
 
         if ($with_relations === 1) {
             $CUSTOMER->with([
-                'contacts',
                 'documents',
                 'directions',
                 'hours',
@@ -316,15 +314,15 @@ class CustomersController extends Controller
             if (count($contacts) === 0) {
                 $contact = new Contact();
                 $contact->customer_id = $customer->id;
-                $contact->first_name = trim($contact_first);
-                $contact->last_name = trim($contact_last);
+                $contact->first_name = ucwords(trim($contact_first));
+                $contact->last_name = ucwords(trim($contact_last));
                 $contact->phone_work = $contact_phone;
                 $contact->phone_ext = $contact_phone_ext;
                 $contact->email_work = $email;
                 $contact->address1 = $address1;
                 $contact->address2 = $address2;
-                $contact->city = $city;
-                $contact->state = $state;
+                $contact->city = ucwords($city);
+                $contact->state = strtoupper($state);
                 $contact->zip_code = $zip;
                 $contact->is_primary = 1;
                 $contact->save();
@@ -362,7 +360,6 @@ class CustomersController extends Controller
 
         $newCustomer = $CUSTOMER->where('id', $customer->id)
             ->with([
-                'contacts',
                 'documents',
                 'directions',
                 'hours',
@@ -404,31 +401,6 @@ class CustomersController extends Controller
         $hours_close = $request->hoursClose ?? '';
         $bill_to_code = $request->billToCode ?? '';
         $bill_to_code_number = $request->billToCodeNumber ?? 0;
-
-//        $curCustomer = $CUSTOMER->where('id', $id)->first();
-//
-//        if ($curCustomer) {
-//            if ($curCustomer->code !== $code) {
-//                $codeExist = $CUSTOMER->where('id', '<>', $id)
-//                    ->where('code', $code)->get();
-//
-//                if (count($codeExist) > 0) {
-//                    $max_code_number = $CUSTOMER->where('code', $code)->max('code_number');
-//                    $code_number = $max_code_number + 1;
-//                } else {
-//                    $code_number = 0;
-//                }
-//            }
-//        } else {
-//            $codeExist = $CUSTOMER->where('code', $code)->get();
-//
-//            if (count($codeExist) > 0) {
-//                $max_code_number = $CUSTOMER->where('code', $code)->max('code_number');
-//                $code_number = $max_code_number + 1;
-//            } else {
-//                $code_number = 0;
-//            }
-//        }
 
         $with_contact = true;
 
@@ -715,7 +687,6 @@ class CustomersController extends Controller
         $CUSTOMER = new Customer();
 
         $customers = $CUSTOMER->with([
-            'contacts',
             'documents',
             'directions',
             'hours',
@@ -729,5 +700,18 @@ class CustomersController extends Controller
         ])->get();
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function customerTest(Request $request): JsonResponse{
+        $CUSTOMER = new Customer();
+
+        $customer_id = $request->customer_id ?? 0;
+
+        $customer = $CUSTOMER->where('id', $customer_id)->first();
+
+        return response()->json(['result' => 'OK', 'customers' => $customer->contacts]);
     }
 }
