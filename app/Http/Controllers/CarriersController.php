@@ -184,7 +184,7 @@ class CarriersController extends Controller
         ]);
 
 
-        $ORDER->orderBy('id', 'desc');
+        $ORDER->orderBy('order_number', 'desc');
 
         $orders = $ORDER->get();
 

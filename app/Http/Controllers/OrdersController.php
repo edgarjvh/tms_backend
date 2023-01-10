@@ -6,6 +6,7 @@ use App\Models\Carrier;
 use App\Models\Customer;
 use App\Models\Delivery;
 use App\Models\InternalNotes;
+use App\Models\NotesForCarrier;
 use App\Models\TemplateDelivery;
 use App\Models\Equipment;
 use App\Models\EventType;
@@ -143,7 +144,7 @@ class OrdersController extends Controller
         if ($customer_id > 0){
             $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
                 if ($bill_to_code !== ''){
-                    $query->whereHas('bill_to_company', function ($query1) use ($bill_to_company_id){
+                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
                         return $query1->where('id', $bill_to_company_id);
                     });
 
@@ -161,7 +162,7 @@ class OrdersController extends Controller
                         });
                     });
                 }else{
-                    $query->whereHas('bill_to_company', function ($query1) use ($customer_id){
+                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
                         return $query1->where('id', $customer_id);
                     });
 
@@ -178,7 +179,8 @@ class OrdersController extends Controller
                     });
                 }
             });
-        }else{
+        }
+        else{
             if ($customer_code !== '') {
                 $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
 
@@ -187,7 +189,7 @@ class OrdersController extends Controller
 
                     $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
                         if ($bill_to_code !== ''){
-                            $query->whereHas('bill_to_company', function ($query1) use ($bill_to_company_id){
+                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
                                 return $query1->where('id', $bill_to_company_id);
                             });
 
@@ -205,7 +207,7 @@ class OrdersController extends Controller
                                 });
                             });
                         }else{
-                            $query->whereHas('bill_to_company', function ($query1) use ($customer_id){
+                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
                                 return $query1->where('id', $customer_id);
                             });
 
@@ -358,9 +360,12 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_company', function ($query){
-           return $query->without(['contacts', 'term']);
+        $ORDER->with('bill_to_customer', function ($query){
+//           return $query->without(['contacts', 'term'])->orderBy('code')->orderBy('code_number');
+           return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
+
+//        $ORDER->orderBy('order_date_time', 'desc');
 
         $orders = $ORDER->get();
 
@@ -594,55 +599,93 @@ class OrdersController extends Controller
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
 
-        if ($customer_id > 0){
-            $ORDER->where(function ($query) use ($customer_id) {
-                $query->whereHas('pickups', function ($query1) use ($customer_id) {
-                    return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                        return $query2->where('id', $customer_id);
-                    });
-                });
+        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_company_id = $bill_to_company->id ?? 0;
 
-                $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
-                    return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                        return $query2->where('id', $customer_id);
+        if ($customer_id > 0){
+            $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
+                if ($bill_to_code !== ''){
+                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                        return $query1->where('id', $bill_to_company_id);
                     });
-                });
+
+                    $query->where(function ($query1) use ($customer_id){
+                        $query1->whereHas('pickups', function ($query2) use ($customer_id) {
+                            return $query2->whereHas('customer', function ($query3) use ($customer_id) {
+                                return $query3->where('id', $customer_id);
+                            });
+                        });
+
+                        $query1->orWhereHas('deliveries', function ($query2) use ($customer_id) {
+                            return $query2->whereHas('customer', function ($query3) use ($customer_id) {
+                                return $query3->where('id', $customer_id);
+                            });
+                        });
+                    });
+                }else{
+                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
+                        return $query1->where('id', $customer_id);
+                    });
+
+                    $query->orWhereHas('pickups', function ($query1) use ($customer_id) {
+                        return $query1->whereHas('customer', function ($query2) use ($customer_id) {
+                            return $query2->where('id', $customer_id);
+                        });
+                    });
+
+                    $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
+                        return $query1->whereHas('customer', function ($query2) use ($customer_id) {
+                            return $query2->where('id', $customer_id);
+                        });
+                    });
+                }
             });
-        }else{
+        }
+        else{
             if ($customer_code !== '') {
                 $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
 
                 if ($customer){
                     $customer_id = $customer->id;
 
-                    $ORDER->where(function ($query) use ($customer_id) {
-                        $query->whereHas('pickups', function ($query1) use ($customer_id) {
-                            return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                                return $query2->where('id', $customer_id);
+                    $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
+                        if ($bill_to_code !== ''){
+                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                                return $query1->where('id', $bill_to_company_id);
                             });
-                        });
 
-                        $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
-                            return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                                return $query2->where('id', $customer_id);
+                            $query->where(function ($query1) use ($customer_id){
+                                $query1->whereHas('pickups', function ($query2) use ($customer_id) {
+                                    return $query2->whereHas('customer', function ($query3) use ($customer_id) {
+                                        return $query3->where('id', $customer_id);
+                                    });
+                                });
+
+                                $query1->orWhereHas('deliveries', function ($query2) use ($customer_id) {
+                                    return $query2->whereHas('customer', function ($query3) use ($customer_id) {
+                                        return $query3->where('id', $customer_id);
+                                    });
+                                });
                             });
-                        });
+                        }else{
+                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
+                                return $query1->where('id', $customer_id);
+                            });
+
+                            $query->orWhereHas('pickups', function ($query1) use ($customer_id) {
+                                return $query1->whereHas('customer', function ($query2) use ($customer_id) {
+                                    return $query2->where('id', $customer_id);
+                                });
+                            });
+
+                            $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
+                                return $query1->whereHas('customer', function ($query2) use ($customer_id) {
+                                    return $query2->where('id', $customer_id);
+                                });
+                            });
+                        }
                     });
                 }
-            }
-        }
-
-        if ($bill_to_code !== '') {
-            $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-
-            if ($bill_to_customer){
-                $bill_to_customer_id = $bill_to_customer->id;
-
-                $ORDER->where(function ($query) use ($bill_to_customer_id) {
-                    $query->whereHas('bill_to_company', function ($query1) use ($bill_to_customer_id) {
-                        return $query1->where('id', $bill_to_customer_id);
-                    });
-                });
             }
         }
 
@@ -778,23 +821,21 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_company', function ($query){
-            return $query->without(['contacts', 'term']);
+        $ORDER->with('bill_to_customer', function ($query){
+            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
 
         $ORDER->with('pickups', function ($query){
-           return $query->with('customer', function ($query1){
-               return $query1->without(['contacts', 'term', 'zip_data']);
-           });
-        });
-
-        $ORDER->with('deliveries', function ($query){
-            return $query->with('customer', function ($query1){
-                return $query1->without(['contacts', 'term', 'zip_data']);
+            $query->with('customer', function($query1){
+                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
             });
         });
 
-        $ORDER->orderBy('order_date_time');
+        $ORDER->with('deliveries', function ($query){
+            $query->with('customer', function($query1){
+                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
+            });
+        });
 
         $orders = $ORDER->get();
 
@@ -2112,6 +2153,7 @@ class OrdersController extends Controller
                 $order_carrier_rating = $item['carrier_rating'] ?? [];
                 $order_events = $item['events'] ?? [];
                 $order_internal_notes = $item['internal_notes'] ?? [];
+                $order_notes_for_carrier = $item['notes_for_carrier'] ?? [];
 
                 $order = Order::updateOrCreate([
                     'id' => 0
@@ -2254,7 +2296,22 @@ class OrdersController extends Controller
                             'text' => $internal_note['text'] ?? '',
                         ]);
                     }
+
+                    for ($n = 0; $n < count($order_notes_for_carrier); $n++){
+                        $note_for_carrier = $order_notes_for_carrier[$n];
+
+                        NotesForCarrier::updateOrCreate([
+                            'id' => 0
+                        ],[
+                            'order_id' => $order_id,
+                            'user_code_id' => $note_for_carrier['user_code_id'] ?? null,
+                            'date_time' => $note_for_carrier['date_time'] ?? null,
+                            'text' => $note_for_carrier['text'] ?? '',
+                        ]);
+                    }
                 }
+
+
             }
 
             return response()->json(['result' => 'OK']);

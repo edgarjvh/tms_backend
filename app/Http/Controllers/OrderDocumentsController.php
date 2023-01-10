@@ -33,42 +33,19 @@ class OrderDocumentsController extends Controller
         $tags = $request->tags ?? '';
         $link = strtolower($request->link ?? '');
         $user_code_id = $request->user_code_id ?? 0;
-        $fileData = $_FILES['doc'];
-        $doc_name = $fileData['name'];
-        $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
-        $doc_id = uniqid() . '.' . $doc_extension;
+        $fileData = $_FILES['files'];
 
-        $document = $ORDER_DOCUMENT->updateOrCreate([
-            'id' => 0
-        ], [
-            'order_id' => $order_id,
-            'doc_id' => $doc_id,
-            'doc_name' => $doc_name,
-            'doc_extension' => $doc_extension,
-            'user_code_id' => $user_code_id,
-            'date_entered' => $date_entered,
-            'title' => $title,
-            'subject' => $subject,
-            'tags' => $tags
-        ]);
+        for ($i = 0; $i < count($fileData['name']); $i++){
 
-        $document = $ORDER_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->first();
-        $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
+            $doc_name = $fileData['name'][$i];
+            $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
+            $doc_id = uniqid() . '.' . $doc_extension;
 
-        move_uploaded_file($fileData['tmp_name'], public_path('order-documents/' . $doc_id));
-
-        $ORDER_BILLING_DOCUMENT = new OrderBillingDocument();
-
-        $billing_documents = [];
-
-        if ($link === 'signed bol'){
-            $new_doc_id = uniqid() . '.' . $doc_extension;
-
-            $ORDER_BILLING_DOCUMENT->updateOrCreate([
+            $document = $ORDER_DOCUMENT->updateOrCreate([
                 'id' => 0
             ], [
                 'order_id' => $order_id,
-                'doc_id' => $new_doc_id,
+                'doc_id' => $doc_id,
                 'doc_name' => $doc_name,
                 'doc_extension' => $doc_extension,
                 'user_code_id' => $user_code_id,
@@ -78,9 +55,36 @@ class OrderDocumentsController extends Controller
                 'tags' => $tags
             ]);
 
-            copy(public_path('order-documents/' . $doc_id), public_path('order-billing-documents/' . $new_doc_id));
+            $document = $ORDER_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->first();
+            $documents = $ORDER_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
 
-            $billing_documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
+            move_uploaded_file($fileData['tmp_name'][$i], public_path('order-documents/' . $doc_id));
+
+            $ORDER_BILLING_DOCUMENT = new OrderBillingDocument();
+
+            $billing_documents = [];
+
+            if ($link === 'signed bol'){
+                $new_doc_id = uniqid() . '.' . $doc_extension;
+
+                $ORDER_BILLING_DOCUMENT->updateOrCreate([
+                    'id' => 0
+                ], [
+                    'order_id' => $order_id,
+                    'doc_id' => $new_doc_id,
+                    'doc_name' => $doc_name,
+                    'doc_extension' => $doc_extension,
+                    'user_code_id' => $user_code_id,
+                    'date_entered' => $date_entered,
+                    'title' => $title,
+                    'subject' => $subject,
+                    'tags' => $tags
+                ]);
+
+                copy(public_path('order-documents/' . $doc_id), public_path('order-billing-documents/' . $new_doc_id));
+
+                $billing_documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
+            }
         }
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents, 'billing_documents' => $billing_documents]);
@@ -178,29 +182,32 @@ class OrderDocumentsController extends Controller
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
         $user_code_id = $request->user_code_id ?? 0;
-        $fileData = $_FILES['doc'];
-        $doc_name = $fileData['name'];
-        $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
-        $doc_id = uniqid() . '.' . $doc_extension;
+        $fileData = $_FILES['files'];
 
-        $document = $ORDER_BILLING_DOCUMENT->updateOrCreate([
-            'id' => 0
-        ], [
-            'order_id' => $order_id,
-            'doc_id' => $doc_id,
-            'doc_name' => $doc_name,
-            'doc_extension' => $doc_extension,
-            'user_code_id' => $user_code_id,
-            'date_entered' => $date_entered,
-            'title' => $title,
-            'subject' => $subject,
-            'tags' => $tags
-        ]);
+        for ($i = 0; $i < count($fileData['name']); $i++){
+            $doc_name = $fileData['name'][$i];
+            $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
+            $doc_id = uniqid() . '.' . $doc_extension;
 
-        $document = $ORDER_BILLING_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->first();
-        $documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
+            $document = $ORDER_BILLING_DOCUMENT->updateOrCreate([
+                'id' => 0
+            ], [
+                'order_id' => $order_id,
+                'doc_id' => $doc_id,
+                'doc_name' => $doc_name,
+                'doc_extension' => $doc_extension,
+                'user_code_id' => $user_code_id,
+                'date_entered' => $date_entered,
+                'title' => $title,
+                'subject' => $subject,
+                'tags' => $tags
+            ]);
 
-        move_uploaded_file($fileData['tmp_name'], public_path('order-billing-documents/' . $doc_id));
+            $document = $ORDER_BILLING_DOCUMENT->where('id', $document->id)->with(['notes', 'user_code'])->first();
+            $documents = $ORDER_BILLING_DOCUMENT->where('order_id', $order_id)->with(['notes', 'user_code'])->get();
+
+            move_uploaded_file($fileData['tmp_name'][$i], public_path('order-billing-documents/' . $doc_id));
+        }
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents]);
 //        {"name":"generated.pdf","type":"application\/pdf","tmp_name":"C:\\xampp\\tmp\\php1753.tmp","error":0,"size":13213}
@@ -281,33 +288,36 @@ class OrderDocumentsController extends Controller
 
     public function saveOrderInvoiceCarrierDocument(Request $request){
         $order_id = $request->order_id;
-        $date_entered = isset($request->date_entered) ? $request->date_entered : '';
-        $title = isset($request->title) ? $request->title : '';
-        $subject = isset($request->subject) ? $request->subject : '';
-        $tags = isset($request->tags) ? $request->tags : '';
-        $user_id = isset($request->user_id) ? $request->user_id : 0;
-        $fileData = $_FILES['doc'];
-        $doc_name = $fileData['name'];
-        $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
-        $doc_id = uniqid() . '.' . $doc_extension;
+        $date_entered = $request->date_entered ?? '';
+        $title = $request->title ?? '';
+        $subject = $request->subject ?? '';
+        $tags = $request->tags ?? '';
+        $user_code_id = $request->user_code_id ?? null;
+        $fileData = $_FILES['files'];
 
-        $document = OrderInvoiceCarrierDocument::query()->updateOrCreate([
-            'id' => 0
-        ], [
-            'order_id' => $order_id,
-            'doc_id' => $doc_id,
-            'doc_name' => $doc_name,
-            'doc_extension' => $doc_extension,
-            'user_id' => $user_id,
-            'date_entered' => $date_entered,
-            'title' => $title,
-            'subject' => $subject,
-            'tags' => $tags
-        ]);
+        for ($i = 0; $i < count($fileData['name']); $i++){
+            $doc_name = $fileData['name'][$i];
+            $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
+            $doc_id = uniqid() . '.' . $doc_extension;
 
-        $documents = OrderInvoiceCarrierDocument::query()->where('order_id', $order_id)->with('notes')->get();
+            $document = OrderInvoiceCarrierDocument::query()->updateOrCreate([
+                'id' => 0
+            ], [
+                'order_id' => $order_id,
+                'doc_id' => $doc_id,
+                'doc_name' => $doc_name,
+                'doc_extension' => $doc_extension,
+                'user_code_id' => $user_code_id,
+                'date_entered' => $date_entered,
+                'title' => $title,
+                'subject' => $subject,
+                'tags' => $tags
+            ]);
 
-        move_uploaded_file($fileData['tmp_name'], public_path('order-invoice-carrier-documents/' . $doc_id));
+            $documents = OrderInvoiceCarrierDocument::query()->where('order_id', $order_id)->with('notes')->get();
+
+            move_uploaded_file($fileData['tmp_name'][$i], public_path('order-invoice-carrier-documents/' . $doc_id));
+        }
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents]);
 //        {"name":"generated.pdf","type":"application\/pdf","tmp_name":"C:\\xampp\\tmp\\php1753.tmp","error":0,"size":13213}

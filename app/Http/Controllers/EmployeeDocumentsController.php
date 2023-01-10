@@ -39,28 +39,31 @@ class EmployeeDocumentsController extends Controller
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
         $user_code_id = $request->user_code_id ?? 0;
-        $fileData = $_FILES['doc'];
-        $doc_name = $fileData['name'];
-        $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
-        $doc_id = uniqid() . '.' . $doc_extension;
+        $fileData = $_FILES['files'];
 
-        $document = $EMPLOYEE_DOCUMENT->updateOrCreate([
-            'id' => 0
-        ], [
-            'employee_id' => $employee_id,
-            'doc_id' => $doc_id,
-            'doc_name' => $doc_name,
-            'doc_extension' => $doc_extension,
-            'user_code_id' => $user_code_id,
-            'date_entered' => $date_entered,
-            'title' => $title,
-            'subject' => $subject,
-            'tags' => $tags
-        ]);
+        for ($i = 0; $i < count($fileData['name']); $i++){
+            $doc_name = $fileData['name'][$i];
+            $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
+            $doc_id = uniqid() . '.' . $doc_extension;
 
-        $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();
+            $document = $EMPLOYEE_DOCUMENT->updateOrCreate([
+                'id' => 0
+            ], [
+                'employee_id' => $employee_id,
+                'doc_id' => $doc_id,
+                'doc_name' => $doc_name,
+                'doc_extension' => $doc_extension,
+                'user_code_id' => $user_code_id,
+                'date_entered' => $date_entered,
+                'title' => $title,
+                'subject' => $subject,
+                'tags' => $tags
+            ]);
 
-        move_uploaded_file($fileData['tmp_name'], public_path('employee-documents/' . $doc_id));
+            $documents = $EMPLOYEE_DOCUMENT->where('employee_id', $employee_id)->with(['notes', 'user_code'])->get();
+
+            move_uploaded_file($fileData['tmp_name'][$i], public_path('employee-documents/' . $doc_id));
+        }
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents]);
 //        {"name":"generated.pdf","type":"application\/pdf","tmp_name":"C:\\xampp\\tmp\\php1753.tmp","error":0,"size":13213}

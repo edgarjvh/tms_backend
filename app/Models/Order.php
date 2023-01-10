@@ -42,6 +42,11 @@ class Order extends Model
             ->with(['term']);
     }
 
+    public function bill_to_customer()
+    {
+        return $this->belongsTo(BillToCompany::class, 'bill_to_customer_id', 'id');
+    }
+
     public function carrier()
     {
         return $this->belongsTo(Carrier::class)

@@ -39,28 +39,31 @@ class CarrierDocumentsController extends Controller
         $subject = $request->subject ?? '';
         $tags = $request->tags ?? '';
         $user_code_id = $request->user_code_id ?? 0;
-        $fileData = $_FILES['doc'];
-        $doc_name = $fileData['name'];
-        $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
-        $doc_id = uniqid() . '.' . $doc_extension;
+        $fileData = $_FILES['files'];
 
-        $document = $CARRIER_DOCUMENT->updateOrCreate([
-            'id' => 0
-        ], [
-            'carrier_id' => $carrier_id,
-            'doc_id' => $doc_id,
-            'doc_name' => $doc_name,
-            'doc_extension' => $doc_extension,
-            'user_code_id' => $user_code_id,
-            'date_entered' => $date_entered,
-            'title' => $title,
-            'subject' => $subject,
-            'tags' => $tags
-        ]);
+        for ($i = 0; $i < count($fileData['name']); $i++){
+            $doc_name = $fileData['name'][$i];
+            $doc_extension = pathinfo($doc_name, PATHINFO_EXTENSION);
+            $doc_id = uniqid() . '.' . $doc_extension;
 
-        $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
+            $document = $CARRIER_DOCUMENT->updateOrCreate([
+                'id' => 0
+            ], [
+                'carrier_id' => $carrier_id,
+                'doc_id' => $doc_id,
+                'doc_name' => $doc_name,
+                'doc_extension' => $doc_extension,
+                'user_code_id' => $user_code_id,
+                'date_entered' => $date_entered,
+                'title' => $title,
+                'subject' => $subject,
+                'tags' => $tags
+            ]);
 
-        move_uploaded_file($fileData['tmp_name'], public_path('carrier-documents/' . $doc_id));
+            $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
+
+            move_uploaded_file($fileData['tmp_name'][$i], public_path('carrier-documents/' . $doc_id));
+        }
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents]);
     }

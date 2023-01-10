@@ -149,7 +149,8 @@ class CustomersController extends Controller
     {
         $id = $request->id ?? 0;
 
-        $ORDER = Order::query()->whereRaw('orders.is_imported = 0');
+//        $ORDER = Order::query()->whereRaw('orders.is_imported = 0');
+        $ORDER = Order::query();
 
         $ORDER->where(function ($query) use ($id){
             $query->whereHas('bill_to_company', function ($query1) use ($id) {
@@ -182,7 +183,7 @@ class CustomersController extends Controller
         ]);
 
 
-        $ORDER->orderBy('id', 'desc');
+        $ORDER->orderBy('order_number', 'desc');
 
         $orders = $ORDER->get();
 

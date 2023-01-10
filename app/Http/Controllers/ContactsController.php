@@ -292,6 +292,7 @@ class ContactsController extends Controller
             $last_name = ucwords($request->last_name ?? ($curContact ? $curContact->last_name : ''));
             $suffix = $request->suffix ?? ($curContact ? $curContact->suffix : '');
             $title = $request->title ?? ($curContact ? $curContact->title : '');
+            $company = $request->company ?? ($curContact ? $curContact->company : '');
             $department = $request->department ?? ($curContact ? $curContact->department : '');
             $email_work = strtolower($request->email_work ?? ($curContact ? $curContact->email_work : ''));
             $email_personal = strtolower($request->email_personal ?? ($curContact ? $curContact->email_personal : ''));
@@ -315,7 +316,7 @@ class ContactsController extends Controller
             $notes = $request->notes ?? ($curContact ? $curContact->notes : '');
             $is_primary = $request->is_primary ?? ($curContact ? $curContact->is_primary : 0);
             $is_online = $request->is_online ?? ($curContact ? $curContact->is_online : 0);
-
+            $type = $request->type ?? ($curContact ? $curContact->type : 'internal');
             $is_primary = (int)$is_primary;
 
             $contact = $CUSTOMER_CONTACT->updateOrCreate([
@@ -331,6 +332,7 @@ class ContactsController extends Controller
                     'last_name' => ucwords(trim($last_name)),
                     'suffix' => $suffix,
                     'title' => $title,
+                    'company' => $company,
                     'department' => $department,
                     'email_work' => strtolower($email_work),
                     'email_personal' => strtolower($email_personal),
@@ -353,7 +355,8 @@ class ContactsController extends Controller
                     'website' => strtolower($website),
                     'notes' => $notes,
                     'is_primary' => $is_primary,
-                    'is_online' => $is_online
+                    'is_online' => $is_online,
+                    'type' => $type
                 ]);
 
             if ($pivot) {
@@ -634,6 +637,7 @@ class ContactsController extends Controller
             $last_name = $request->last_name ?? ($curContact ? $curContact->last_name : '');
             $suffix = $request->suffix ?? ($curContact ? $curContact->suffix : '');
             $title = $request->title ?? ($curContact ? $curContact->title : '');
+            $company = $request->company ?? ($curContact ? $curContact->company : '');
             $department = $request->department ?? ($curContact ? $curContact->department : '');
             $email_work = $request->email_work ?? ($curContact ? $curContact->email_work : '');
             $email_personal = $request->email_personal ?? ($curContact ? $curContact->email_personal : '');
@@ -657,7 +661,7 @@ class ContactsController extends Controller
             $notes = $request->notes ?? ($curContact ? $curContact->notes : '');
             $is_primary = $request->is_primary ?? ($curContact ? $curContact->is_primary : 0);
             $is_online = $request->is_online ?? ($curContact ? $curContact->is_online : 0);
-
+            $type = $request->type ?? ($curContact ? $curContact->type : 'internal');
             $is_primary = (int)$is_primary;
 
             $contact = $CARRIER_CONTACT->updateOrCreate([
@@ -673,6 +677,7 @@ class ContactsController extends Controller
                     'last_name' => ucwords(trim($last_name)),
                     'suffix' => $suffix,
                     'title' => $title,
+                    'company' => $company,
                     'department' => $department,
                     'email_work' => strtolower($email_work),
                     'email_personal' => strtolower($email_personal),
@@ -695,7 +700,8 @@ class ContactsController extends Controller
                     'website' => strtolower($website),
                     'notes' => $notes,
                     'is_primary' => $is_primary,
-                    'is_online' => $is_online
+                    'is_online' => $is_online,
+                    'type' => $type
                 ]);
 
             if ($is_primary === 1) {

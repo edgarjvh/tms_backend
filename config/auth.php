@@ -43,12 +43,14 @@ return [
 
         'employee' => [
             'driver' => 'session',
-            'provider' => 'employees'
+            'provider' => 'employees',
+            'hash' => true
         ],
 
         'agent' => [
             'driver' => 'session',
-            'provider' => 'agents'
+            'provider' => 'agents',
+            'hash' => true
         ]
     ],
 

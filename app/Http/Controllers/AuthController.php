@@ -23,15 +23,19 @@ class AuthController extends Controller
                 'email_work' => $request->email,
                 'password' => $request->password
             ])){
-                return response(['message' => 'Invalid Credentials'], Response::HTTP_UNAUTHORIZED);
+                return response(['message' => 'Invalid Credentials', 'type' => $user_type], Response::HTTP_UNAUTHORIZED);
             }
         }elseif($user_type === 'agent'){
+            $hashed = Hash::make($request->password);
+
             if (!Auth::guard('agent')->attempt([
                 'email_work' => $request->email,
                 'password' => $request->password,
-                'agent_id' => !null
+                'agent_id' => function($query){
+                    $query->where('agent_id', 4);
+                }
             ])){
-                return response(['message' => 'Invalid Credentials'], Response::HTTP_UNAUTHORIZED);
+                return response(['message' => 'Invalid Credentials', 'type' => $user_type], Response::HTTP_UNAUTHORIZED);
             }
         }
 
