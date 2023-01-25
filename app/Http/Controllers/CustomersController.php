@@ -10,6 +10,7 @@ use App\Models\CustomerMailingAddress;
 use App\Models\Direction;
 use App\Models\Note;
 use App\Models\Order;
+use App\Models\PlainCustomer;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,9 @@ class CustomersController extends Controller
                 'automatic_emails',
                 'notes',
                 'zip_data',
+                'mailing_same',
                 'mailing_address',
+                'mailing_customer',
                 'term',
                 'division',
                 'salesman'
@@ -88,7 +91,9 @@ class CustomersController extends Controller
                 'automatic_emails',
                 'notes',
                 'zip_data',
+                'mailing_same',
                 'mailing_address',
+                'mailing_customer',
                 'term',
                 'division',
                 'salesman'
@@ -176,7 +181,7 @@ class CustomersController extends Controller
         ]);
 
         $ORDER->with([
-            'bill_to_company',
+//            'bill_to_company',
             'pickups',
             'deliveries',
             'routing'
@@ -221,6 +226,14 @@ class CustomersController extends Controller
         $agent_code = strtoupper($request->agent_code ?? '');
         $fid = $request->fid ?? '';
         $user_code = $request->user_code ?? '';
+
+        $mailing_address_id = $request->mailing_address_id ?? null;
+        $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
+        $mailing_customer_id = $request->mailing_customer_id ?? null;
+        $mailing_customer_contact_id = $request->mailing_customer_contact_id ?? null;
+        $mailing_customer_contact_primary_phone = $request->mailing_customer_contact_primary_phone ?? 'work';
+        $mailing_customer_contact_primary_email = $request->mailing_customer_contact_primary_email ?? 'work';
+
         $codeExist = [];
 
         // get incoming customer by id, code and code_number
@@ -284,7 +297,13 @@ class CustomersController extends Controller
                 'salesman_id' => $salesman_id,
                 'fid' => $fid,
                 'term_id' => $term_id,
-                'credit_limit_total' => $credit_limit_total
+                'credit_limit_total' => $credit_limit_total,
+                'mailing_address_id' => $mailing_address_id,
+                'remit_to_address_is_the_same' => $remit_to_address_is_the_same,
+                'mailing_customer_id' => $mailing_customer_id,
+                'mailing_customer_contact_id' => $mailing_customer_contact_id,
+                'mailing_customer_contact_primary_phone' => $mailing_customer_contact_primary_phone,
+                'mailing_customer_contact_primary_email' => $mailing_customer_contact_primary_email
             ]);
 
         if ($user_code !== ''){
@@ -367,7 +386,9 @@ class CustomersController extends Controller
                 'automatic_emails',
                 'notes',
                 'zip_data',
+                'mailing_same',
                 'mailing_address',
+                'mailing_customer',
                 'term',
                 'division',
                 'salesman'
@@ -694,7 +715,9 @@ class CustomersController extends Controller
             'automatic_emails',
             'notes',
             'zip_data',
+            'mailing_same',
             'mailing_address',
+            'mailing_customer',
             'term',
             'division',
             'salesman'
@@ -707,12 +730,20 @@ class CustomersController extends Controller
      * @throws Exception
      */
     public function customerTest(Request $request): JsonResponse{
-        $CUSTOMER = new Customer();
+        $CUSTOMER = new PlainCustomer();
+        $MAILING_ADDRESS = new CustomerMailingAddress();
 
-        $customer_id = $request->customer_id ?? 0;
+        $collection = collect();
 
-        $customer = $CUSTOMER->where('id', $customer_id)->first();
+        $customers = $CUSTOMER->selectRaw('id, code, code_number, name, address1, address2, city, state, zip, concat("customer") as type')->get();
+        $addresses = $MAILING_ADDRESS->where('code', '<>', '')->selectRaw('id, code, code_number, name, address1, address2, city, state, zip, concat("mailing") as type')->get();
 
-        return response()->json(['result' => 'OK', 'customers' => $customer->contacts]);
+        foreach ($customers as $customer)
+            $collection->push($customer);
+
+        foreach ($addresses as $address)
+            $collection->push($address);
+
+        return response()->json(['result' => 'OK', 'customers' => $collection]);
     }
 }

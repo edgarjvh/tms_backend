@@ -725,4 +725,68 @@ class CarriersController extends Controller
 
         return response()->json(['result' => 'OK', 'equipments' => $equipments, 'insurance_types' => $insurance_types]);
     }
+
+    /**
+     * @throws Exception
+     */
+    public function getMcNumbers() : JsonResponse
+    {
+        $CARRIER = Carrier::query();
+
+        $CARRIER->whereNotNull('mc_number');
+        $CARRIER->where('mc_number','<>', '');
+        $CARRIER->orderBy('mc_number');
+        $CARRIER->select(['id', 'code', 'code_number', 'name', 'mc_number']);
+        $mc_numbers = $CARRIER->get();
+
+        return response()->json(['result' => 'OK', 'mc_numbers' => $mc_numbers]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getDotNumbers() : JsonResponse
+    {
+        $CARRIER = Carrier::query();
+
+        $CARRIER->whereNotNull('dot_number');
+        $CARRIER->where('dot_number','<>', '');
+        $CARRIER->orderBy('dot_number');
+        $CARRIER->select(['id', 'code', 'code_number', 'name', 'dot_number']);
+        $mc_numbers = $CARRIER->get();
+
+        return response()->json(['result' => 'OK', 'mc_numbers' => $mc_numbers]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getScacNumbers() : JsonResponse
+    {
+        $CARRIER = Carrier::query();
+
+        $CARRIER->whereNotNull('scac');
+        $CARRIER->where('scac','<>', '');
+        $CARRIER->orderBy('scac');
+        $CARRIER->select(['id', 'code', 'code_number', 'name', 'scac']);
+        $mc_numbers = $CARRIER->get();
+
+        return response()->json(['result' => 'OK', 'mc_numbers' => $mc_numbers]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getFidNumbers() : JsonResponse
+    {
+        $CARRIER = Carrier::query();
+
+        $CARRIER->whereNotNull('fid');
+        $CARRIER->where('fid','<>', '');
+        $CARRIER->orderBy('fid');
+        $CARRIER->select(['id', 'code', 'code_number', 'name', 'fid']);
+        $mc_numbers = $CARRIER->get();
+
+        return response()->json(['result' => 'OK', 'mc_numbers' => $mc_numbers]);
+    }
 }

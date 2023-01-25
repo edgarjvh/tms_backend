@@ -228,11 +228,13 @@ class OrdersController extends Controller
             }
         }
 
-        if ($date_start !== '' && $date_end !== '') {
+        if ($date_start !== '' && $date_end !== '')
+        {
             $ORDER->where(function ($query) use ($date_start, $date_end){
                 $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
             });
-        } else {
+        }
+        else {
             if ($date_start !== '') {
                 $ORDER->where(function ($query) use ($date_start){
                     $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
@@ -397,6 +399,9 @@ class OrdersController extends Controller
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
 
+        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_company_id = $bill_to_company->id ?? 0;
+
         if ($carrier_id > 0){
             $ORDER->where(function ($query) use ($carrier_id) {
                 $query->whereHas('carrier', function ($query1) use ($carrier_id){
@@ -420,24 +425,18 @@ class OrdersController extends Controller
         }
 
         if ($bill_to_code !== '') {
-            $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-
-            if ($bill_to_customer){
-                $bill_to_customer_id = $bill_to_customer->id;
-
-                $ORDER->where(function ($query) use ($bill_to_customer_id) {
-                    $query->whereHas('bill_to_company', function ($query1) use ($bill_to_customer_id) {
-                        return $query1->where('id', $bill_to_customer_id);
-                    });
-                });
-            }
+            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                return $query1->where('id', $bill_to_company_id);
+            });
         }
 
-        if ($date_start !== '' && $date_end !== '') {
+        if ($date_start !== '' && $date_end !== '')
+        {
             $ORDER->where(function ($query) use ($date_start, $date_end){
                 $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
             });
-        } else {
+        }
+        else {
             if ($date_start !== '') {
                 $ORDER->where(function ($query) use ($date_start){
                     $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
@@ -565,9 +564,12 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_company', function ($query){
-            return $query->without(['contacts', 'term']);
+        $ORDER->with('bill_to_customer', function ($query){
+//           return $query->without(['contacts', 'term'])->orderBy('code')->orderBy('code_number');
+            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
+
+//        $ORDER->orderBy('order_date_time', 'desc');
 
         $orders = $ORDER->get();
 
@@ -867,6 +869,9 @@ class OrdersController extends Controller
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
 
+        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_company_id = $bill_to_company->id ?? 0;
+
         if ($carrier_id > 0){
             $ORDER->where(function ($query) use ($carrier_id) {
                 $query->whereHas('carrier', function ($query1) use ($carrier_id){
@@ -890,17 +895,9 @@ class OrdersController extends Controller
         }
 
         if ($bill_to_code !== '') {
-            $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-
-            if ($bill_to_customer){
-                $bill_to_customer_id = $bill_to_customer->id;
-
-                $ORDER->where(function ($query) use ($bill_to_customer_id) {
-                    $query->whereHas('bill_to_company', function ($query1) use ($bill_to_customer_id) {
-                        return $query1->where('id', $bill_to_customer_id);
-                    });
-                });
-            }
+            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                return $query1->where('id', $bill_to_company_id);
+            });
         }
 
         if ($date_start !== '' && $date_end !== '') {
@@ -1035,7 +1032,21 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->orderBy('order_date_time');
+        $ORDER->with('bill_to_customer', function ($query){
+            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
+        });
+
+        $ORDER->with('pickups', function ($query){
+            $query->with('customer', function($query1){
+                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
+            });
+        });
+
+        $ORDER->with('deliveries', function ($query){
+            $query->with('customer', function($query1){
+                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
+            });
+        });
 
         $orders = $ORDER->get();
 

@@ -22,9 +22,19 @@ class Customer extends Model
     protected $table = 'customers';
     protected $appends = ['total_customer_order', 'credit_ordered', 'credit_invoiced', 'credit_paid', 'contacts'];
 
+    public function mailing_same()
+    {
+        return $this->belongsTo(Customer::class, 'id', 'id')->where('remit_to_address_is_the_same', 1);
+    }
+
     public function mailing_address()
     {
-        return $this->hasOne(CustomerMailingAddress::class)->with(['mailing_contact', 'bill_to_contact', 'division']);
+        return $this->belongsTo(CustomerMailingAddress::class, 'mailing_address_id', 'id');
+    }
+
+    public function mailing_customer()
+    {
+        return $this->belongsTo(Customer::class, 'mailing_customer_id', 'id');
     }
 
     public function total_customer_ratings()
@@ -37,7 +47,7 @@ class Customer extends Model
     {
         $ratings = OrderCustomerRating::query();
 
-        $ratings->whereHas('order', function ($query1){
+        $ratings->whereHas('order', function ($query1) {
             return $query1
                 ->where('is_imported', 0)
                 ->where('order_invoiced', 0)
@@ -59,7 +69,7 @@ class Customer extends Model
     {
         $ratings = OrderCustomerRating::query();
 
-        $ratings->whereHas('order', function ($query1){
+        $ratings->whereHas('order', function ($query1) {
             return $query1
                 ->where('is_imported', 0)
                 ->where('order_invoiced', 1)
@@ -97,7 +107,7 @@ class Customer extends Model
     public function getContactsAttribute()
     {
         $contacts = $this->hasMany(Contact::class)->get();
-        $ext_contacts = $this->belongsToMany(Contact::class)->with(['customer' => function($query){
+        $ext_contacts = $this->belongsToMany(Contact::class)->with(['customer' => function ($query) {
             $query->select('id', 'code', 'code_number', 'name')
                 ->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
         }])->withPivot(['id', 'is_primary'])->get();
@@ -168,17 +178,20 @@ class Customer extends Model
         return $this->belongsTo(Term::class);
     }
 
-    public function division(){
+    public function division()
+    {
         return $this->belongsTo(Division::class);
     }
 
-    public function salesman(){
+    public function salesman()
+    {
         return $this->belongsTo(Salesman::class, 'salesman_id', 'id')->select(['id', DB::raw("CONCAT(`first_name`, ' ', `last_name`) AS name")]);
     }
 
-    public function ext_contacts(){
+    public function ext_contacts()
+    {
         return $this->belongsToMany(Contact::class)
-            ->with('customer', function ($query){
+            ->with('customer', function ($query) {
                 return $query->select([
                     'id',
                     'name',

@@ -83,6 +83,12 @@ Route::post('/submitCarrierImport2', [CarriersController::class, 'submitCarrierI
 Route::post('/getCarrierPayload', [CarriersController::class, 'getCarrierPayload']);
 Route::post('/getCarrierPopupItems', [CarriersController::class, 'getCarrierPopupItems']);
 Route::post('/saveCarrierAchWiringInfo', [CarriersController::class, 'saveCarrierAchWiringInfo']);
+
+Route::post('/getMcNumbers', [CarriersController::class, 'getMcNumbers']);
+Route::post('/getDotNumbers', [CarriersController::class, 'getDotNumbers']);
+Route::post('/getScacNumbers', [CarriersController::class, 'getScacNumbers']);
+Route::post('/getFidNumbers', [CarriersController::class, 'getFidNumbers']);
+
 Route::post('/saveCarrierEquipment', [CarrierEquipmentsController::class, 'saveCarrierEquipment']);
 Route::post('/deleteCarrierEquipment', [CarrierEquipmentsController::class, 'deleteCarrierEquipment']);
 Route::post('/getCarrierEquipments', [CarrierEquipmentsController::class, 'getCarrierEquipments']);
@@ -220,6 +226,7 @@ Route::post('/saveOrderBillingNotes', [DispatchNotesController::class, 'saveOrde
 
 Route::post('/saveCustomerMailingAddress', [CustomerMailingAddressesController::class, 'saveCustomerMailingAddress']);
 Route::post('/deleteCustomerMailingAddress', [CustomerMailingAddressesController::class, 'deleteCustomerMailingAddress']);
+Route::post('/getCustomerMailingAddressByCode', [CustomerMailingAddressesController::class, 'getCustomerMailingAddressByCode']);
 
 Route::post('/saveCarrierMailingAddress', [CarrierMailingAddressesController::class, 'saveCarrierMailingAddress']);
 Route::post('/deleteCarrierMailingAddress', [CarrierMailingAddressesController::class, 'deleteCarrierMailingAddress']);
