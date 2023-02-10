@@ -22,21 +22,24 @@ class CarriersController extends Controller
      * @param Request $json
      * @return JsonResponse
      */
-    public function getCarrierById(Request $request){
+    public function getCarrierById(Request $request)
+    {
         $CARRIER = Carrier::query();
         $id = $request->id ?? 0;
 
         $carrier = $CARRIER->where('id', $id)
             ->with([
-            'contacts',
-            'drivers',
-            'notes',
-            'insurances',
-            'factoring_company',
-            'mailing_address',
-            'documents',
-            'equipments_information'
-        ])->first();
+                'contacts',
+                'drivers',
+                'notes',
+                'insurances',
+                'factoring_company',
+                'mailing_same',
+                'mailing_address',
+                'mailing_carrier',
+                'documents',
+                'equipments_information'
+            ])->first();
 
         return response()->json(['result' => 'OK', 'carrier' => $carrier]);
     }
@@ -59,7 +62,7 @@ class CarriersController extends Controller
         $email = $json->email ?? '';
         $with_relations = $request->with_relations ?? 1;
 
-        if ($with_relations === 1){
+        if ($with_relations === 1) {
             $carriers = $CARRIER->whereRaw("1 = 1")
                 ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
                 ->whereRaw("name like '%$name%'")
@@ -78,12 +81,14 @@ class CarriersController extends Controller
                     'notes',
                     'insurances',
                     'factoring_company',
+                    'mailing_same',
                     'mailing_address',
+                    'mailing_carrier',
                     'documents',
                     'equipments_information'
                 ])
                 ->get();
-        }else{
+        } else {
             $carriers = $CARRIER->whereRaw("1 = 1")
                 ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
                 ->whereRaw("name like '%$name%'")
@@ -221,10 +226,18 @@ class CarriersController extends Controller
         $fid = $request->fid ?? '';
         $do_not_use = $request->do_not_use ?? 0;
         $rating = $request->rating ?? 0;
+
+        $mailing_address_id = $request->mailing_address_id ?? null;
+        $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
+        $mailing_carrier_id = $request->mailing_carrier_id ?? null;
+        $mailing_carrier_contact_id = $request->mailing_carrier_contact_id ?? null;
+        $mailing_carrier_contact_primary_phone = $request->mailing_carrier_contact_primary_phone ?? 'work';
+        $mailing_carrier_contact_primary_email = $request->mailing_carrier_contact_primary_email ?? 'work';
+
         $codeExist = [];
 
         $curCarrier = $CARRIER
-            ->where('id',$id)
+            ->where('id', $id)
             ->whereRaw("CONCAT(code,code_number) = '$full_code'")
             ->first();
 
@@ -284,6 +297,12 @@ class CarriersController extends Controller
                 'fid' => $fid,
                 'do_not_use' => $do_not_use,
                 'rating' => $rating,
+                'mailing_address_id' => $mailing_address_id,
+                'remit_to_address_is_the_same' => $remit_to_address_is_the_same,
+                'mailing_carrier_id' => $mailing_carrier_id,
+                'mailing_carrier_contact_id' => $mailing_carrier_contact_id,
+                'mailing_carrier_contact_primary_phone' => $mailing_carrier_contact_primary_phone,
+                'mailing_carrier_contact_primary_email' => $mailing_carrier_contact_primary_email
             ]);
 
         if ($with_contact) {
@@ -355,7 +374,9 @@ class CarriersController extends Controller
                 'notes',
                 'insurances',
                 'factoring_company',
+                'mailing_same',
                 'mailing_address',
+                'mailing_carrier',
                 'documents',
                 'equipments_information'
             ])->first();
@@ -368,7 +389,8 @@ class CarriersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCarrierAchWiringInfo(Request $request) : JsonResponse {
+    public function saveCarrierAchWiringInfo(Request $request): JsonResponse
+    {
         $carrier_id = $request->carrier_id ?? 0;
         $ach_banking_info = $request->ach_banking_info ?? '';
         $ach_account_info = $request->ach_account_info ?? '';
@@ -384,8 +406,8 @@ class CarriersController extends Controller
         $CARRIER = new Carrier();
 
         $CARRIER->updateOrCreate([
-            'id'=>$carrier_id
-        ],[
+            'id' => $carrier_id
+        ], [
             'ach_banking_info' => $ach_banking_info,
             'ach_account_info' => $ach_account_info,
             'ach_aba_routing' => $ach_aba_routing,
@@ -405,7 +427,9 @@ class CarriersController extends Controller
                 'notes',
                 'insurances',
                 'factoring_company',
+                'mailing_same',
                 'mailing_address',
+                'mailing_carrier',
                 'documents',
                 'equipments_information'
             ])->first();
@@ -417,7 +441,8 @@ class CarriersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function submitCarrierImport(Request $request){
+    public function submitCarrierImport(Request $request)
+    {
         $CARRIER = new Carrier();
         $CARRIER_CONTACT = new Contact();
 
@@ -557,7 +582,8 @@ class CarriersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function submitCarrierImport2(Request $request){
+    public function submitCarrierImport2(Request $request)
+    {
         $list = $request->list ?? [];
 
         if (count($list) > 0) {
@@ -588,22 +614,22 @@ class CarriersController extends Controller
 
                 $zip = str_replace(" ", "", $zip);
 
-                if (preg_match('/[a-z]/i', $zip)){
+                if (preg_match('/[a-z]/i', $zip)) {
                     $zip = str_replace("-", "", $zip);
                     $len = strlen($zip);
                     $rem = $len - 6;
 
-                    if ($rem > 0){
+                    if ($rem > 0) {
                         $zip = substr_replace($zip, "", 0, $rem);
                     }
 
                     $zip = substr_replace($zip, " ", 3, 0);
-                }else if (preg_match('/[0-9]/', $zip)){
+                } else if (preg_match('/[0-9]/', $zip)) {
                     $zip = explode("-", $zip)[0];
 
                     $len = strlen($zip);
 
-                    if ($len < 5){
+                    if ($len < 5) {
                         $zip = str_pad($zip, 5, "0", STR_PAD_LEFT);
                     }
                 }
@@ -641,7 +667,7 @@ class CarriersController extends Controller
                     try {
                         $saved_contact = CarrierContact::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'carrier_id' => $carrier_id,
                             'first_name' => $contact_first_name,
                             'last_name' => $contact_last_name,
@@ -704,7 +730,9 @@ class CarriersController extends Controller
             'notes',
             'insurances',
             'factoring_company',
+            'mailing_same',
             'mailing_address',
+            'mailing_carrier',
             'documents',
             'equipments_information'
         ])->get();
@@ -729,12 +757,12 @@ class CarriersController extends Controller
     /**
      * @throws Exception
      */
-    public function getMcNumbers() : JsonResponse
+    public function getMcNumbers(): JsonResponse
     {
         $CARRIER = Carrier::query();
 
         $CARRIER->whereNotNull('mc_number');
-        $CARRIER->where('mc_number','<>', '');
+        $CARRIER->where('mc_number', '<>', '');
         $CARRIER->orderBy('mc_number');
         $CARRIER->select(['id', 'code', 'code_number', 'name', 'mc_number']);
         $mc_numbers = $CARRIER->get();
@@ -745,12 +773,12 @@ class CarriersController extends Controller
     /**
      * @throws Exception
      */
-    public function getDotNumbers() : JsonResponse
+    public function getDotNumbers(): JsonResponse
     {
         $CARRIER = Carrier::query();
 
         $CARRIER->whereNotNull('dot_number');
-        $CARRIER->where('dot_number','<>', '');
+        $CARRIER->where('dot_number', '<>', '');
         $CARRIER->orderBy('dot_number');
         $CARRIER->select(['id', 'code', 'code_number', 'name', 'dot_number']);
         $mc_numbers = $CARRIER->get();
@@ -761,12 +789,12 @@ class CarriersController extends Controller
     /**
      * @throws Exception
      */
-    public function getScacNumbers() : JsonResponse
+    public function getScacNumbers(): JsonResponse
     {
         $CARRIER = Carrier::query();
 
         $CARRIER->whereNotNull('scac');
-        $CARRIER->where('scac','<>', '');
+        $CARRIER->where('scac', '<>', '');
         $CARRIER->orderBy('scac');
         $CARRIER->select(['id', 'code', 'code_number', 'name', 'scac']);
         $mc_numbers = $CARRIER->get();
@@ -777,12 +805,12 @@ class CarriersController extends Controller
     /**
      * @throws Exception
      */
-    public function getFidNumbers() : JsonResponse
+    public function getFidNumbers(): JsonResponse
     {
         $CARRIER = Carrier::query();
 
         $CARRIER->whereNotNull('fid');
-        $CARRIER->where('fid','<>', '');
+        $CARRIER->where('fid', '<>', '');
         $CARRIER->orderBy('fid');
         $CARRIER->select(['id', 'code', 'code_number', 'name', 'fid']);
         $mc_numbers = $CARRIER->get();

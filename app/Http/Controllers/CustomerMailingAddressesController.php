@@ -145,6 +145,7 @@ class CustomerMailingAddressesController extends Controller
                 ]);
 
             $newMailingAddress = $CUSTOMER_MAILING_ADDRESS->where('id', $mailing->id)->with(['mailing_contact', 'division'])->first();
+
             $CUSTOMER->updateOrCreate([
                 'id' => $customer_id
             ], [

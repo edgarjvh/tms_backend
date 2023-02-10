@@ -1226,6 +1226,7 @@ class OrdersController extends Controller
         $percentage = $request->percentage ?? '';
         $haz_mat = $request->haz_mat ?? 0;
         $expedited = $request->expedited ?? 0;
+        $is_cancelled = $request->is_cancelled ?? 0;
 
         $customer_check_number = $request->customer_check_number ?? null;
         $customer_date_received = $request->customer_date_received ?? null;
@@ -1310,7 +1311,8 @@ class OrdersController extends Controller
             'invoice_carrier_received' => $invoice_carrier_received,
             'invoice_bol_received' => $invoice_bol_received,
             'invoice_rate_conf_received' => $invoice_rate_conf_received,
-            'invoice_carrier_approved' => $invoice_carrier_approved
+            'invoice_carrier_approved' => $invoice_carrier_approved,
+            'is_cancelled' => $is_cancelled
         ]);
 
         if (count($pickups) > 0) {

@@ -15,6 +15,21 @@ class Carrier extends Model
 {
     protected $guarded = [];
 
+    public function mailing_same()
+    {
+        return $this->belongsTo(Carrier::class, 'id', 'id')->where('remit_to_address_is_the_same', 1);
+    }
+
+    public function mailing_address()
+    {
+        return $this->belongsTo(CarrierMailingAddress::class, 'mailing_address_id', 'id');
+    }
+
+    public function mailing_carrier()
+    {
+        return $this->belongsTo(Carrier::class, 'mailing_carrier_id', 'id');
+    }
+
     public function contacts(){
         return $this->hasMany(Contact::class)->orderBy('first_name')->orderBy('last_name');
     }
@@ -34,11 +49,6 @@ class Carrier extends Model
             'notes',
             'documents'
         ]);
-    }
-
-    public function mailing_address()
-    {
-        return $this->hasOne(CarrierMailingAddress::class)->with(['mailing_contact']);
     }
 
     public function notes()
