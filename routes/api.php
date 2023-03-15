@@ -56,6 +56,7 @@ use App\Http\Controllers\AgentDocumentsController;
 use App\Http\Controllers\DriverDocumentsController;
 use App\Http\Controllers\OperatorDocumentsController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmailsController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
 Route::post('/getCustomerById', [CustomersController::class, 'getCustomerById']);
@@ -403,6 +404,18 @@ Route::post('/getNotesByOperatorDocument', [OperatorDocumentsController::class, 
 Route::post('/saveOperatorDocumentNote', [OperatorDocumentsController::class, 'saveOperatorDocumentNote']);
 Route::post('/deleteOperatorDocumentNote', [OperatorDocumentsController::class, 'deleteOperatorDocumentNote']);
 
+Route::post('/sendRateConfEmail', [EmailsController::class, 'sendRateConfEmail']);
+Route::post('/sendBookedLoadEmail', [EmailsController::class, 'sendBookedLoadEmail']);
+Route::post('/sendCarrierArrivedShipperEmail', [EmailsController::class, 'sendCarrierArrivedShipperEmail']);
+Route::post('/sendCarrierArrivedConsigneeEmail', [EmailsController::class, 'sendCarrierArrivedConsigneeEmail']);
+Route::post('/sendCarrierLoadedShipperEmail', [EmailsController::class, 'sendCarrierLoadedShipperEmail']);
+Route::post('/sendCarrierUnloadedConsigneeEmail', [EmailsController::class, 'sendCarrierUnloadedConsigneeEmail']);
+
+Route::post('/testPdf', [EmailsController::class, 'testPdf']);
+Route::get('/testView', function (){
+    return view('mails.rate-conf.rate_conf_template');
+});
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/generatePass', [AuthController::class, 'generatePass']);
 Route::post('/checkPass', [AuthController::class, 'checkPass']);
@@ -410,6 +423,8 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
 });
+
+
 
 Route::get('/company-logo/{filename}', function($filename){
     $path = public_path('company-logo/' . $filename);

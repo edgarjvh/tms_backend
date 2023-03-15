@@ -64,6 +64,7 @@ class AuthController extends Controller
 
     public function generatePass(Request $request){
         $myPass = $request->pass ?? '';
+
         $newPassword = $this->random_str();
 
         if ($myPass === ''){

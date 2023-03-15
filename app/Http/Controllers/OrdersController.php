@@ -141,14 +141,14 @@ class OrdersController extends Controller
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
 
-        if ($customer_id > 0){
+        if ($customer_id > 0) {
             $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                if ($bill_to_code !== ''){
-                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                if ($bill_to_code !== '') {
+                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
                         return $query1->where('id', $bill_to_company_id);
                     });
 
-                    $query->where(function ($query1) use ($customer_id){
+                    $query->where(function ($query1) use ($customer_id) {
                         $query1->whereHas('pickups', function ($query2) use ($customer_id) {
                             return $query2->whereHas('customer', function ($query3) use ($customer_id) {
                                 return $query3->where('id', $customer_id);
@@ -161,8 +161,8 @@ class OrdersController extends Controller
                             });
                         });
                     });
-                }else{
-                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
+                } else {
+                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
                         return $query1->where('id', $customer_id);
                     });
 
@@ -179,21 +179,20 @@ class OrdersController extends Controller
                     });
                 }
             });
-        }
-        else{
+        } else {
             if ($customer_code !== '') {
                 $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
 
-                if ($customer){
+                if ($customer) {
                     $customer_id = $customer->id;
 
                     $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                        if ($bill_to_code !== ''){
-                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                        if ($bill_to_code !== '') {
+                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
                                 return $query1->where('id', $bill_to_company_id);
                             });
 
-                            $query->where(function ($query1) use ($customer_id){
+                            $query->where(function ($query1) use ($customer_id) {
                                 $query1->whereHas('pickups', function ($query2) use ($customer_id) {
                                     return $query2->whereHas('customer', function ($query3) use ($customer_id) {
                                         return $query3->where('id', $customer_id);
@@ -206,8 +205,8 @@ class OrdersController extends Controller
                                     });
                                 });
                             });
-                        }else{
-                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
+                        } else {
+                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
                                 return $query1->where('id', $customer_id);
                             });
 
@@ -228,21 +227,19 @@ class OrdersController extends Controller
             }
         }
 
-        if ($date_start !== '' && $date_end !== '')
-        {
-            $ORDER->where(function ($query) use ($date_start, $date_end){
+        if ($date_start !== '' && $date_end !== '') {
+            $ORDER->where(function ($query) use ($date_start, $date_end) {
                 $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
             });
-        }
-        else {
+        } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start){
+                $ORDER->where(function ($query) use ($date_start) {
                     $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
                 });
             }
 
             if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end){
+                $ORDER->where(function ($query) use ($date_end) {
                     $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
                 });
             }
@@ -268,7 +265,7 @@ class OrdersController extends Controller
         }
 
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use($city_destination){
+            $ORDER->where(function ($query) use ($city_destination) {
                 $query->whereHas('routing', function ($query1) use ($city_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($city_destination) {
@@ -287,7 +284,7 @@ class OrdersController extends Controller
         }
 
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin){
+            $ORDER->where(function ($query) use ($state_origin) {
                 $query->whereHas('routing', function ($query1) use ($state_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_origin) {
@@ -306,7 +303,7 @@ class OrdersController extends Controller
         }
 
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination){
+            $ORDER->where(function ($query) use ($state_destination) {
                 $query->whereHas('routing', function ($query1) use ($state_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_destination) {
@@ -325,7 +322,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin){
+            $ORDER->where(function ($query) use ($zip_origin) {
                 $query->whereHas('routing', function ($query1) use ($zip_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_origin) {
@@ -344,7 +341,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use($zip_destination){
+            $ORDER->where(function ($query) use ($zip_destination) {
                 $query->whereHas('routing', function ($query1) use ($zip_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_destination) {
@@ -362,9 +359,9 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_customer', function ($query){
+        $ORDER->with('bill_to_customer', function ($query) {
 //           return $query->without(['contacts', 'term'])->orderBy('code')->orderBy('code_number');
-           return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
+            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
 
 //        $ORDER->orderBy('order_date_time', 'desc');
@@ -402,21 +399,21 @@ class OrdersController extends Controller
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
 
-        if ($carrier_id > 0){
+        if ($carrier_id > 0) {
             $ORDER->where(function ($query) use ($carrier_id) {
-                $query->whereHas('carrier', function ($query1) use ($carrier_id){
+                $query->whereHas('carrier', function ($query1) use ($carrier_id) {
                     return $query1->where('id', $carrier_id);
                 });
             });
-        }else{
-            if ($carrier_code !== ''){
+        } else {
+            if ($carrier_code !== '') {
                 $carrier = Carrier::query()->whereRaw("CONCAT(`code`, `code_number`) = '$carrier_code'")->first();
 
-                if ($carrier){
+                if ($carrier) {
                     $carrier_id = $carrier->id;
 
                     $ORDER->where(function ($query) use ($carrier_id) {
-                        $query->whereHas('carrier', function ($query1) use ($carrier_id){
+                        $query->whereHas('carrier', function ($query1) use ($carrier_id) {
                             return $query1->where('id', $carrier_id);
                         });
                     });
@@ -425,26 +422,24 @@ class OrdersController extends Controller
         }
 
         if ($bill_to_code !== '') {
-            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
                 return $query1->where('id', $bill_to_company_id);
             });
         }
 
-        if ($date_start !== '' && $date_end !== '')
-        {
-            $ORDER->where(function ($query) use ($date_start, $date_end){
+        if ($date_start !== '' && $date_end !== '') {
+            $ORDER->where(function ($query) use ($date_start, $date_end) {
                 $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
             });
-        }
-        else {
+        } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start){
+                $ORDER->where(function ($query) use ($date_start) {
                     $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
                 });
             }
 
             if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end){
+                $ORDER->where(function ($query) use ($date_end) {
                     $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
                 });
             }
@@ -470,7 +465,7 @@ class OrdersController extends Controller
         }
 
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use($city_destination){
+            $ORDER->where(function ($query) use ($city_destination) {
                 $query->whereHas('routing', function ($query1) use ($city_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($city_destination) {
@@ -489,7 +484,7 @@ class OrdersController extends Controller
         }
 
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin){
+            $ORDER->where(function ($query) use ($state_origin) {
                 $query->whereHas('routing', function ($query1) use ($state_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_origin) {
@@ -508,7 +503,7 @@ class OrdersController extends Controller
         }
 
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination){
+            $ORDER->where(function ($query) use ($state_destination) {
                 $query->whereHas('routing', function ($query1) use ($state_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_destination) {
@@ -527,7 +522,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin){
+            $ORDER->where(function ($query) use ($zip_origin) {
                 $query->whereHas('routing', function ($query1) use ($zip_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_origin) {
@@ -546,7 +541,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use($zip_destination){
+            $ORDER->where(function ($query) use ($zip_destination) {
                 $query->whereHas('routing', function ($query1) use ($zip_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_destination) {
@@ -564,7 +559,7 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_customer', function ($query){
+        $ORDER->with('bill_to_customer', function ($query) {
 //           return $query->without(['contacts', 'term'])->orderBy('code')->orderBy('code_number');
             return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
@@ -604,14 +599,14 @@ class OrdersController extends Controller
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
 
-        if ($customer_id > 0){
+        if ($customer_id > 0) {
             $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                if ($bill_to_code !== ''){
-                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                if ($bill_to_code !== '') {
+                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
                         return $query1->where('id', $bill_to_company_id);
                     });
 
-                    $query->where(function ($query1) use ($customer_id){
+                    $query->where(function ($query1) use ($customer_id) {
                         $query1->whereHas('pickups', function ($query2) use ($customer_id) {
                             return $query2->whereHas('customer', function ($query3) use ($customer_id) {
                                 return $query3->where('id', $customer_id);
@@ -624,8 +619,8 @@ class OrdersController extends Controller
                             });
                         });
                     });
-                }else{
-                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
+                } else {
+                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
                         return $query1->where('id', $customer_id);
                     });
 
@@ -642,21 +637,20 @@ class OrdersController extends Controller
                     });
                 }
             });
-        }
-        else{
+        } else {
             if ($customer_code !== '') {
                 $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
 
-                if ($customer){
+                if ($customer) {
                     $customer_id = $customer->id;
 
                     $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                        if ($bill_to_code !== ''){
-                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+                        if ($bill_to_code !== '') {
+                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
                                 return $query1->where('id', $bill_to_company_id);
                             });
 
-                            $query->where(function ($query1) use ($customer_id){
+                            $query->where(function ($query1) use ($customer_id) {
                                 $query1->whereHas('pickups', function ($query2) use ($customer_id) {
                                     return $query2->whereHas('customer', function ($query3) use ($customer_id) {
                                         return $query3->where('id', $customer_id);
@@ -669,8 +663,8 @@ class OrdersController extends Controller
                                     });
                                 });
                             });
-                        }else{
-                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id){
+                        } else {
+                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
                                 return $query1->where('id', $customer_id);
                             });
 
@@ -692,18 +686,18 @@ class OrdersController extends Controller
         }
 
         if ($date_start !== '' && $date_end !== '') {
-            $ORDER->where(function ($query) use ($date_start, $date_end){
+            $ORDER->where(function ($query) use ($date_start, $date_end) {
                 $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
             });
         } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start){
+                $ORDER->where(function ($query) use ($date_start) {
                     $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
                 });
             }
 
             if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end){
+                $ORDER->where(function ($query) use ($date_end) {
                     $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
                 });
             }
@@ -729,7 +723,7 @@ class OrdersController extends Controller
         }
 
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use($city_destination){
+            $ORDER->where(function ($query) use ($city_destination) {
                 $query->whereHas('routing', function ($query1) use ($city_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($city_destination) {
@@ -748,7 +742,7 @@ class OrdersController extends Controller
         }
 
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin){
+            $ORDER->where(function ($query) use ($state_origin) {
                 $query->whereHas('routing', function ($query1) use ($state_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_origin) {
@@ -767,7 +761,7 @@ class OrdersController extends Controller
         }
 
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination){
+            $ORDER->where(function ($query) use ($state_destination) {
                 $query->whereHas('routing', function ($query1) use ($state_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_destination) {
@@ -786,7 +780,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin){
+            $ORDER->where(function ($query) use ($zip_origin) {
                 $query->whereHas('routing', function ($query1) use ($zip_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_origin) {
@@ -805,7 +799,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use($zip_destination){
+            $ORDER->where(function ($query) use ($zip_destination) {
                 $query->whereHas('routing', function ($query1) use ($zip_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_destination) {
@@ -823,18 +817,18 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_customer', function ($query){
+        $ORDER->with('bill_to_customer', function ($query) {
             return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
 
-        $ORDER->with('pickups', function ($query){
-            $query->with('customer', function($query1){
+        $ORDER->with('pickups', function ($query) {
+            $query->with('customer', function ($query1) {
                 return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
             });
         });
 
-        $ORDER->with('deliveries', function ($query){
-            $query->with('customer', function($query1){
+        $ORDER->with('deliveries', function ($query) {
+            $query->with('customer', function ($query1) {
                 return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
             });
         });
@@ -872,21 +866,21 @@ class OrdersController extends Controller
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
 
-        if ($carrier_id > 0){
+        if ($carrier_id > 0) {
             $ORDER->where(function ($query) use ($carrier_id) {
-                $query->whereHas('carrier', function ($query1) use ($carrier_id){
+                $query->whereHas('carrier', function ($query1) use ($carrier_id) {
                     return $query1->where('id', $carrier_id);
                 });
             });
-        }else{
-            if ($carrier_code !== ''){
+        } else {
+            if ($carrier_code !== '') {
                 $carrier = Carrier::query()->whereRaw("CONCAT(`code`, `code_number`) = '$carrier_code'")->first();
 
-                if ($carrier){
+                if ($carrier) {
                     $carrier_id = $carrier->id;
 
                     $ORDER->where(function ($query) use ($carrier_id) {
-                        $query->whereHas('carrier', function ($query1) use ($carrier_id){
+                        $query->whereHas('carrier', function ($query1) use ($carrier_id) {
                             return $query1->where('id', $carrier_id);
                         });
                     });
@@ -895,24 +889,24 @@ class OrdersController extends Controller
         }
 
         if ($bill_to_code !== '') {
-            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id){
+            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
                 return $query1->where('id', $bill_to_company_id);
             });
         }
 
         if ($date_start !== '' && $date_end !== '') {
-            $ORDER->where(function ($query) use ($date_start, $date_end){
+            $ORDER->where(function ($query) use ($date_start, $date_end) {
                 $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
             });
         } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start){
+                $ORDER->where(function ($query) use ($date_start) {
                     $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
                 });
             }
 
             if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end){
+                $ORDER->where(function ($query) use ($date_end) {
                     $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
                 });
             }
@@ -938,7 +932,7 @@ class OrdersController extends Controller
         }
 
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use($city_destination){
+            $ORDER->where(function ($query) use ($city_destination) {
                 $query->whereHas('routing', function ($query1) use ($city_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($city_destination) {
@@ -957,7 +951,7 @@ class OrdersController extends Controller
         }
 
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin){
+            $ORDER->where(function ($query) use ($state_origin) {
                 $query->whereHas('routing', function ($query1) use ($state_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_origin) {
@@ -976,7 +970,7 @@ class OrdersController extends Controller
         }
 
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination){
+            $ORDER->where(function ($query) use ($state_destination) {
                 $query->whereHas('routing', function ($query1) use ($state_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($state_destination) {
@@ -995,7 +989,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin){
+            $ORDER->where(function ($query) use ($zip_origin) {
                 $query->whereHas('routing', function ($query1) use ($zip_origin) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_origin) {
@@ -1014,7 +1008,7 @@ class OrdersController extends Controller
         }
 
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use($zip_destination){
+            $ORDER->where(function ($query) use ($zip_destination) {
                 $query->whereHas('routing', function ($query1) use ($zip_destination) {
                     return $query1
                         ->whereHas('pickup', function ($query2) use ($zip_destination) {
@@ -1032,18 +1026,18 @@ class OrdersController extends Controller
             });
         }
 
-        $ORDER->with('bill_to_customer', function ($query){
+        $ORDER->with('bill_to_customer', function ($query) {
             return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
         });
 
-        $ORDER->with('pickups', function ($query){
-            $query->with('customer', function($query1){
+        $ORDER->with('pickups', function ($query) {
+            $query->with('customer', function ($query1) {
                 return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
             });
         });
 
-        $ORDER->with('deliveries', function ($query){
-            $query->with('customer', function($query1){
+        $ORDER->with('deliveries', function ($query) {
+            $query->with('customer', function ($query1) {
                 return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
             });
         });
@@ -1100,11 +1094,18 @@ class OrdersController extends Controller
      */
     public function getOrderByOrderNumber(Request $request): JsonResponse
     {
-        $ORDER = new Order();
+        $ORDER = Order::query();
 
         $order_number = $request->order_number ?? 0;
+        $user_code = $request->user_code ?? '';
 
-        $order = $ORDER->where('order_number', $order_number)
+        if ($user_code !== '') {
+            $ORDER->whereHas('bill_to_company', function ($query) use ($user_code){
+                return $query->where('agent_code', $user_code);
+            });
+        }
+
+        $ORDER->where('order_number', $order_number)
             ->with([
                 'bill_to_company',
                 'carrier',
@@ -1127,8 +1128,9 @@ class OrdersController extends Controller
                 'billing_notes',
                 'term',
                 'user_code'
-            ])
-            ->first();
+            ]);
+
+        $order = $ORDER->first();
 
         $result = $order ? 'OK' : 'NOT FOUND';
 
@@ -1144,8 +1146,15 @@ class OrdersController extends Controller
         $ORDER = new Order();
 
         $trip_number = $request->trip_number ?? 0;
+        $user_code = $request->user_code ?? '';
 
-        $order = $ORDER->where('trip_number', $trip_number)
+        if ($user_code !== '') {
+            $ORDER->whereHas('bill_to_company', function ($query) use ($user_code){
+                return $query->where('agent_code', $user_code);
+            });
+        }
+
+        $ORDER->where('trip_number', $trip_number)
             ->with([
                 'bill_to_company',
                 'carrier',
@@ -1168,8 +1177,9 @@ class OrdersController extends Controller
                 'billing_notes',
                 'term',
                 'user_code'
-            ])
-            ->first();
+            ]);
+
+        $order = $ORDER->first();
 
         $result = $order ? 'OK' : 'NOT FOUND';
 
@@ -2188,14 +2198,14 @@ class OrdersController extends Controller
                 $order_id = $order->id;
 
                 if ($order_id > 0) {
-                    for ($p = 0; $p < count($order_routing); $p++){
+                    for ($p = 0; $p < count($order_routing); $p++) {
                         $route_item = $order_routing[$p];
                         $route_type = $route_item['type'];
 
-                        if ($route_type === 'pickup'){
+                        if ($route_type === 'pickup') {
                             $pickup = Pickup::updateOrCreate([
                                 'id' => 0
-                            ],[
+                            ], [
                                 'order_id' => $order_id,
                                 'customer_id' => $route_item['customer_id'],
                                 'pu_date1' => $route_item['pu_date1'] ?? '',
@@ -2210,16 +2220,16 @@ class OrdersController extends Controller
 
                             Route::updateOrCreate([
                                 'id' => 0
-                            ],[
+                            ], [
                                 'order_id' => $order_id,
                                 'pickup_id' => $pickup->id,
                                 'delivery_id' => null,
                                 'type' => $route_type
                             ]);
-                        }else{
+                        } else {
                             $delivery = Delivery::updateOrCreate([
                                 'id' => 0
-                            ],[
+                            ], [
                                 'order_id' => $order_id,
                                 'customer_id' => $route_item['customer_id'],
                                 'delivery_date1' => $route_item['delivery_date1'] ?? '',
@@ -2234,7 +2244,7 @@ class OrdersController extends Controller
 
                             Route::updateOrCreate([
                                 'id' => 0
-                            ],[
+                            ], [
                                 'order_id' => $order_id,
                                 'pickup_id' => null,
                                 'delivery_id' => $delivery->id,
@@ -2243,12 +2253,12 @@ class OrdersController extends Controller
                         }
                     }
 
-                    for ($cus = 0; $cus < count($order_customer_rating); $cus++){
+                    for ($cus = 0; $cus < count($order_customer_rating); $cus++) {
                         $customer_rating_item = $order_customer_rating[$cus];
 
                         OrderCustomerRating::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'order_id' => $order_id,
                             'rate_type_id' => $customer_rating_item['rate_type_id'],
                             'description' => $customer_rating_item['description'],
@@ -2259,12 +2269,12 @@ class OrdersController extends Controller
                         ]);
                     }
 
-                    for ($car = 0; $car < count($order_carrier_rating); $car++){
+                    for ($car = 0; $car < count($order_carrier_rating); $car++) {
                         $carrier_rating_item = $order_carrier_rating[$car];
 
                         OrderCarrierRating::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'order_id' => $order_id,
                             'rate_type_id' => $carrier_rating_item['rate_type_id'],
                             'description' => $carrier_rating_item['description'],
@@ -2275,12 +2285,12 @@ class OrdersController extends Controller
                         ]);
                     }
 
-                    for ($e = 0; $e < count($order_events); $e++){
+                    for ($e = 0; $e < count($order_events); $e++) {
                         $event_item = $order_events[$e];
 
                         OrderEvent::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'order_id' => $order_id,
                             'user_code_id' => $event_item['user_code_id'] ?? null,
                             'event_type_id' => $event_item['event_type_id'],
@@ -2297,12 +2307,12 @@ class OrdersController extends Controller
                         ]);
                     }
 
-                    for ($n = 0; $n < count($order_internal_notes); $n++){
+                    for ($n = 0; $n < count($order_internal_notes); $n++) {
                         $internal_note = $order_internal_notes[$n];
 
                         InternalNotes::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'order_id' => $order_id,
                             'user_code_id' => $internal_note['user_code_id'] ?? null,
                             'date_time' => $internal_note['date_time'] ?? null,
@@ -2310,12 +2320,12 @@ class OrdersController extends Controller
                         ]);
                     }
 
-                    for ($n = 0; $n < count($order_notes_for_carrier); $n++){
+                    for ($n = 0; $n < count($order_notes_for_carrier); $n++) {
                         $note_for_carrier = $order_notes_for_carrier[$n];
 
                         NotesForCarrier::updateOrCreate([
                             'id' => 0
-                        ],[
+                        ], [
                             'order_id' => $order_id,
                             'user_code_id' => $note_for_carrier['user_code_id'] ?? null,
                             'date_time' => $note_for_carrier['date_time'] ?? null,

@@ -124,8 +124,9 @@ class CustomersController extends Controller
         $contact_phone = strtolower($request->search[6]['data'] ?? '');
         $email = strtolower($request->search[7]['data'] ?? '');
         $user_code = strtolower($request->search[8]['data'] ?? '');
+        $origin = strtolower($request->search[9]['data'] ?? '');
 
-        $customers = DB::table('customers');
+        $customers = Customer::query();
         $customers->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'")
             ->whereRaw("LOWER(name) like '$name%'")
             ->whereRaw("LOWER(city) like '$city%'")
@@ -137,6 +138,10 @@ class CustomersController extends Controller
 
         if ($user_code !== '') {
             $customers->where('agent_code', $user_code);
+        }
+
+        if ($origin === 'agent'){
+            $customers->whereRaw('agent_code <> ""');
         }
 
         $customers->orderBy('code');
