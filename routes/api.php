@@ -57,6 +57,7 @@ use App\Http\Controllers\DriverDocumentsController;
 use App\Http\Controllers\OperatorDocumentsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailsController;
+use App\Http\Controllers\AgentDriversController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
 Route::post('/getCustomerById', [CustomersController::class, 'getCustomerById']);
@@ -410,6 +411,15 @@ Route::post('/sendCarrierArrivedShipperEmail', [EmailsController::class, 'sendCa
 Route::post('/sendCarrierArrivedConsigneeEmail', [EmailsController::class, 'sendCarrierArrivedConsigneeEmail']);
 Route::post('/sendCarrierLoadedShipperEmail', [EmailsController::class, 'sendCarrierLoadedShipperEmail']);
 Route::post('/sendCarrierUnloadedConsigneeEmail', [EmailsController::class, 'sendCarrierUnloadedConsigneeEmail']);
+Route::post('/sendCarrierCheckCallsEmail', [EmailsController::class, 'sendCarrierCheckCallsEmail']);
+Route::post('/sendOrderEmail', [EmailsController::class, 'sendOrderEmail']);
+
+
+Route::post('/getAgentDriverByCode', [AgentDriversController::class, 'getAgentDriverByCode']);
+Route::post('/getDriversByAgentId', [AgentDriversController::class, 'getDriversByAgentId']);
+Route::post('/saveAgentDriver', [AgentDriversController::class, 'saveAgentDriver']);
+Route::post('/deleteAgentDriver', [AgentDriversController::class, 'deleteAgentDriver']);
+
 
 Route::post('/testPdf', [EmailsController::class, 'testPdf']);
 Route::get('/testView', function (){

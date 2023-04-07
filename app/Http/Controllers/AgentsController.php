@@ -26,7 +26,8 @@ class AgentsController extends Controller
                 'hours',
                 'notes',
                 'mailing_address',
-                'division'
+                'division',
+                'drivers'
             ])
             ->first();
 
@@ -69,7 +70,8 @@ class AgentsController extends Controller
                     'hours',
                     'notes',
                     'mailing_address',
-                    'division'
+                    'division',
+                    'drivers'
                 ])
                 ->get();
         } else {
@@ -278,7 +280,8 @@ class AgentsController extends Controller
                 'hours',
                 'notes',
                 'mailing_address',
-                'division'
+                'division',
+                'drivers'
             ])->first();
 
         $agents = $AGENT->where('company_id', $company_id)->with(['contacts'])
@@ -288,7 +291,8 @@ class AgentsController extends Controller
                 'hours',
                 'notes',
                 'mailing_address',
-                'division'
+                'division',
+                'drivers'
             ])->get();
 
         return response()->json(['result' => 'OK', 'agent' => $newAgent, 'agents' => $agents]);

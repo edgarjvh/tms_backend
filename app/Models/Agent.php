@@ -44,6 +44,10 @@ class Agent extends Model
         return $this->hasOne(AgentHour::class);
     }
 
+    public function drivers(){
+        return $this->hasMany(AgentDriver::class)->with(['equipment']);
+    }
+
     public function division(){
         return $this->belongsTo(Division::class);
     }

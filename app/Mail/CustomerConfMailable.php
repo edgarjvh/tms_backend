@@ -57,12 +57,12 @@ class CustomerConfMailable extends Mailable
     public function build()
     {
         return $this
-            ->from(env('CUSTOMER_CONF_EMAIL_SENDER'))
+            ->from(env('CUSTOMER_CONF_EMAIL_SENDER'), $this->user_first_name . ' ' . $this->user_last_name)
             ->to($this->recipient_to)
             ->cc($this->recipient_cc)
             ->bcc($this->recipient_bcc)
             ->subject("CC - Order $this->order_number")
-            ->attachData($this->pdf->output(), "RC $this->order_number.pdf", ['mime' => 'application/pdf'])
+            ->attachData($this->pdf->output(), "CC-$this->order_number.pdf", ['mime' => 'application/pdf'])
             ->view('mails.rate-conf.customer_rate_conf_template');
     }
 }
