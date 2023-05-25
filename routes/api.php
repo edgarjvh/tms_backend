@@ -256,6 +256,14 @@ Route::post('/getOrdersRelatedData', [OrdersController::class, 'getOrdersRelated
 Route::post('/submitOrderImport', [OrdersController::class, 'submitOrderImport']);
 Route::post('/submitOrderImport2', [OrdersController::class, 'submitOrderImport2']);
 Route::post('/arrayTest', [OrdersController::class, 'arrayTest']);
+Route::post('/saveInvoiceCustomerCheckNumber', [OrdersController::class, 'saveInvoiceCustomerCheckNumber']);
+Route::post('/saveInvoiceCustomerDateReceived', [OrdersController::class, 'saveInvoiceCustomerDateReceived']);
+Route::post('/saveInvoiceCarrierReceivedDate', [OrdersController::class, 'saveInvoiceCarrierReceivedDate']);
+Route::post('/saveInvoiceNumber', [OrdersController::class, 'saveInvoiceNumber']);
+Route::post('/saveInvoiceTerm', [OrdersController::class, 'saveInvoiceTerm']);
+Route::post('/saveInvoiceDatePaid', [OrdersController::class, 'saveInvoiceDatePaid']);
+Route::post('/saveInvoiceCarrierCheckNumber', [OrdersController::class, 'saveInvoiceCarrierCheckNumber']);
+
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
 Route::post('/getSalesmen', [SalesmenController::class, 'getSalesmen']);

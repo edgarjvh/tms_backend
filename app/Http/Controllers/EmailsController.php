@@ -65,6 +65,11 @@ class EmailsController extends Controller
             return $item->is_primary === 1;
         });
 
+        $customer_primary_contact = $order->bill_to_company->contacts->first(function ($item) {
+            return $item->is_primary === 1;
+        });
+
+        $order->customer_contact_first_name = $customer_primary_contact->first_name;
         $order->carrier_contact_name = $carrier_primary_contact->first_name . ' ' . $carrier_primary_contact->last_name;
 
         $order->carrier_contact_email = ($carrier_primary_contact->primary_email ?? 'work') === 'work'
@@ -138,7 +143,7 @@ class EmailsController extends Controller
                 if ($type === 'carrier') {
                     Mail::send(new RateConfMailable($order->carrier->name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $user_phone, $user_email_address, $order_number, $recipient_to, $recipient_cc, $recipient_bcc, $pdf));
                 } else {
-                    Mail::send(new CustomerConfMailable($order->carrier->name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $user_phone, $user_email_address, $order_number, $recipient_to, $recipient_cc, $recipient_bcc, $pdf));
+                    Mail::send(new CustomerConfMailable($order->customer_contact_first_name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $user_phone, $user_email_address, $order_number, $recipient_to, $recipient_cc, $recipient_bcc, $pdf));
                 }
                 return response()->json(['result' => 'SENT']);
             } catch (\Exception $e) {

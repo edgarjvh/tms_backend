@@ -11,7 +11,7 @@ class CustomerConfMailable extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $carrier_name;
+    public $customer_first_name;
     public $origin_city;
     public $destination_city;
     public $origin_state;
@@ -31,9 +31,9 @@ class CustomerConfMailable extends Mailable
      *
      * @return void
      */
-    public function __construct($carrier_name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $user_phone, $user_email_address, $order_number, $recipient_to, $recipient_cc, $recipient_bcc, $pdf)
+    public function __construct($customer_first_name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $user_phone, $user_email_address, $order_number, $recipient_to, $recipient_cc, $recipient_bcc, $pdf)
     {
-        $this->carrier_name = $carrier_name;
+        $this->customer_first_name = $customer_first_name;
         $this->origin_city = $origin_city;
         $this->origin_state = $origin_state;
         $this->destination_city = $destination_city;

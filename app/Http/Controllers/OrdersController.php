@@ -1100,7 +1100,7 @@ class OrdersController extends Controller
         $user_code = $request->user_code ?? '';
 
         if ($user_code !== '') {
-            $ORDER->whereHas('bill_to_company', function ($query) use ($user_code){
+            $ORDER->whereHas('bill_to_company', function ($query) use ($user_code) {
                 return $query->where('agent_code', $user_code);
             });
         }
@@ -1149,7 +1149,7 @@ class OrdersController extends Controller
         $user_code = $request->user_code ?? '';
 
         if ($user_code !== '') {
-            $ORDER->whereHas('bill_to_company', function ($query) use ($user_code){
+            $ORDER->whereHas('bill_to_company', function ($query) use ($user_code) {
                 return $query->where('agent_code', $user_code);
             });
         }
@@ -2367,7 +2367,117 @@ class OrdersController extends Controller
         ]);
     }
 
+    public function saveInvoiceCustomerCheckNumber(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $customer_check_number = $request->customer_check_number ?? null;
 
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'customer_check_number' => $customer_check_number
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceCustomerDateReceived(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $customer_date_received = $request->customer_date_received ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'customer_date_received' => $customer_date_received
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceCarrierReceivedDate(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $invoice_received_date = $request->invoice_received_date ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'invoice_received_date' => $invoice_received_date
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceNumber(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $invoice_number = $request->invoice_number ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'invoice_number' => $invoice_number
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceTerm(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $term_id = $request->term_id ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'term_id' => $term_id
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceDatePaid(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $invoice_date_paid = $request->invoice_date_paid ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'invoice_date_paid' => $invoice_date_paid
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceCarrierCheckNumber(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $carrier_check_number = $request->carrier_check_number ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ],[
+            'carrier_check_number' => $carrier_check_number
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
 }
 
 

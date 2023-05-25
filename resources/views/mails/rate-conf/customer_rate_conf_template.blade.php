@@ -16,7 +16,7 @@
     <tr>
         <td>
 {{--            Dear {{$carrier_name}}--}}
-            Dear <span style="font-weight: bold">{{$carrier_name}}</span>,
+            Dear <span style="font-weight: bold">{{$customer_first_name ?? ''}}</span>,
         </td>
     </tr>
     <tr>
@@ -25,9 +25,8 @@
     <tr>
         <td style="padding: 0.5rem 0;">
 {{--            Please see the attached order confirmation for your shipment from {{$origin_city}}, {{$origin_state}} to {{$destination_city}}, {{$destination_state}}. Please sign and return back.--}}
-            Please see the attached order confirmation for your shipment from <span style="font-weight: bold">{{$origin_city}}</span>,
-            <span style="font-weight: bold">{{$origin_state}}</span> to <span style="font-weight: bold">{{$destination_city}}</span>, <span style="font-weight: bold">{{$destination_state}}</span>.
-            Please sign and return back.
+            Please see the attached order confirmation for your shipment from <span style="font-weight: bold">{{$origin_city ?? ''}}</span>,
+            <span style="font-weight: bold">{{$origin_state ?? ''}}</span> to <span style="font-weight: bold">{{$destination_city ?? ''}}</span>, <span style="font-weight: bold">{{$destination_state ?? ''}}</span>.
         </td>
     </tr>
     <tr>
@@ -42,7 +41,7 @@
     <tr>
         <td>
 {{--            {{$user_first_name}}--}}
-            <span style="font-weight: bold">{{$user_first_name}}</span>
+            <span style="font-weight: bold">{{$user_first_name ?? ''}}</span>
         </td>
     </tr>
     <tr>

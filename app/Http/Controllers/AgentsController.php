@@ -194,6 +194,8 @@ class AgentsController extends Controller
         $division_id = $request->division_id ?? null;
         $fid = $request->fid ?? '';
         $agent_pay_brokerage = $request->agent_pay_brokerage ?? 0;
+        $agent_pay_et3 = $request->agent_pay_et3 ?? 0;
+        $agent_pay_outside_broker = $request->agent_pay_outside_broker ?? 0;
         $agent_pay_company_trucks = $request->agent_pay_company_trucks ?? 0;
         $agent_own_units = $request->agent_own_units ?? 0;
         $agent_pay_own_trucks = $request->agent_pay_own_trucks ?? 0;
@@ -226,6 +228,8 @@ class AgentsController extends Controller
                 'division_id' => $division_id,
                 'fid' => $fid,
                 'agent_pay_brokerage' => $agent_pay_brokerage,
+                'agent_pay_et3' => $agent_pay_et3,
+                'agent_pay_outside_broker' => $agent_pay_outside_broker,
                 'agent_pay_company_trucks' => $agent_pay_company_trucks,
                 'agent_own_units' => $agent_own_units,
                 'agent_pay_own_trucks' => $agent_pay_own_trucks

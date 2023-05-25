@@ -74,6 +74,8 @@ class CompaniesController extends Controller
         $ein = $request->ein ?? '';
         $zulip_name = $request->zulip_name ?? '';
         $jitsi_name = $request->jitsi_name ?? '';
+        $mc_number = $request->mc_number ?? '';
+        $dot_number = $request->dot_number ?? '';
 
         $company = $COMPANY->updateOrCreate([
             'id' => $id
@@ -91,7 +93,9 @@ class CompaniesController extends Controller
             'website' => strtolower($website),
             'ein' => $ein,
             'zulip_name' => $zulip_name,
-            'jitsi_name' => $jitsi_name
+            'jitsi_name' => $jitsi_name,
+            'mc_number' => $mc_number,
+            'dot_number' => $dot_number
         ]);
 
         $company = $COMPANY->where('id', $company->id)
