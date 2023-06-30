@@ -2,11 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanyDriverEmergencyContact;
+use App\Models\CompanyDriverLicense;
+use App\Models\CompanyDriverMailingAddress;
+use App\Models\CompanyDriverMedicalCard;
+use App\Models\CompanyDriverTractor;
+use App\Models\CompanyDriverTrailer;
+use App\Models\LicenseClass;
+use App\Models\LicenseEndorsement;
+use App\Models\LicenseRestriction;
+use App\Models\OwnerOperator;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\CompanyDriver;
 use App\Models\Company;
+use Throwable;
 
 class CompanyDriversController extends Controller
 {
@@ -14,226 +27,194 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveDriver(Request $request): JsonResponse
+    public function getDriverById(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
-        $COMPANY = new Company();
+        $DRIVER = CompanyDriver::query();
+        $id = $request->id ?? null;
 
-        $driver_id = $request->driver_id ?? ($request->id ?? 0);
-        $company_id = $request->company_id ?? 0;
+        $driver = $DRIVER->where('id', $id)
+            ->with([
+                'mailing_address',
+                'contacts',
+                'license',
+                'medical_card',
+                'tractor',
+                'trailer'
+            ])->first();
 
-        if ($company_id > 0) {
-            $curDriver = $DRIVER->where('id', $driver_id)->first();
-
-            $company = $COMPANY->where('id', $company_id)->first();
-
-            $prefix = $request->prefix ?? ($curDriver ? $curDriver->prefix : '');
-            $first_name = $request->first_name ?? ($curDriver ? $curDriver->first_name : '');
-            $middle_name = $request->middle_name ?? ($curDriver ? $curDriver->middle_name : '');
-            $last_name = $request->last_name ?? ($curDriver ? $curDriver->last_name : '');
-            $suffix = $request->suffix ?? ($curDriver ? $curDriver->suffix : '');
-            $title = $request->title ?? ($curDriver ? $curDriver->title : '');
-            $department = $request->department ?? ($curDriver ? $curDriver->department : '');
-            $email_work = $request->email_work ?? ($curDriver ? $curDriver->email_work : '');
-            $email_personal = $request->email_personal ?? ($curDriver ? $curDriver->email_personal : '');
-            $email_other = $request->email_other ?? ($curDriver ? $curDriver->email_other : '');
-            $primary_email = $request->primary_email ?? ($curDriver ? $curDriver->primary_email : 'work');
-            $phone_work = $request->phone_work ?? ($curDriver ? $curDriver->phone_work : '');
-            $phone_work_fax = $request->phone_work_fax ?? ($curDriver ? $curDriver->phone_work_fax : '');
-            $phone_mobile = $request->phone_mobile ?? ($curDriver ? $curDriver->phone_mobile : '');
-            $phone_direct = $request->phone_direct ?? ($curDriver ? $curDriver->phone_direct : '');
-            $phone_other = $request->phone_other ?? ($curDriver ? $curDriver->phone_other : '');
-            $primary_phone = $request->primary_phone ?? ($curDriver ? $curDriver->primary_phone : 'work');
-            $phone_ext = $request->phone_ext ?? ($curDriver ? $curDriver->phone_ext : '');
-            $country = $request->country ?? ($curDriver ? $curDriver->country : '');
-            $address1 = $request->address1 ?? ($curDriver ? $curDriver->address1 : $company->address1);
-            $address2 = $request->address2 ?? ($curDriver ? $curDriver->address2 : $company->address2);
-            $city = $request->city ?? ($curDriver ? $curDriver->city : $company->city);
-            $state = $request->state ?? ($curDriver ? $curDriver->state : $company->state);
-            $zip_code = $request->zip_code ?? ($curDriver ? $curDriver->zip_code : $company->zip);
-            $birthday = $request->birthday ?? ($curDriver ? $curDriver->birthday : '');
-            $website = $request->website ?? ($curDriver ? $curDriver->website : '');
-            $notes = $request->notes ?? ($curDriver ? $curDriver->notes : '');
-            $is_primary_admin = $request->is_primary_admin ?? ($curDriver ? $curDriver->is_primary_admin : 0);
-            $is_online = $request->is_online ?? ($curDriver ? $curDriver->is_online : 0);
-
-            $driver_manager = $request->driver_manager ?? ($curDriver ? $curDriver->driver_manager : '');
-            $division = $request->division ?? ($curDriver ? $curDriver->division : '');
-            $unit_number = $request->unit_number ?? ($curDriver ? $curDriver->unit_number : '');
-            $trailer_number = $request->trailer_number ?? ($curDriver ? $curDriver->trailer_number : '');
-            $tractor_plate = $request->tractor_plate ?? ($curDriver ? $curDriver->tractor_plate : '');
-            $trailer_plate = $request->trailer_plate ?? ($curDriver ? $curDriver->trailer_plate : '');
-            $drivers_license_number = $request->drivers_license_number ?? ($curDriver ? $curDriver->drivers_license_number : '');
-            $driver_state = $request->driver_state ?? ($curDriver ? $curDriver->driver_state : '');
-            $expiration_date = $request->expiration_date ?? ($curDriver ? $curDriver->expiration_date : '');
-            $endorsements = $request->endorsements ?? ($curDriver ? $curDriver->endorsements : '');
-            $hire_date = $request->hire_date ?? ($curDriver ? $curDriver->hire_date : '');
-            $termination_date = $request->termination_date ?? ($curDriver ? $curDriver->termination_date : '');
-            $physical_date = $request->physical_date ?? ($curDriver ? $curDriver->physical_date : '');
-            $renewal_date = $request->renewal_date ?? ($curDriver ? $curDriver->renewal_date : '');
-            $drug_test_date = $request->drug_test_date ?? ($curDriver ? $curDriver->drug_test_date : '');
-            $pay_rate = $request->pay_rate ?? ($curDriver ? $curDriver->pay_rate : 0.00);
-            $per_hour_per_day = $request->per_hour_per_day ?? ($curDriver ? $curDriver->per_hour_per_day : 0.00);
-            $per_hour_per_day_unit = $request->per_hour_per_day_unit ?? ($curDriver ? $curDriver->per_hour_per_day_unit : 'hr');
-
-
-
-            $is_primary_admin = (int)$is_primary_admin;
-
-            $driver = $DRIVER->updateOrCreate([
-                'id' => $driver_id
-            ],
-                [
-                    'company_id' => $company_id,
-                    'prefix' => $prefix,
-                    'first_name' => ucwords(trim($first_name)),
-                    'middle_name' => ucwords(trim($middle_name)),
-                    'last_name' => ucwords(trim($last_name)),
-                    'suffix' => $suffix,
-                    'title' => $title,
-                    'department' => $department,
-                    'email_work' => strtolower($email_work),
-                    'email_personal' => strtolower($email_personal),
-                    'email_other' => strtolower($email_other),
-                    'primary_email' => $primary_email,
-                    'phone_work' => $phone_work,
-                    'phone_work_fax' => $phone_work_fax,
-                    'phone_mobile' => $phone_mobile,
-                    'phone_direct' => $phone_direct,
-                    'phone_other' => $phone_other,
-                    'primary_phone' => $primary_phone,
-                    'phone_ext' => $phone_ext,
-                    'country' => ucwords($country),
-                    'address1' => $address1,
-                    'address2' => $address2,
-                    'city' => ucwords($city),
-                    'state' => strtoupper($state),
-                    'zip_code' => $zip_code,
-                    'birthday' => $birthday,
-                    'website' => strtolower($website),
-                    'notes' => $notes,
-                    'is_primary_admin' => $is_primary_admin,
-                    'is_online' => $is_online,
-                    'driver_manager' => $driver_manager,
-                    'division' => $division,
-                    'unit_number' => $unit_number,
-                    'trailer_number' => $trailer_number,
-                    'tractor_plate' => $tractor_plate,
-                    'trailer_plate' => $trailer_plate,
-                    'drivers_license_number' => $drivers_license_number,
-                    'driver_state' => $driver_state,
-                    'expiration_date' => $expiration_date,
-                    'endorsements' => $endorsements,
-                    'hire_date' => $hire_date,
-                    'termination_date' => $termination_date,
-                    'physical_date' => $physical_date,
-                    'renewal_date' => $renewal_date,
-                    'drug_test_date' => $drug_test_date,
-                    'pay_rate' => $pay_rate,
-                    'per_hour_per_day' => $per_hour_per_day,
-                    'per_hour_per_day_unit' => $per_hour_per_day_unit
-                ]);
-
-            $newDriver = $DRIVER->where('id', $driver->id)
-                ->with('company')
-                ->has('company')
-                ->first();
-
-            $drivers = $DRIVER->where('company_id', $company_id)
-                ->with('company')
-                ->has('company')
-                ->orderBy('first_name')
-                ->get();
-
-            return response()->json(['result' => 'OK', 'driver' => $newDriver, 'drivers' => $drivers]);
-        } else {
-            return response()->json(['result' => 'NO COMPANY']);
-        }
+        return response()->json(['result' => 'OK', 'driver' => $driver]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function uploadAvatar(Request $request): JsonResponse
+    public function getDrivers(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = CompanyDriver::query();
+        $company_id = $request->company_id ?? null;
 
-        $driver_id = $_POST['driver_id'];
-        $company_id = $request->company_id;
-        $fileData = $_FILES['avatar'];
-        $path = $fileData['name'];
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $drivers = $DRIVER->where('company_id', $company_id)
+            ->with([
+                'mailing_address',
+                'contacts',
+                'license',
+                'medical_card',
+                'tractor',
+                'trailer'
+            ])->get();
 
-        $driver = $DRIVER->where('id', $driver_id)->first();
-        $cur_avatar = $driver->avatar;
-        $new_avatar = uniqid() . '.' . $extension;
+        return response()->json(['result' => 'OK', 'drivers' => $drivers]);
+    }
 
-        if ($cur_avatar) {
-            if (file_exists(public_path('avatars/' . $cur_avatar))){
-                try {
-                    unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable | Exception $e) {
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getDriverByCode(Request $request): JsonResponse
+    {
+        $DRIVER = CompanyDriver::query();
+        $code = strtoupper($request->code ?? '');
+
+        $driver = $DRIVER->whereRaw("1 = 1")
+            ->whereRaw("code LIKE '$code%'")
+            ->with([
+                'mailing_address',
+                'contacts',
+                'license',
+                'medical_card',
+                'tractor',
+                'trailer'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'driver' => $driver]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveDriver(Request $request): JsonResponse
+    {
+        $DRIVER = CompanyDriver::query();
+
+        $id = $request->id ?? null;
+        $code = $request->code ?? '';
+        $company_id = $request->company_id ?? null;
+        $owner_operator_id = $request->owner_operator_id ?? null;
+        $first_name = $request->first_name ?? '';
+        $last_name = $request->last_name ?? '';
+        $address1 = $request->address1 ?? '';
+        $address2 = $request->address2 ?? '';
+        $city = $request->city ?? '';
+        $state = $request->state ?? '';
+        $zip = $request->zip ?? '';
+        $contact_name = $request->contact_name ?? '';
+        $contact_phone = $request->contact_phone ?? '';
+        $ext = $request->ext ?? '';
+        $mailing_contact_id = $request->mailing_contact_id ?? null;
+        $mailing_contact_primary_phone = $request->mailing_contact_primary_phone ?? 'work';
+        $mailing_contact_primary_email = $request->mailing_contact_primary_email ?? 'work';
+        $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
+
+        if (!$id) {
+            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_drivers'");
+            $code = str_pad($table_info[0]->Auto_increment, 6, "DV0000", STR_PAD_LEFT);
+        }
+
+        $with_contact = true;
+
+        if (trim($contact_name) === '' || trim($contact_phone) === '') {
+            $with_contact = false;
+        }
+
+        $driver = $DRIVER->updateOrCreate([
+            'id' => $id
+        ],
+            [
+                'code' => $code,
+                'company_id' => $company_id,
+                'owner_operator_id' => $owner_operator_id,
+                'first_name' => ucwords($first_name),
+                'last_name' => ucwords($last_name),
+                'address1' => ucwords($address1),
+                'address2' => ucwords($address2),
+                'city' => ucwords($city),
+                'state' => strtoupper($state),
+                'zip' => $zip,
+                'contact_name' => ucwords($contact_name),
+                'contact_phone' => $contact_phone,
+                'ext' => $ext,
+                'mailing_contact_id' => $mailing_contact_id,
+                'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
+                'mailing_contact_primary_email' => $mailing_contact_primary_email,
+                'remit_to_address_is_the_same' => $remit_to_address_is_the_same,
+            ]);
+
+        if ($with_contact) {
+            $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver->id)->get();
+
+            $contact_name_splitted = explode(" ", $contact_name);
+            $contact_first = $contact_name_splitted[0];
+            $contact_last = '';
+
+            if (count($contact_name_splitted) > 0) {
+                for ($i = 1; $i < count($contact_name_splitted); $i++) {
+                    $contact_last .= $contact_name_splitted[$i] . " ";
+                }
+            }
+
+            $contact_last = trim($contact_last);
+
+            if (count($contacts) === 0) {
+                $contact = new CompanyDriverEmergencyContact();
+                $contact->driver_id = $driver->id;
+                $contact->first_name = ucwords(trim($contact_first));
+                $contact->last_name = ucwords(trim($contact_last));
+                $contact->phone_work = $contact_phone;
+                $contact->phone_ext = $ext;
+                $contact->address1 = $address1;
+                $contact->address2 = $address2;
+                $contact->city = ucwords($city);
+                $contact->state = strtoupper($state);
+                $contact->zip_code = $zip;
+                $contact->is_primary = 0;
+                $contact->priority = 1;
+                $contact->save();
+
+            } elseif (count($contacts) === 1) {
+
+                $contact = $contacts[0];
+                if ($contact->first_name === $contact_first && $contact->last_name === $contact_last) {
+
+                    CompanyDriverEmergencyContact::where('id', $contact->id)->update([
+                        'phone_work' => ($contact->primary_phone === 'work') ? $contact_phone : $contact->phone_work,
+                        'phone_work_fax' => ($contact->primary_phone === 'fax') ? $contact_phone : $contact->phone_work_fax,
+                        'phone_mobile' => ($contact->primary_phone === 'mobile') ? $contact_phone : $contact->phone_mobile,
+                        'phone_direct' => ($contact->primary_phone === 'direct') ? $contact_phone : $contact->phone_direct,
+                        'phone_other' => ($contact->primary_phone === 'other') ? $contact_phone : $contact->phone_other,
+                        'phone_ext' => $ext
+                    ]);
                 }
             }
         }
 
-        $DRIVER->where('id', $driver_id)->update([
-            'avatar' => $new_avatar
-        ]);
+        $newDriver = CompanyDriver::where('id', $driver->id)
+            ->with([
+                'mailing_address',
+                'contacts',
+                'license',
+                'medical_card',
+                'tractor',
+                'trailer'
+            ])->first();
 
-        $driver = $DRIVER->where('id', $driver_id)
-            ->with('company')
-            ->has('company')
-            ->first();
-
-        $drivers = $DRIVER->where('company_id', $company_id)
-            ->with('company')
-            ->has('company')
+        $drivers = CompanyDriver::where('company_id', $company_id)
             ->orderBy('first_name')
+            ->orderBy('last_name')
             ->get();
 
-        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
-
-        return response()->json(['result' => 'OK', 'driver' => $driver, 'drivers' => $drivers]);
-    }
-
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function removeAvatar(Request $request): JsonResponse
-    {
-        $DRIVER = new CompanyDriver();
-
-        $driver_id = $request->driver_id ?? ($request->id ?? 0);
-        $company_id = $request->company_id;
-
-        $driver = $DRIVER->where('id', $driver_id)->first();
-
-        if (file_exists(public_path('avatars/' . $driver->avatar))){
-            try {
-                unlink(public_path('avatars/' . $driver->avatar));
-            } catch (Throwable | Exception $e) {
-            }
-        }
-
-        $DRIVER->where('id', $driver_id)->update([
-            'avatar' => ''
-        ]);
-
-        $driver = $DRIVER->where('id', $driver_id)
-            ->with('company')
-            ->has('company')
-            ->first();
-
-        $drivers = $DRIVER->where('company_id', $company_id)
-            ->with('company')
-            ->has('company')
-            ->orderBy('first_name')
-            ->get();
-
-        return response()->json(['result' => 'OK', 'driver' => $driver, 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'driver' => $newDriver, 'drivers' => $drivers]);
     }
 
     /**
@@ -242,18 +223,23 @@ class CompanyDriversController extends Controller
      */
     public function deleteDriver(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = CompanyDriver::query();
 
-        $driver_id = $request->driver_id ?? ($request->id ?? 0);
+        $id = $request->id ?? null;
 
-        $driver = $DRIVER->where('id', $driver_id)->first();
+        $driver = $DRIVER->where('id', $id)->first();
 
-        $DRIVER->where('id', $driver_id)->delete();
+        $DRIVER->where('id', $id)->delete();
+
         $drivers = $DRIVER->where('company_id', $driver->company_id)
-            ->with('company')
-            ->has('company')
-            ->orderBy('first_name')
-            ->get();
+            ->with([
+                'mailing_address',
+                'contacts',
+                'license',
+                'medical_card',
+                'tractor',
+                'trailer'
+            ])->get();
 
         return response()->json(['result' => 'OK', 'drivers' => $drivers]);
     }
@@ -264,49 +250,857 @@ class CompanyDriversController extends Controller
      */
     public function companyDriversSearch(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = CompanyDriver::query();
 
-        $company_id = $request->search[0]['data'] ?? 0;
-        $first_name = $request->search[1]['data'] ?? '';
-        $last_name = $request->search[2]['data'] ?? '';
-        $address1 = $request->search[3]['data'] ?? '';
-        $address2 = $request->search[4]['data'] ?? '';
-        $city = $request->search[5]['data'] ?? '';
-        $state = $request->search[6]['data'] ?? '';
-        $phone = $request->search[7]['data'] ?? '';
-        $email = $request->search[8]['data'] ?? '';
+        $name = $request->search[0]['data'] ?? '';
+        $address1 = $request->search[1]['data'] ?? '';
+        $address2 = $request->search[2]['data'] ?? '';
+        $city = $request->search[3]['data'] ?? '';
+        $state = $request->search[4]['data'] ?? '';
+        $zip = $request->search[5]['data'] ?? '';
+        $contact_name = $request->search[6]['data'] ?? '';
+        $contact_phone = $request->search[7]['data'] ?? '';
+        $contact_phone_ext = $request->search[8]['data'] ?? '';
 
-        if ($company_id == 0) {
-            $drivers = $DRIVER->whereRaw("1 = 1")
-                ->whereRaw("LOWER(first_name) like '%$first_name%'")
-                ->whereRaw("LOWER(last_name) like '%$last_name%'")
-                ->whereRaw("LOWER(address1) like '%$address1%'")
-                ->whereRaw("LOWER(address2) like '%$address2%'")
-                ->whereRaw("LOWER(city) like '%$city%'")
-                ->whereRaw("LOWER(state) like '%$state%'")
-                ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
-                ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('first_name')
-                ->with('company')
-                ->has('company')
-                ->get();
-        } else {
-            $drivers = $DRIVER->whereRaw("1 = 1")
-                ->whereRaw("company_id = $company_id")
-                ->whereRaw("LOWER(first_name) like '%$first_name%'")
-                ->whereRaw("LOWER(last_name) like '%$last_name%'")
-                ->whereRaw("LOWER(address1) like '%$address1%'")
-                ->whereRaw("LOWER(address2) like '%$address2%'")
-                ->whereRaw("LOWER(city) like '%$city%'")
-                ->whereRaw("LOWER(state) like '%$state%'")
-                ->whereRaw("(phone_work like '%$phone%' or phone_mobile like '%$phone%' or phone_work_fax like '%$phone%' or phone_direct like '%$phone%' or phone_other like '%$phone%')")
-                ->whereRaw("(LOWER(email_work) like '%$email%' or LOWER(email_personal) like '%$email%' or LOWER(email_other) like '%$email%')")
-                ->orderBy('first_name')
-                ->with('company')
-                ->has('company')
-                ->get();
-        }
+        $drivers = $DRIVER->whereRaw("1 = 1")
+            ->whereRaw("LOWER(name) like '$name%'")
+            ->whereRaw("LOWER(address1) like '$address1%'")
+            ->whereRaw("LOWER(address2) like '$address2%'")
+            ->whereRaw("LOWER(city) like '$city%'")
+            ->whereRaw("LOWER(state) like '$state%'")
+            ->whereRaw("LOWER(zip) like '$zip%'")
+            ->whereRaw("LOWER(contact_name) like '$contact_name%'")
+            ->whereRaw("LOWER(contact_phone) like '$contact_phone%'")
+            ->whereRaw("LOWER(contact_phone_ext) like '$contact_phone_ext%'")
+            ->orderBy('name')
+            ->get();
 
         return response()->json(['result' => 'OK', 'drivers' => $drivers]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCompanyDriverMailingAddress(Request $request): JsonResponse
+    {
+        $MAILING_ADDRESS = CompanyDriverMailingAddress::query();
+
+        $id = $request->id ?? null;
+        $company_driver_id = $request->company_driver_id ?? null;
+        $address1 = $request->address1 ?? '';
+        $address2 = $request->address2 ?? '';
+        $city = $request->city ?? '';
+        $state = $request->state ?? '';
+        $zip = $request->zip ?? '';
+        $contact_name = $request->contact_name ?? '';
+        $contact_phone = $request->contact_phone ?? '';
+        $ext = $request->ext ?? '';
+        $email = $request->email ?? '';
+        $mailing_contact_id = $request->mailing_contact_id ?? null;
+        $mailing_contact_primary_phone = $request->mailing_contact_primary_phone ?? 'work';
+        $mailing_contact_primary_email = $request->mailing_contact_primary_email ?? 'work';
+
+        $mailing_address = $MAILING_ADDRESS->updateOrCreate([
+            'id' => $id
+        ], [
+            'company_driver_id' => $company_driver_id,
+            'address1' => $address1,
+            'address2' => $address2,
+            'city' => $city,
+            'state' => strtoupper($state),
+            'zip' => $zip,
+            'contact_name' => $contact_name,
+            'contact_phone' => $contact_phone,
+            'ext' => $ext,
+            'email' => strtolower($email),
+        ]);
+
+        CompanyDriver::query()->updateOrCreate([
+            'id' => $company_driver_id
+        ], [
+            'mailing_contact_id' => $mailing_contact_id,
+            'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
+            'mailing_contact_primary_email' => $mailing_contact_primary_email,
+            'remit_to_address_is_the_same' => 1
+        ]);
+
+        return response()->json(['result' => 'OK', 'mailing_address' => $mailing_address]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCompanyDriverMailingAddress(Request $request): JsonResponse
+    {
+        $MAILING_ADDRESS = CompanyDriverMailingAddress::query();
+        $company_driver_id = $request->company_driver_id ?? null;
+
+        $MAILING_ADDRESS->where('company_driver_id', $company_driver_id)->delete();
+
+        CompanyDriver::query()->updateOrCreate([
+            'id' => $company_driver_id
+        ], [
+            'mailing_contact_id' => null,
+            'mailing_contact_primary_phone' => 'work',
+            'mailing_contact_primary_email' => 'work',
+            'remit_to_address_is_the_same' => 0
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCompanyDriverEmergencyContact(Request $request): JsonResponse
+    {
+        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $id = $request->id ?? null;
+
+        $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCompanyDriverEmergencyContact(Request $request): JsonResponse
+    {
+        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $id = $request->id ?? null;
+        $driver_id = $request->driver_id ?? null;
+
+        $curContact = $EMERGENCY_CONTACT->where('id', $id)->first();
+
+        $prefix = $request->prefix ?? ($curContact->prefix ?? '');
+        $first_name = $request->first_name ?? ($curContact->first_name ?? '');
+        $middle_name = $request->middle_name ?? ($curContact->middle_name ?? '');
+        $last_name = $request->last_name ?? ($curContact->last_name ?? '');
+        $suffix = $request->suffix ?? ($curContact->suffix ?? '');
+        $title = $request->title ?? ($curContact->title ?? '');
+        $company = $request->company ?? ($curContact->company ?? '');
+        $department = $request->department ?? ($curContact->department ?? '');
+        $email_work = $request->email_work ?? ($curContact->email_work ?? '');
+        $email_personal = $request->email_personal ?? ($curContact->email_personal ?? '');
+        $email_other = $request->email_other ?? ($curContact->email_other ?? '');
+        $primary_email = $request->primary_email ?? ($curContact->primary_email ?? 'work');
+        $phone_work = $request->phone_work ?? ($curContact->phone_work ?? '');
+        $phone_work_fax = $request->phone_work_fax ?? ($curContact->phone_work_fax ?? '');
+        $phone_mobile = $request->phone_mobile ?? ($curContact->phone_mobile ?? '');
+        $phone_direct = $request->phone_direct ?? ($curContact->phone_direct ?? '');
+        $phone_other = $request->phone_other ?? ($curContact->phone_other ?? '');
+        $primary_phone = $request->primary_phone ?? ($curContact->primary_phone ?? 'work');
+        $phone_ext = $request->phone_ext ?? ($curContact->phone_ext ?? '');
+        $country = $request->country ?? ($curContact->country ?? '');
+        $address1 = $request->address1 ?? ($curContact->address1 ?? '');
+        $address2 = $request->address2 ?? ($curContact->address2 ?? '');
+        $city = $request->city ?? ($curContact->city ?? '');
+        $state = $request->state ?? ($curContact->state ?? '');
+        $zip_code = $request->zip_code ?? ($curContact->zip_code ?? '');
+        $birthday = $request->birthday ?? ($curContact->birthday ?? '');
+        $website = $request->website ?? ($curContact->website ?? '');
+        $notes = $request->notes ?? ($curContact->notes ?? '');
+        $is_primary = $request->is_primary ?? ($curContact->is_primary ?? 0);
+        $is_online = $request->is_online ?? ($curContact->is_online ?? 0);
+        $type = $request->type ?? ($curContact->type ?? 'internal');
+        $relationship = $request->relationship ?? ($curContact->relationship ?? '');
+        $priority = $request->priority ?? ($curContact->priority ?? 0);
+
+        $is_primary = (int)$is_primary;
+        $priority = (int)$priority;
+        $is_online = (int)$is_online;
+
+
+        $contact = $EMERGENCY_CONTACT->updateOrCreate([
+            'id' => $id
+        ], [
+            'driver_id' => $driver_id,
+            'prefix' => $prefix,
+            'first_name' => ucwords(trim($first_name)),
+            'middle_name' => ucwords(trim($middle_name)),
+            'last_name' => ucwords(trim($last_name)),
+            'suffix' => $suffix,
+            'title' => $title,
+            'company' => $company,
+            'department' => $department,
+            'email_work' => strtolower($email_work),
+            'email_personal' => strtolower($email_personal),
+            'email_other' => strtolower($email_other),
+            'primary_email' => $primary_email,
+            'phone_work' => $phone_work,
+            'phone_work_fax' => $phone_work_fax,
+            'phone_mobile' => $phone_mobile,
+            'phone_direct' => $phone_direct,
+            'phone_other' => $phone_other,
+            'primary_phone' => $primary_phone,
+            'phone_ext' => $phone_ext,
+            'country' => ucwords($country),
+            'address1' => $address1,
+            'address2' => $address2,
+            'city' => ucwords($city),
+            'state' => strtoupper($state),
+            'zip_code' => $zip_code,
+            'birthday' => $birthday,
+            'website' => strtolower($website),
+            'notes' => $notes,
+            'is_primary' => $is_primary,
+            'is_online' => $is_online,
+            'type' => $type,
+            'relationship' => $relationship,
+            'priority' => $priority
+        ]);
+
+        $newContact = CompanyDriverEmergencyContact::where('id', $contact->id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->first();
+
+        $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver_id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->orderBy('priority')
+            ->get();
+
+        return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCompanyDriverEmergencyContact(Request $request): JsonResponse
+    {
+        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $id = $request->id ?? null;
+
+        $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
+
+        $EMERGENCY_CONTACT->where('id', $id)->delete();
+
+        $contacts = $EMERGENCY_CONTACT->where('driver_id', $contact->driver_id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->orderBy('priority')
+            ->get();
+
+        return response()->json(['result', 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+    public function uploadCompanyDriverEmergencyContactAvatar(Request $request): JsonResponse
+    {
+        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+
+        $contact_id = $_POST['contact_id'];
+        $driver_id = $request->driver_id;
+        $fileData = $_FILES['avatar'];
+        $path = $fileData['name'];
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        $contact = $EMERGENCY_CONTACT->where('id', $contact_id)->first();
+        $cur_avatar = $contact->avatar;
+        $new_avatar = uniqid() . '.' . $extension;
+
+        if ($cur_avatar) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))) {
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable|Exception $e) {
+                }
+            }
+        }
+
+        CompanyDriverEmergencyContact::where('id', $contact_id)->update([
+            'avatar' => $new_avatar
+        ]);
+
+        $contact = CompanyDriverEmergencyContact::where('id', $contact_id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->first();
+
+        $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver_id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->orderBy('priority')
+            ->get();
+
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeCompanyDriverEmergencyContactAvatar(Request $request): JsonResponse
+    {
+        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+
+        $contact_id = $request->contact_id ?? ($request->id ?? 0);
+        $driver_id = $request->driver_id;
+
+        $contact = $EMERGENCY_CONTACT->where('id', $contact_id)->first();
+
+        if (file_exists(public_path('avatars/' . $contact->avatar))) {
+            try {
+                unlink(public_path('avatars/' . $contact->avatar));
+            } catch (Throwable|Exception $e) {
+            }
+        }
+
+        CompanyDriverEmergencyContact::where('id', $contact_id)->update([
+            'avatar' => ''
+        ]);
+
+        $contact = CompanyDriverEmergencyContact::where('id', $contact_id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->first();
+
+        $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver_id)
+            ->with('company_driver')
+            ->has('company_driver')
+            ->orderBy('priority')
+            ->get();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    public function getCompanyDriverLicense(Request $request): JsonResponse
+    {
+        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $id = $request->id ?? null;
+
+        $license = $DRIVER_LICENSE->where('id', $id)
+            ->with([
+                'class',
+                'endorsement',
+                'restriction'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'license' => $license]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCompanyDriverLicense(Request $request): JsonResponse
+    {
+        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $id = $request->id ?? null;
+        $company_driver_id = $request->company_driver_id ?? null;
+        $license_number = $request->license_number ?? '';
+        $state = $request->state ?? '';
+        $cdl = $request->cdl ?? 0;
+        $class_id = $request->class_id ?? null;
+        $endorsement_id = $request->endorsement_id ?? null;
+        $expiration_date = $request->expiration_date ?? null;
+        $restriction_id = $request->restriction_id ?? null;
+
+        $license = $DRIVER_LICENSE->updateOrCreate([
+            'id' => $id
+        ], [
+            'company_driver_id' => $company_driver_id,
+            'license_number' => $license_number,
+            'state' => strtoupper($state),
+            'cdl' => $cdl,
+            'class_id' => $class_id,
+            'endorsement_id' => $endorsement_id,
+            'expiration_date' => $expiration_date,
+            'restriction_id' => $restriction_id
+        ]);
+
+        $newLicense = CompanyDriverLicense::where('id', $license->id)
+            ->with([
+                'class',
+                'endorsement',
+                'restriction'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'license' => $newLicense]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCompanyDriverLicense(Request $request): JsonResponse
+    {
+        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $id = $request->id ?? null;
+
+        $license = CompanyDriverLicense::where('id', $id)->first();
+
+        if ($license) {
+            $DRIVER_LICENSE->where('id', $id)->delete();
+
+            if (file_exists(public_path('license-images/' . $license->image))) {
+                try {
+                    unlink(public_path('license-images/' . $license->image));
+                } catch (Throwable|Exception $e) {
+                }
+            }
+        }
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLicenseEndorsements(Request $request): JsonResponse
+    {
+        $ENDORSEMENT = LicenseEndorsement::query();
+
+        $name = $request->name ?? '';
+
+        $endorsements = $ENDORSEMENT->whereRaw("1 = 1")
+            ->whereRaw("LOWER(name) like '$name%'")
+            ->orderBy('name')->get();
+
+        return response()->json(['result' => 'OK', 'endorsements' => $endorsements]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLicenseClasses(Request $request): JsonResponse
+    {
+        $CLASSES = LicenseClass::query();
+
+        $name = $request->name ?? '';
+
+        $classes = $CLASSES->whereRaw("1 = 1")
+            ->whereRaw("LOWER(name) like '$name%'")
+            ->orderBy('name')->get();
+
+        return response()->json(['result' => 'OK', 'classes' => $classes]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLicenseRestrictions(Request $request): JsonResponse
+    {
+        $RESTRICTIONS = LicenseRestriction::query();
+
+        $name = $request->name ?? '';
+
+        $restrictions = $RESTRICTIONS->whereRaw("1 = 1")
+            ->whereRaw("LOWER(name) like '$name%'")
+            ->orderBy('name')->get();
+
+        return response()->json(['result' => 'OK', 'restrictions' => $restrictions]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function uploadDriverLicenseImage(Request $request): JsonResponse
+    {
+        $DRIVER_LICENSE = CompanyDriverLicense::query();
+
+        $id = $_POST['license_id'];
+        $license_number = $_POST['license_number'];
+        $state = $_POST['state'];
+        $class_id = $_POST['class_id'];
+        $cdl = $_POST['cdl'];
+        $endorsement_id = $_POST['endorsement_id'];
+        $expiration_date = $_POST['expiration_date'];
+        $restriction_id = $_POST['restriction_id'];
+
+        $license = $DRIVER_LICENSE->updateOrCreate([
+            'id' => $id
+        ], [
+            'license_number' => $license_number,
+            'state' => $state,
+            'class_id' => $class_id,
+            'cdl' => $cdl,
+            'endorsement_id' => $endorsement_id,
+            'expiration_date' => $expiration_date,
+            'restriction_id' => $restriction_id
+        ]);
+
+        $fileData = $_FILES['image'];
+        $path = $fileData['name'];
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        $cur_image = $license->image;
+        $new_image = uniqid() . '.' . $extension;
+
+        if ($cur_image) {
+            if (file_exists(public_path('license-images/' . $cur_image))) {
+                try {
+                    unlink(public_path('license-images/' . $cur_image));
+                } catch (Throwable|Exception $e) {
+                }
+            }
+        }
+
+        CompanyDriverLicense::where('id', $id)->update([
+            'image' => $new_image
+        ]);
+
+
+        move_uploaded_file($fileData['tmp_name'], public_path('license-images/' . $new_image));
+
+        return response()->json(['result' => 'OK', 'image' => $new_image]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeDriverLicenseImage(Request $request): JsonResponse
+    {
+        $DRIVER_LICENSE = new CompanyDriverLicense();
+
+        $id = $request->id ?? null;
+
+        $license = $DRIVER_LICENSE->where('id', $id)->first();
+
+        if (file_exists(public_path('license-images/' . $license->image))) {
+            try {
+                unlink(public_path('license-images/' . $license->image));
+            } catch (Throwable|Exception $e) {
+            }
+        }
+
+        CompanyDriverLicense::where('id', $id)->update([
+            'image' => ''
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCompanyDriverMedicalCard(Request $request): JsonResponse
+    {
+        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $id = $request->id ?? null;
+
+        $card = $DRIVER_MEDICAL_CARD->where('id', $id)->first();
+
+        return response()->json(['result' => 'OK', 'card' => $card]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCompanyDriverMedicalCard(Request $request): JsonResponse
+    {
+        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $id = $request->id ?? null;
+        $company_driver_id = $request->company_driver_id ?? null;
+        $issue_date = $request->issue_date ?? null;
+        $expiration_date = $request->expiration_date ?? null;
+
+        $card = $DRIVER_MEDICAL_CARD->updateOrCreate([
+            'id' => $id
+        ], [
+            'company_driver_id' => $company_driver_id,
+            'issue_date' => $issue_date,
+            'expiration_date' => $expiration_date
+        ]);
+
+        $newCard = CompanyDriverMedicalCard::where('id', $card->id)->first();
+
+        return response()->json(['result' => 'OK', 'card' => $newCard]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCompanyDriverMedicalCard(Request $request): JsonResponse
+    {
+        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $id = $request->id ?? null;
+
+        $card = CompanyDriverMedicalCard::where('id', $id)->first();
+
+        if ($card) {
+            $DRIVER_MEDICAL_CARD->where('id', $id)->delete();
+
+            if (file_exists(public_path('medical-card-images/' . $card->image))) {
+                try {
+                    unlink(public_path('medical-card-images/' . $card->image));
+                } catch (Throwable|Exception $e) {
+                }
+            }
+        }
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function uploadDriverMedicalCardImage(Request $request): JsonResponse
+    {
+        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+
+        $id = $_POST['medical_card_id'];
+        $issue_date = $_POST['issue_date'];
+        $expiration_date = $_POST['expiration_date'];
+
+        $card = $DRIVER_MEDICAL_CARD->updateOrCreate([
+            'id' => $id
+        ], [
+            'issue_date' => $issue_date,
+            'expiration_date' => $expiration_date
+        ]);
+
+        $fileData = $_FILES['image'];
+        $path = $fileData['name'];
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        $cur_image = $card->image;
+        $new_image = uniqid() . '.' . $extension;
+
+        if ($cur_image) {
+            if (file_exists(public_path('medical-card-images/' . $cur_image))) {
+                try {
+                    unlink(public_path('medical-card-images/' . $cur_image));
+                } catch (Throwable|Exception $e) {
+                }
+            }
+        }
+
+        CompanyDriverMedicalCard::where('id', $id)->update([
+            'image' => $new_image
+        ]);
+
+
+        move_uploaded_file($fileData['tmp_name'], public_path('medical-card-images/' . $new_image));
+
+        return response()->json(['result' => 'OK', 'image' => $new_image]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeDriverMedicalCardImage(Request $request): JsonResponse
+    {
+        $DRIVER_MEDICAL_CARD = new CompanyDriverMedicalCard();
+
+        $id = $request->id ?? null;
+
+        $card = $DRIVER_MEDICAL_CARD->where('id', $id)->first();
+
+        if (file_exists(public_path('medical-card-images/' . $card->image))) {
+            try {
+                unlink(public_path('medical-card-images/' . $card->image));
+            } catch (Throwable|Exception $e) {
+            }
+        }
+
+        CompanyDriverMedicalCard::where('id', $id)->update([
+            'image' => ''
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCompanyDriverTractor(Request $request): JsonResponse
+    {
+        $DRIVER_TRACTOR = CompanyDriverTractor::query();
+        $id = $request->id ?? null;
+
+        $tractor = $DRIVER_TRACTOR->where('id', $id)
+            ->with([
+                'type'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'tractor' => $tractor]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCompanyDriverTractor(Request $request): JsonResponse
+    {
+        $DRIVER_TRACTOR = CompanyDriverTractor::query();
+        $id = $request->id ?? null;
+        $company_driver_id = $request->company_driver_id ?? null;
+        $number = $request->number ?? '';
+        $plate_state = $request->plate_state ?? '';
+        $plate_number = $request->plate_number ?? '';
+        $year = $request->year ?? '';
+        $make = $request->make ?? '';
+        $model = $request->model ?? '';
+        $vin = $request->vin ?? '';
+        $color = $request->color ?? '';
+        $type_id = $request->type_id ?? null;
+        $axle = $request->axle ?? null;
+
+        if (!$id) {
+            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_driver_tractors'");
+            $number = str_pad($table_info[0]->Auto_increment, 4, "T000", STR_PAD_LEFT);
+        }
+
+        $tractor = $DRIVER_TRACTOR->updateOrCreate([
+            'id' => $id
+        ], [
+            'company_driver_id' => $company_driver_id,
+            'number' => $number,
+            'plate_state' => strtoupper($plate_state),
+            'plate_number' => $plate_number,
+            'year' => $year,
+            'make' => $make,
+            'model' => $model,
+            'vin' => $vin,
+            'color' => $color,
+            'type_id' => $type_id,
+            'axle' => $axle
+        ]);
+
+        $newTractor = CompanyDriverTractor::where('id', $tractor->id)
+            ->with([
+                'type'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'tractor' => $newTractor]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCompanyDriverTractor(Request $request): JsonResponse
+    {
+        $DRIVER_TRACTOR = CompanyDriverTractor::query();
+        $id = $request->id ?? null;
+
+        $DRIVER_TRACTOR->where('id', $id)->delete();
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCompanyDriverTrailer(Request $request): JsonResponse
+    {
+        $DRIVER_TRAILER = CompanyDriverTrailer::query();
+        $id = $request->id ?? null;
+
+        $trailer = $DRIVER_TRAILER->where('id', $id)
+            ->with([
+                'type'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'trailer' => $trailer]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveCompanyDriverTrailer(Request $request): JsonResponse
+    {
+        $DRIVER_TRAILER = CompanyDriverTrailer::query();
+        $id = $request->id ?? null;
+        $company_driver_id = $request->company_driver_id ?? null;
+        $number = $request->number ?? '';
+        $plate_state = $request->plate_state ?? '';
+        $plate_number = $request->plate_number ?? '';
+        $year = $request->year ?? '';
+        $make = $request->make ?? '';
+        $model = $request->model ?? '';
+        $vin = $request->vin ?? '';
+        $tarps = $request->tarps ?? 0;
+        $dimensions = $request->dimensions ?? '';
+        $length = $request->length ?? 0.00;
+        $width = $request->width ?? 0.00;
+        $height = $request->height ?? 0.00;
+        $type_id = $request->type_id ?? null;
+        $liftgate = $request->liftgate ?? 0;
+        $ramps = $request->ramps ?? 0;
+
+        $length = filter_var($length, FILTER_SANITIZE_NUMBER_INT);
+        $length = str_pad($length, 2, "00", STR_PAD_LEFT);
+
+        $width = filter_var($width, FILTER_SANITIZE_NUMBER_INT);
+        $width = str_pad($width, 3, "000", STR_PAD_LEFT);
+
+        $height = filter_var($height, FILTER_SANITIZE_NUMBER_INT);
+        $height = str_pad($height, 3, "000", STR_PAD_LEFT);
+
+        if (!$id) {
+            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_driver_trailers'");
+            $number = str_pad($table_info[0]->Auto_increment, 6, $length . "0000", STR_PAD_LEFT);
+        }
+
+
+        $trailer = $DRIVER_TRAILER->updateOrCreate([
+            'id' => $id
+        ], [
+            'company_driver_id' => $company_driver_id,
+            'number' => $number,
+            'plate_state' => strtoupper($plate_state),
+            'plate_number' => $plate_number,
+            'year' => $year,
+            'make' => $make,
+            'model' => $model,
+            'vin' => $vin,
+            'tarps' => $tarps,
+            'dimensions' => $dimensions,
+            'length' => $length,
+            'width' => $width,
+            'height' => $height,
+            'type_id' => $type_id,
+            'liftgate' => $liftgate,
+            'ramps' => $ramps
+        ]);
+
+        $newTrailer = CompanyDriverTrailer::where('id', $trailer->id)
+            ->with([
+                'type'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'trailer' => $newTrailer]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteCompanyDriverTrailer(Request $request): JsonResponse
+    {
+        $DRIVER_TRAILER = CompanyDriverTrailer::query();
+        $id = $request->id ?? null;
+
+        $DRIVER_TRAILER->where('id', $id)->delete();
+
+        return response()->json(['result' => 'OK']);
     }
 }

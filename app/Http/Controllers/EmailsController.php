@@ -61,23 +61,23 @@ class EmailsController extends Controller
 
         $order = $ORDER->first();
 
-        $carrier_primary_contact = $order->carrier->contacts->first(function ($item) {
-            return $item->is_primary === 1;
+        $carrier_primary_contact = collect($order->carrier->contacts)->first(function ($item) {
+            return $item["is_primary"] === 1;
         });
 
-        $customer_primary_contact = $order->bill_to_company->contacts->first(function ($item) {
-            return $item->is_primary === 1;
+        $customer_primary_contact = collect($order->bill_to_company->contacts)->first(function ($item) {
+            return $item["is_primary"] === 1;
         });
 
-        $order->customer_contact_first_name = $customer_primary_contact->first_name;
-        $order->carrier_contact_name = $carrier_primary_contact->first_name . ' ' . $carrier_primary_contact->last_name;
+        $order->customer_contact_first_name = $customer_primary_contact["first_name"];
+        $order->carrier_contact_name = $carrier_primary_contact["first_name"] . ' ' . $carrier_primary_contact["last_name"];
 
         $order->carrier_contact_email = ($carrier_primary_contact->primary_email ?? 'work') === 'work'
-            ? ($carrier_primary_contact->email_work ?? '')
-            : (($carrier_primary_contact->primary_email ?? 'work') === 'personal'
-                ? ($carrier_primary_contact->email_personal ?? '')
-                : (($carrier_primary_contact->primary_email ?? 'work') === 'other'
-                    ? ($carrier_primary_contact->email_other ?? '')
+            ? ($carrier_primary_contact["email_work"] ?? '')
+            : (($carrier_primary_contact["primary_email"] ?? 'work') === 'personal'
+                ? ($carrier_primary_contact["email_personal"] ?? '')
+                : (($carrier_primary_contact["primary_email"] ?? 'work') === 'other'
+                    ? ($carrier_primary_contact["email_other"] ?? '')
                     : ''));
 
         $origin_city = "";

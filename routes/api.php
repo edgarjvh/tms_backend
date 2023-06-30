@@ -4,6 +4,10 @@ use App\Http\Controllers\AgentContactsController;
 use App\Http\Controllers\AgentHoursController;
 use App\Http\Controllers\AgentMailingAddressesController;
 use App\Http\Controllers\AgentNotesController;
+use App\Http\Controllers\CompanyDriverLicenseDocumentsController;
+use App\Http\Controllers\CompanyDriverMedicalCardDocumentsController;
+use App\Http\Controllers\CompanyDriverTractorDocumentsController;
+use App\Http\Controllers\CompanyDriverTrailerDocumentsController;
 use App\Http\Controllers\DivisionContactsController;
 use App\Http\Controllers\DivisionDocumentsController;
 use App\Http\Controllers\DivisionHoursController;
@@ -371,13 +375,68 @@ Route::post('/removeDivisioContactAvatar', [AgentContactsController::class, 'rem
 Route::post('/deleteAgentContact', [AgentContactsController::class, 'deleteAgentContact']);
 Route::post('/resetAgentContactPassword', [AgentContactsController::class, 'resetAgentContactPassword']);
 
-
-
+Route::post('/getDriverById', [CompanyDriversController::class, 'getDriverById']);
+Route::post('/getDrivers', [CompanyDriversController::class, 'getDrivers']);
+Route::post('/getDriverByCode', [CompanyDriversController::class, 'getDriverByCode']);
 Route::post('/saveDriver', [CompanyDriversController::class, 'saveDriver']);
 Route::post('/deleteDriver', [CompanyDriversController::class, 'deleteDriver']);
 Route::post('/uploadDriverAvatar', [CompanyDriversController::class, 'uploadAvatar']);
 Route::post('/removeDriverAvatar', [CompanyDriversController::class, 'removeAvatar']);
 Route::post('/companyDriversSearch', [CompanyDriversController::class, 'companyDriversSearch']);
+Route::post('/saveCompanyDriverMailingAddress', [CompanyDriversController::class, 'saveCompanyDriverMailingAddress']);
+Route::post('/deleteCompanyDriverMailingAddress', [CompanyDriversController::class, 'deleteCompanyDriverMailingAddress']);
+Route::post('/getCompanyDriverEmergencyContact', [CompanyDriversController::class, 'getCompanyDriverEmergencyContact']);
+Route::post('/saveCompanyDriverEmergencyContact', [CompanyDriversController::class, 'saveCompanyDriverEmergencyContact']);
+Route::post('/deleteCompanyDriverEmergencyContact', [CompanyDriversController::class, 'deleteCompanyDriverEmergencyContact']);
+Route::post('/uploadCompanyDriverEmergencyContactAvatar', [CompanyDriversController::class, 'uploadCompanyDriverEmergencyContactAvatar']);
+Route::post('/removeCompanyDriverEmergencyContactAvatar', [CompanyDriversController::class, 'removeCompanyDriverEmergencyContactAvatar']);
+Route::post('/getCompanyDriverLicense', [CompanyDriversController::class, 'getCompanyDriverLicense']);
+Route::post('/saveCompanyDriverLicense', [CompanyDriversController::class, 'saveCompanyDriverLicense']);
+Route::post('/deleteCompanyDriverLicense', [CompanyDriversController::class, 'deleteCompanyDriverLicense']);
+Route::post('/getLicenseEndorsements', [CompanyDriversController::class, 'getLicenseEndorsements']);
+Route::post('/getLicenseClasses', [CompanyDriversController::class, 'getLicenseClasses']);
+Route::post('/getLicenseRestrictions', [CompanyDriversController::class, 'getLicenseRestrictions']);
+Route::post('/uploadDriverLicenseImage', [CompanyDriversController::class, 'uploadDriverLicenseImage']);
+Route::post('/removeDriverLicenseImage', [CompanyDriversController::class, 'removeDriverLicenseImage']);
+Route::post('/getCompanyDriverMedicalCard', [CompanyDriversController::class, 'getCompanyDriverMedicalCard']);
+Route::post('/saveCompanyDriverMedicalCard', [CompanyDriversController::class, 'saveCompanyDriverMedicalCard']);
+Route::post('/deleteCompanyDriverMedicalCard', [CompanyDriversController::class, 'deleteCompanyDriverMedicalCard']);
+Route::post('/uploadDriverMedicalCardImage', [CompanyDriversController::class, 'uploadDriverMedicalCardImage']);
+Route::post('/removeDriverMedicalCardImage', [CompanyDriversController::class, 'removeDriverMedicalCardImage']);
+Route::post('/getCompanyDriverTractor', [CompanyDriversController::class, 'getCompanyDriverTractor']);
+Route::post('/saveCompanyDriverTractor', [CompanyDriversController::class, 'saveCompanyDriverTractor']);
+Route::post('/deleteCompanyDriverTractor', [CompanyDriversController::class, 'deleteCompanyDriverTractor']);
+Route::post('/getCompanyDriverTrailer', [CompanyDriversController::class, 'getCompanyDriverTrailer']);
+Route::post('/saveCompanyDriverTrailer', [CompanyDriversController::class, 'saveCompanyDriverTrailer']);
+Route::post('/deleteCompanyDriverTrailer', [CompanyDriversController::class, 'deleteCompanyDriverTrailer']);
+
+Route::post('/getDocumentsByCompanyDriverLicense', [CompanyDriverLicenseDocumentsController::class, 'getDocumentsByCompanyDriverLicense']);
+Route::post('/saveCompanyDriverLicenseDocument', [CompanyDriverLicenseDocumentsController::class, 'saveCompanyDriverLicenseDocument']);
+Route::post('/deleteCompanyDriverLicenseDocument', [CompanyDriverLicenseDocumentsController::class, 'deleteCompanyDriverLicenseDocument']);
+Route::post('/getNotesByCompanyDriverLicenseDocument', [CompanyDriverLicenseDocumentsController::class, 'getNotesByCompanyDriverLicenseDocument']);
+Route::post('/saveCompanyDriverLicenseDocumentNote', [CompanyDriverLicenseDocumentsController::class, 'saveCompanyDriverLicenseDocumentNote']);
+Route::post('/deleteCompanyDriverLicenseDocumentNote', [CompanyDriverLicenseDocumentsController::class, 'deleteCompanyDriverLicenseDocumentNote']);
+
+Route::post('/getDocumentsByCompanyDriverMedicalCard', [CompanyDriverMedicalCardDocumentsController::class, 'getDocumentsByCompanyDriverMedicalCard']);
+Route::post('/saveCompanyDriverMedicalCardDocument', [CompanyDriverMedicalCardDocumentsController::class, 'saveCompanyDriverMedicalCardDocument']);
+Route::post('/deleteCompanyDriverMedicalCardDocument', [CompanyDriverMedicalCardDocumentsController::class, 'deleteCompanyDriverMedicalCardDocument']);
+Route::post('/getNotesByCompanyDriverMedicalCardDocument', [CompanyDriverMedicalCardDocumentsController::class, 'getNotesByCompanyDriverMedicalCardDocument']);
+Route::post('/saveCompanyDriverMedicalCardDocumentNote', [CompanyDriverMedicalCardDocumentsController::class, 'saveCompanyDriverMedicalCardDocumentNote']);
+Route::post('/deleteCompanyDriverMedicalCardDocumentNote', [CompanyDriverMedicalCardDocumentsController::class, 'deleteCompanyDriverMedicalCardDocumentNote']);
+
+Route::post('/getDocumentsByCompanyDriverTractor', [CompanyDriverTractorDocumentsController::class, 'getDocumentsByCompanyDriverTractor']);
+Route::post('/saveCompanyDriverTractorDocument', [CompanyDriverTractorDocumentsController::class, 'saveCompanyDriverTractorDocument']);
+Route::post('/deleteCompanyDriverTractorDocument', [CompanyDriverTractorDocumentsController::class, 'deleteCompanyDriverTractorDocument']);
+Route::post('/getNotesByCompanyDriverTractorDocument', [CompanyDriverTractorDocumentsController::class, 'getNotesByCompanyDriverTractorDocument']);
+Route::post('/saveCompanyDriverTractorDocumentNote', [CompanyDriverTractorDocumentsController::class, 'saveCompanyDriverTractorDocumentNote']);
+Route::post('/deleteCompanyDriverTractorDocumentNote', [CompanyDriverTractorDocumentsController::class, 'deleteCompanyDriverTractorDocumentNote']);
+
+Route::post('/getDocumentsByCompanyDriverTrailer', [CompanyDriverTrailerDocumentsController::class, 'getDocumentsByCompanyDriverTrailer']);
+Route::post('/saveCompanyDriverTrailerDocument', [CompanyDriverTrailerDocumentsController::class, 'saveCompanyDriverTrailerDocument']);
+Route::post('/deleteCompanyDriverTrailerDocument', [CompanyDriverTrailerDocumentsController::class, 'deleteCompanyDriverTrailerDocument']);
+Route::post('/getNotesByCompanyDriverTrailerDocument', [CompanyDriverTrailerDocumentsController::class, 'getNotesByCompanyDriverTrailerDocument']);
+Route::post('/saveCompanyDriverTrailerDocumentNote', [CompanyDriverTrailerDocumentsController::class, 'saveCompanyDriverTrailerDocumentNote']);
+Route::post('/deleteCompanyDriverTrailerDocumentNote', [CompanyDriverTrailerDocumentsController::class, 'deleteCompanyDriverTrailerDocumentNote']);
 
 Route::post('/saveOperator', [OwnerOperatorsController::class, 'saveOperator']);
 Route::post('/deleteOperator', [OwnerOperatorsController::class, 'deleteOperator']);

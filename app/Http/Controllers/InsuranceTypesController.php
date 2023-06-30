@@ -12,7 +12,7 @@ class InsuranceTypesController extends Controller
         $name = isset($request->name) ? trim($request->name) : '';
 
         $types = InsuranceType::whereRaw("1 = 1")
-            ->whereRaw("name like '%$name%'")
+            ->whereRaw("name like '$name%'")
             ->orderBy('name')
             ->get();
 
