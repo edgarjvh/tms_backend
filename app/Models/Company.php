@@ -23,10 +23,10 @@ class Company extends Model
     }
 
     public function drivers(){
-        return $this->hasMany(CompanyDriver::class, 'company_id', 'id')->orderBy('id');
+        return $this->hasMany(CompanyDriver::class, 'company_id', 'id')->with(['contacts'])->orderBy('id');
     }
 
     public function operators(){
-        return $this->hasMany(OwnerOperator::class, 'company_id', 'id')->orderBy('id');
+        return $this->hasMany(CompanyOperator::class, 'company_id', 'id')->with(['contacts'])->orderBy('id');
     }
 }

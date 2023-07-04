@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CompanyDriverEmergencyContact;
-use App\Models\CompanyDriverLicense;
-use App\Models\CompanyDriverMailingAddress;
-use App\Models\CompanyDriverMedicalCard;
-use App\Models\CompanyDriverTractor;
-use App\Models\CompanyDriverTrailer;
+use App\Models\CompanyOperatorEmergencyContact;
+use App\Models\CompanyOperatorLicense;
+use App\Models\CompanyOperatorMailingAddress;
+use App\Models\CompanyOperatorMedicalCard;
+use App\Models\CompanyOperatorTractor;
+use App\Models\CompanyOperatorTrailer;
 use App\Models\LicenseClass;
 use App\Models\LicenseEndorsement;
 use App\Models\LicenseRestriction;
@@ -17,22 +17,22 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Models\CompanyDriver;
+use App\Models\CompanyOperator;
 use App\Models\Company;
 use Throwable;
 
-class CompanyDriversController extends Controller
+class CompanyOperatorsController extends Controller
 {
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function getDriverById(Request $request): JsonResponse
+    public function getOperatorById(Request $request): JsonResponse
     {
-        $DRIVER = CompanyDriver::query();
+        $OPERATOR = CompanyOperator::query();
         $id = $request->id ?? null;
 
-        $driver = $DRIVER->where('id', $id)
+        $operator = $OPERATOR->where('id', $id)
             ->with([
                 'mailing_address',
                 'contacts',
@@ -42,19 +42,19 @@ class CompanyDriversController extends Controller
                 'trailer'
             ])->first();
 
-        return response()->json(['result' => 'OK', 'driver' => $driver]);
+        return response()->json(['result' => 'OK', 'driver' => $operator]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function getDrivers(Request $request): JsonResponse
+    public function getOperators(Request $request): JsonResponse
     {
-        $DRIVER = CompanyDriver::query();
+        $OPERATOR = CompanyOperator::query();
         $company_id = $request->company_id ?? null;
 
-        $drivers = $DRIVER->where('company_id', $company_id)
+        $operators = $OPERATOR->where('company_id', $company_id)
             ->with([
                 'mailing_address',
                 'contacts',
@@ -64,19 +64,19 @@ class CompanyDriversController extends Controller
                 'trailer'
             ])->get();
 
-        return response()->json(['result' => 'OK', 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'drivers' => $operators]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function getDriverByCode(Request $request): JsonResponse
+    public function getOperatorByCode(Request $request): JsonResponse
     {
-        $DRIVER = CompanyDriver::query();
+        $OPERATOR = CompanyOperator::query();
         $code = strtoupper($request->code ?? '');
 
-        $driver = $DRIVER->whereRaw("1 = 1")
+        $operator = $OPERATOR->whereRaw("1 = 1")
             ->whereRaw("code LIKE '$code%'")
             ->with([
                 'mailing_address',
@@ -87,21 +87,20 @@ class CompanyDriversController extends Controller
                 'trailer'
             ])->first();
 
-        return response()->json(['result' => 'OK', 'driver' => $driver]);
+        return response()->json(['result' => 'OK', 'driver' => $operator]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveDriver(Request $request): JsonResponse
+    public function saveOperator(Request $request): JsonResponse
     {
-        $DRIVER = CompanyDriver::query();
+        $OPERATOR = CompanyOperator::query();
 
         $id = $request->id ?? null;
         $code = $request->code ?? '';
         $company_id = $request->company_id ?? null;
-        $owner_operator_id = $request->owner_operator_id ?? null;
         $first_name = $request->first_name ?? '';
         $last_name = $request->last_name ?? '';
         $address1 = $request->address1 ?? '';
@@ -118,8 +117,8 @@ class CompanyDriversController extends Controller
         $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
 
         if (!$id) {
-            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_drivers'");
-            $code = str_pad($table_info[0]->Auto_increment, 6, "DV0000", STR_PAD_LEFT);
+            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_operators'");
+            $code = str_pad($table_info[0]->Auto_increment, 6, "OP0000", STR_PAD_LEFT);
         }
 
         $with_contact = true;
@@ -128,13 +127,12 @@ class CompanyDriversController extends Controller
             $with_contact = false;
         }
 
-        $driver = $DRIVER->updateOrCreate([
+        $operator = $OPERATOR->updateOrCreate([
             'id' => $id
         ],
             [
                 'code' => $code,
                 'company_id' => $company_id,
-                'owner_operator_id' => $owner_operator_id,
                 'first_name' => ucwords($first_name),
                 'last_name' => ucwords($last_name),
                 'address1' => ucwords($address1),
@@ -152,7 +150,7 @@ class CompanyDriversController extends Controller
             ]);
 
         if ($with_contact) {
-            $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver->id)->get();
+            $contacts = CompanyOperatorEmergencyContact::where('operator_id', $operator->id)->get();
 
             $contact_name_splitted = explode(" ", $contact_name);
             $contact_first = $contact_name_splitted[0];
@@ -167,8 +165,8 @@ class CompanyDriversController extends Controller
             $contact_last = trim($contact_last);
 
             if (count($contacts) === 0) {
-                $contact = new CompanyDriverEmergencyContact();
-                $contact->driver_id = $driver->id;
+                $contact = new CompanyOperatorEmergencyContact();
+                $contact->operator_id = $operator->id;
                 $contact->first_name = ucwords(trim($contact_first));
                 $contact->last_name = ucwords(trim($contact_last));
                 $contact->phone_work = $contact_phone;
@@ -187,7 +185,7 @@ class CompanyDriversController extends Controller
                 $contact = $contacts[0];
                 if ($contact->first_name === $contact_first && $contact->last_name === $contact_last) {
 
-                    CompanyDriverEmergencyContact::where('id', $contact->id)->update([
+                    CompanyOperatorEmergencyContact::where('id', $contact->id)->update([
                         'phone_work' => ($contact->primary_phone === 'work') ? $contact_phone : $contact->phone_work,
                         'phone_work_fax' => ($contact->primary_phone === 'fax') ? $contact_phone : $contact->phone_work_fax,
                         'phone_mobile' => ($contact->primary_phone === 'mobile') ? $contact_phone : $contact->phone_mobile,
@@ -199,7 +197,7 @@ class CompanyDriversController extends Controller
             }
         }
 
-        $newDriver = CompanyDriver::where('id', $driver->id)
+        $newOperator = CompanyOperator::where('id', $operator->id)
             ->with([
                 'mailing_address',
                 'contacts',
@@ -209,29 +207,29 @@ class CompanyDriversController extends Controller
                 'trailer'
             ])->first();
 
-        $drivers = CompanyDriver::where('company_id', $company_id)
+        $operators = CompanyOperator::where('company_id', $company_id)
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
 
-        return response()->json(['result' => 'OK', 'driver' => $newDriver, 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'driver' => $newOperator, 'drivers' => $operators]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteDriver(Request $request): JsonResponse
+    public function deleteOperator(Request $request): JsonResponse
     {
-        $DRIVER = CompanyDriver::query();
+        $OPERATOR = CompanyOperator::query();
 
         $id = $request->id ?? null;
 
-        $driver = $DRIVER->where('id', $id)->first();
+        $operator = $OPERATOR->where('id', $id)->first();
 
-        $DRIVER->where('id', $id)->delete();
+        $OPERATOR->where('id', $id)->delete();
 
-        $drivers = $DRIVER->where('company_id', $driver->company_id)
+        $operators = $OPERATOR->where('company_id', $operator->company_id)
             ->with([
                 'mailing_address',
                 'contacts',
@@ -241,50 +239,53 @@ class CompanyDriversController extends Controller
                 'trailer'
             ])->get();
 
-        return response()->json(['result' => 'OK', 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'drivers' => $operators]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function companyDriversSearch(Request $request): JsonResponse
+    public function companyOperatorsSearch(Request $request): JsonResponse
     {
-        $DRIVER = CompanyDriver::query();
-        $company_id = $request->search[0]['data'] ?? null;
-        $first_name = $request->search[1]['data'] ?? '';
-        $last_name = $request->search[2]['data'] ?? '';
-        $address1 = $request->search[3]['data'] ?? '';
-        $address2 = $request->search[4]['data'] ?? '';
-        $city = $request->search[5]['data'] ?? '';
-        $state = $request->search[6]['data'] ?? '';
-        $zip = $request->search[7]['data'] ?? '';
+        $OPERATOR = CompanyOperator::query();
 
-        $drivers = $DRIVER->whereRaw("1 = 1")
-            ->whereRaw("LOWER(first_name) like '$first_name%'")
-            ->whereRaw("LOWER(last_name) like '$last_name%'")
+        $name = $request->search[0]['data'] ?? '';
+        $address1 = $request->search[1]['data'] ?? '';
+        $address2 = $request->search[2]['data'] ?? '';
+        $city = $request->search[3]['data'] ?? '';
+        $state = $request->search[4]['data'] ?? '';
+        $zip = $request->search[5]['data'] ?? '';
+        $contact_name = $request->search[6]['data'] ?? '';
+        $contact_phone = $request->search[7]['data'] ?? '';
+        $contact_phone_ext = $request->search[8]['data'] ?? '';
+
+        $operators = $OPERATOR->whereRaw("1 = 1")
+            ->whereRaw("LOWER(name) like '$name%'")
             ->whereRaw("LOWER(address1) like '$address1%'")
             ->whereRaw("LOWER(address2) like '$address2%'")
             ->whereRaw("LOWER(city) like '$city%'")
             ->whereRaw("LOWER(state) like '$state%'")
             ->whereRaw("LOWER(zip) like '$zip%'")
-            ->with(['company'])
-            ->orderBy('first_name')
+            ->whereRaw("LOWER(contact_name) like '$contact_name%'")
+            ->whereRaw("LOWER(contact_phone) like '$contact_phone%'")
+            ->whereRaw("LOWER(contact_phone_ext) like '$contact_phone_ext%'")
+            ->orderBy('name')
             ->get();
 
-        return response()->json(['result' => 'OK', 'drivers' => $drivers]);
+        return response()->json(['result' => 'OK', 'drivers' => $operators]);
     }
 
     /**
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCompanyDriverMailingAddress(Request $request): JsonResponse
+    public function saveCompanyOperatorMailingAddress(Request $request): JsonResponse
     {
-        $MAILING_ADDRESS = CompanyDriverMailingAddress::query();
+        $MAILING_ADDRESS = CompanyOperatorMailingAddress::query();
 
         $id = $request->id ?? null;
-        $company_driver_id = $request->company_driver_id ?? null;
+        $company_operator_id = $request->company_operator_id ?? null;
         $address1 = $request->address1 ?? '';
         $address2 = $request->address2 ?? '';
         $city = $request->city ?? '';
@@ -301,7 +302,7 @@ class CompanyDriversController extends Controller
         $mailing_address = $MAILING_ADDRESS->updateOrCreate([
             'id' => $id
         ], [
-            'company_driver_id' => $company_driver_id,
+            'company_operator_id' => $company_operator_id,
             'address1' => $address1,
             'address2' => $address2,
             'city' => $city,
@@ -313,8 +314,8 @@ class CompanyDriversController extends Controller
             'email' => strtolower($email),
         ]);
 
-        CompanyDriver::query()->updateOrCreate([
-            'id' => $company_driver_id
+        CompanyOperator::query()->updateOrCreate([
+            'id' => $company_operator_id
         ], [
             'mailing_contact_id' => $mailing_contact_id,
             'mailing_contact_primary_phone' => $mailing_contact_primary_phone,
@@ -329,15 +330,15 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteCompanyDriverMailingAddress(Request $request): JsonResponse
+    public function deleteCompanyOperatorMailingAddress(Request $request): JsonResponse
     {
-        $MAILING_ADDRESS = CompanyDriverMailingAddress::query();
-        $company_driver_id = $request->company_driver_id ?? null;
+        $MAILING_ADDRESS = CompanyOperatorMailingAddress::query();
+        $company_operator_id = $request->company_operator_id ?? null;
 
-        $MAILING_ADDRESS->where('company_driver_id', $company_driver_id)->delete();
+        $MAILING_ADDRESS->where('company_operator_id', $company_operator_id)->delete();
 
-        CompanyDriver::query()->updateOrCreate([
-            'id' => $company_driver_id
+        CompanyOperator::query()->updateOrCreate([
+            'id' => $company_operator_id
         ], [
             'mailing_contact_id' => null,
             'mailing_contact_primary_phone' => 'work',
@@ -352,9 +353,9 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getCompanyDriverEmergencyContact(Request $request): JsonResponse
+    public function getCompanyOperatorEmergencyContact(Request $request): JsonResponse
     {
-        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $EMERGENCY_CONTACT = CompanyOperatorEmergencyContact::query();
         $id = $request->id ?? null;
 
         $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
@@ -366,11 +367,11 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCompanyDriverEmergencyContact(Request $request): JsonResponse
+    public function saveCompanyOperatorEmergencyContact(Request $request): JsonResponse
     {
-        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $EMERGENCY_CONTACT = CompanyOperatorEmergencyContact::query();
         $id = $request->id ?? null;
-        $driver_id = $request->driver_id ?? null;
+        $operator_id = $request->operator_id ?? null;
 
         $curContact = $EMERGENCY_CONTACT->where('id', $id)->first();
 
@@ -416,7 +417,7 @@ class CompanyDriversController extends Controller
         $contact = $EMERGENCY_CONTACT->updateOrCreate([
             'id' => $id
         ], [
-            'driver_id' => $driver_id,
+            'operator_id' => $operator_id,
             'prefix' => $prefix,
             'first_name' => ucwords(trim($first_name)),
             'middle_name' => ucwords(trim($middle_name)),
@@ -452,14 +453,14 @@ class CompanyDriversController extends Controller
             'priority' => $priority
         ]);
 
-        $newContact = CompanyDriverEmergencyContact::where('id', $contact->id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $newContact = CompanyOperatorEmergencyContact::where('id', $contact->id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->first();
 
-        $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver_id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $contacts = CompanyOperatorEmergencyContact::where('operator_id', $operator_id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->orderBy('priority')
             ->get();
 
@@ -470,18 +471,18 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteCompanyDriverEmergencyContact(Request $request): JsonResponse
+    public function deleteCompanyOperatorEmergencyContact(Request $request): JsonResponse
     {
-        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $EMERGENCY_CONTACT = CompanyOperatorEmergencyContact::query();
         $id = $request->id ?? null;
 
         $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
 
         $EMERGENCY_CONTACT->where('id', $id)->delete();
 
-        $contacts = $EMERGENCY_CONTACT->where('driver_id', $contact->driver_id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $contacts = $EMERGENCY_CONTACT->where('operator_id', $contact->operator_id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->orderBy('priority')
             ->get();
 
@@ -493,12 +494,12 @@ class CompanyDriversController extends Controller
      * @return JsonResponse
      */
 
-    public function uploadCompanyDriverEmergencyContactAvatar(Request $request): JsonResponse
+    public function uploadCompanyOperatorEmergencyContactAvatar(Request $request): JsonResponse
     {
-        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $EMERGENCY_CONTACT = CompanyOperatorEmergencyContact::query();
 
         $contact_id = $_POST['contact_id'];
-        $driver_id = $request->driver_id;
+        $operator_id = $request->operator_id;
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
@@ -516,18 +517,18 @@ class CompanyDriversController extends Controller
             }
         }
 
-        CompanyDriverEmergencyContact::where('id', $contact_id)->update([
+        CompanyOperatorEmergencyContact::where('id', $contact_id)->update([
             'avatar' => $new_avatar
         ]);
 
-        $contact = CompanyDriverEmergencyContact::where('id', $contact_id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $contact = CompanyOperatorEmergencyContact::where('id', $contact_id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->first();
 
-        $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver_id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $contacts = CompanyOperatorEmergencyContact::where('operator_id', $operator_id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->orderBy('priority')
             ->get();
 
@@ -540,12 +541,12 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function removeCompanyDriverEmergencyContactAvatar(Request $request): JsonResponse
+    public function removeCompanyOperatorEmergencyContactAvatar(Request $request): JsonResponse
     {
-        $EMERGENCY_CONTACT = CompanyDriverEmergencyContact::query();
+        $EMERGENCY_CONTACT = CompanyOperatorEmergencyContact::query();
 
         $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $driver_id = $request->driver_id;
+        $operator_id = $request->operator_id;
 
         $contact = $EMERGENCY_CONTACT->where('id', $contact_id)->first();
 
@@ -556,30 +557,34 @@ class CompanyDriversController extends Controller
             }
         }
 
-        CompanyDriverEmergencyContact::where('id', $contact_id)->update([
+        CompanyOperatorEmergencyContact::where('id', $contact_id)->update([
             'avatar' => ''
         ]);
 
-        $contact = CompanyDriverEmergencyContact::where('id', $contact_id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $contact = CompanyOperatorEmergencyContact::where('id', $contact_id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->first();
 
-        $contacts = CompanyDriverEmergencyContact::where('driver_id', $driver_id)
-            ->with('company_driver')
-            ->has('company_driver')
+        $contacts = CompanyOperatorEmergencyContact::where('operator_id', $operator_id)
+            ->with('company_operator')
+            ->has('company_operator')
             ->orderBy('priority')
             ->get();
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
 
-    public function getCompanyDriverLicense(Request $request): JsonResponse
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCompanyOperatorLicense(Request $request): JsonResponse
     {
-        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $OPERATOR_LICENSE = CompanyOperatorLicense::query();
         $id = $request->id ?? null;
 
-        $license = $DRIVER_LICENSE->where('id', $id)
+        $license = $OPERATOR_LICENSE->where('id', $id)
             ->with([
                 'class',
                 'endorsement',
@@ -593,11 +598,11 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCompanyDriverLicense(Request $request): JsonResponse
+    public function saveCompanyOperatorLicense(Request $request): JsonResponse
     {
-        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $OPERATOR_LICENSE = CompanyOperatorLicense::query();
         $id = $request->id ?? null;
-        $company_driver_id = $request->company_driver_id ?? null;
+        $company_operator_id = $request->company_operator_id ?? null;
         $license_number = $request->license_number ?? '';
         $state = $request->state ?? '';
         $cdl = $request->cdl ?? 0;
@@ -606,10 +611,10 @@ class CompanyDriversController extends Controller
         $expiration_date = $request->expiration_date ?? null;
         $restriction_id = $request->restriction_id ?? null;
 
-        $license = $DRIVER_LICENSE->updateOrCreate([
+        $license = $OPERATOR_LICENSE->updateOrCreate([
             'id' => $id
         ], [
-            'company_driver_id' => $company_driver_id,
+            'company_operator_id' => $company_operator_id,
             'license_number' => $license_number,
             'state' => strtoupper($state),
             'cdl' => $cdl,
@@ -619,7 +624,7 @@ class CompanyDriversController extends Controller
             'restriction_id' => $restriction_id
         ]);
 
-        $newLicense = CompanyDriverLicense::where('id', $license->id)
+        $newLicense = CompanyOperatorLicense::where('id', $license->id)
             ->with([
                 'class',
                 'endorsement',
@@ -633,15 +638,15 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteCompanyDriverLicense(Request $request): JsonResponse
+    public function deleteCompanyOperatorLicense(Request $request): JsonResponse
     {
-        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $OPERATOR_LICENSE = CompanyOperatorLicense::query();
         $id = $request->id ?? null;
 
-        $license = CompanyDriverLicense::where('id', $id)->first();
+        $license = CompanyOperatorLicense::where('id', $id)->first();
 
         if ($license) {
-            $DRIVER_LICENSE->where('id', $id)->delete();
+            $OPERATOR_LICENSE->where('id', $id)->delete();
 
             if (file_exists(public_path('license-images/' . $license->image))) {
                 try {
@@ -709,9 +714,9 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function uploadDriverLicenseImage(Request $request): JsonResponse
+    public function uploadOperatorLicenseImage(Request $request): JsonResponse
     {
-        $DRIVER_LICENSE = CompanyDriverLicense::query();
+        $OPERATOR_LICENSE = CompanyOperatorLicense::query();
 
         $id = $_POST['license_id'];
         $license_number = $_POST['license_number'];
@@ -722,7 +727,7 @@ class CompanyDriversController extends Controller
         $expiration_date = $_POST['expiration_date'];
         $restriction_id = $_POST['restriction_id'];
 
-        $license = $DRIVER_LICENSE->updateOrCreate([
+        $license = $OPERATOR_LICENSE->updateOrCreate([
             'id' => $id
         ], [
             'license_number' => $license_number,
@@ -750,7 +755,7 @@ class CompanyDriversController extends Controller
             }
         }
 
-        CompanyDriverLicense::where('id', $id)->update([
+        CompanyOperatorLicense::where('id', $id)->update([
             'image' => $new_image
         ]);
 
@@ -764,13 +769,13 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function removeDriverLicenseImage(Request $request): JsonResponse
+    public function removeOperatorLicenseImage(Request $request): JsonResponse
     {
-        $DRIVER_LICENSE = new CompanyDriverLicense();
+        $OPERATOR_LICENSE = new CompanyOperatorLicense();
 
         $id = $request->id ?? null;
 
-        $license = $DRIVER_LICENSE->where('id', $id)->first();
+        $license = $OPERATOR_LICENSE->where('id', $id)->first();
 
         if (file_exists(public_path('license-images/' . $license->image))) {
             try {
@@ -779,7 +784,7 @@ class CompanyDriversController extends Controller
             }
         }
 
-        CompanyDriverLicense::where('id', $id)->update([
+        CompanyOperatorLicense::where('id', $id)->update([
             'image' => ''
         ]);
 
@@ -790,12 +795,12 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getCompanyDriverMedicalCard(Request $request): JsonResponse
+    public function getCompanyOperatorMedicalCard(Request $request): JsonResponse
     {
-        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $OPERATOR_MEDICAL_CARD = CompanyOperatorMedicalCard::query();
         $id = $request->id ?? null;
 
-        $card = $DRIVER_MEDICAL_CARD->where('id', $id)->first();
+        $card = $OPERATOR_MEDICAL_CARD->where('id', $id)->first();
 
         return response()->json(['result' => 'OK', 'card' => $card]);
     }
@@ -804,23 +809,23 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCompanyDriverMedicalCard(Request $request): JsonResponse
+    public function saveCompanyOperatorMedicalCard(Request $request): JsonResponse
     {
-        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $OPERATOR_MEDICAL_CARD = CompanyOperatorMedicalCard::query();
         $id = $request->id ?? null;
-        $company_driver_id = $request->company_driver_id ?? null;
+        $company_operator_id = $request->company_operator_id ?? null;
         $issue_date = $request->issue_date ?? null;
         $expiration_date = $request->expiration_date ?? null;
 
-        $card = $DRIVER_MEDICAL_CARD->updateOrCreate([
+        $card = $OPERATOR_MEDICAL_CARD->updateOrCreate([
             'id' => $id
         ], [
-            'company_driver_id' => $company_driver_id,
+            'company_operator_id' => $company_operator_id,
             'issue_date' => $issue_date,
             'expiration_date' => $expiration_date
         ]);
 
-        $newCard = CompanyDriverMedicalCard::where('id', $card->id)->first();
+        $newCard = CompanyOperatorMedicalCard::where('id', $card->id)->first();
 
         return response()->json(['result' => 'OK', 'card' => $newCard]);
     }
@@ -829,15 +834,15 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteCompanyDriverMedicalCard(Request $request): JsonResponse
+    public function deleteCompanyOperatorMedicalCard(Request $request): JsonResponse
     {
-        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $OPERATOR_MEDICAL_CARD = CompanyOperatorMedicalCard::query();
         $id = $request->id ?? null;
 
-        $card = CompanyDriverMedicalCard::where('id', $id)->first();
+        $card = CompanyOperatorMedicalCard::where('id', $id)->first();
 
         if ($card) {
-            $DRIVER_MEDICAL_CARD->where('id', $id)->delete();
+            $OPERATOR_MEDICAL_CARD->where('id', $id)->delete();
 
             if (file_exists(public_path('medical-card-images/' . $card->image))) {
                 try {
@@ -854,15 +859,15 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function uploadDriverMedicalCardImage(Request $request): JsonResponse
+    public function uploadOperatorMedicalCardImage(Request $request): JsonResponse
     {
-        $DRIVER_MEDICAL_CARD = CompanyDriverMedicalCard::query();
+        $OPERATOR_MEDICAL_CARD = CompanyOperatorMedicalCard::query();
 
         $id = $_POST['medical_card_id'];
         $issue_date = $_POST['issue_date'];
         $expiration_date = $_POST['expiration_date'];
 
-        $card = $DRIVER_MEDICAL_CARD->updateOrCreate([
+        $card = $OPERATOR_MEDICAL_CARD->updateOrCreate([
             'id' => $id
         ], [
             'issue_date' => $issue_date,
@@ -885,7 +890,7 @@ class CompanyDriversController extends Controller
             }
         }
 
-        CompanyDriverMedicalCard::where('id', $id)->update([
+        CompanyOperatorMedicalCard::where('id', $id)->update([
             'image' => $new_image
         ]);
 
@@ -899,13 +904,13 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function removeDriverMedicalCardImage(Request $request): JsonResponse
+    public function removeOperatorMedicalCardImage(Request $request): JsonResponse
     {
-        $DRIVER_MEDICAL_CARD = new CompanyDriverMedicalCard();
+        $OPERATOR_MEDICAL_CARD = new CompanyOperatorMedicalCard();
 
         $id = $request->id ?? null;
 
-        $card = $DRIVER_MEDICAL_CARD->where('id', $id)->first();
+        $card = $OPERATOR_MEDICAL_CARD->where('id', $id)->first();
 
         if (file_exists(public_path('medical-card-images/' . $card->image))) {
             try {
@@ -914,7 +919,7 @@ class CompanyDriversController extends Controller
             }
         }
 
-        CompanyDriverMedicalCard::where('id', $id)->update([
+        CompanyOperatorMedicalCard::where('id', $id)->update([
             'image' => ''
         ]);
 
@@ -925,12 +930,12 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getCompanyDriverTractor(Request $request): JsonResponse
+    public function getCompanyOperatorTractor(Request $request): JsonResponse
     {
-        $DRIVER_TRACTOR = CompanyDriverTractor::query();
+        $OPERATOR_TRACTOR = CompanyOperatorTractor::query();
         $id = $request->id ?? null;
 
-        $tractor = $DRIVER_TRACTOR->where('id', $id)
+        $tractor = $OPERATOR_TRACTOR->where('id', $id)
             ->with([
                 'type'
             ])->first();
@@ -942,11 +947,11 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCompanyDriverTractor(Request $request): JsonResponse
+    public function saveCompanyOperatorTractor(Request $request): JsonResponse
     {
-        $DRIVER_TRACTOR = CompanyDriverTractor::query();
+        $OPERATOR_TRACTOR = CompanyOperatorTractor::query();
         $id = $request->id ?? null;
-        $company_driver_id = $request->company_driver_id ?? null;
+        $company_operator_id = $request->company_operator_id ?? null;
         $number = $request->number ?? '';
         $plate_state = $request->plate_state ?? '';
         $plate_number = $request->plate_number ?? '';
@@ -959,14 +964,14 @@ class CompanyDriversController extends Controller
         $axle = $request->axle ?? null;
 
         if (!$id) {
-            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_driver_tractors'");
+            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_operator_tractors'");
             $number = str_pad($table_info[0]->Auto_increment, 4, "T000", STR_PAD_LEFT);
         }
 
-        $tractor = $DRIVER_TRACTOR->updateOrCreate([
+        $tractor = $OPERATOR_TRACTOR->updateOrCreate([
             'id' => $id
         ], [
-            'company_driver_id' => $company_driver_id,
+            'company_operator_id' => $company_operator_id,
             'number' => $number,
             'plate_state' => strtoupper($plate_state),
             'plate_number' => $plate_number,
@@ -979,7 +984,7 @@ class CompanyDriversController extends Controller
             'axle' => $axle
         ]);
 
-        $newTractor = CompanyDriverTractor::where('id', $tractor->id)
+        $newTractor = CompanyOperatorTractor::where('id', $tractor->id)
             ->with([
                 'type'
             ])->first();
@@ -991,12 +996,12 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteCompanyDriverTractor(Request $request): JsonResponse
+    public function deleteCompanyOperatorTractor(Request $request): JsonResponse
     {
-        $DRIVER_TRACTOR = CompanyDriverTractor::query();
+        $OPERATOR_TRACTOR = CompanyOperatorTractor::query();
         $id = $request->id ?? null;
 
-        $DRIVER_TRACTOR->where('id', $id)->delete();
+        $OPERATOR_TRACTOR->where('id', $id)->delete();
 
         return response()->json(['result' => 'OK']);
     }
@@ -1005,12 +1010,12 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getCompanyDriverTrailer(Request $request): JsonResponse
+    public function getCompanyOperatorTrailer(Request $request): JsonResponse
     {
-        $DRIVER_TRAILER = CompanyDriverTrailer::query();
+        $OPERATOR_TRAILER = CompanyOperatorTrailer::query();
         $id = $request->id ?? null;
 
-        $trailer = $DRIVER_TRAILER->where('id', $id)
+        $trailer = $OPERATOR_TRAILER->where('id', $id)
             ->with([
                 'type'
             ])->first();
@@ -1022,11 +1027,11 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveCompanyDriverTrailer(Request $request): JsonResponse
+    public function saveCompanyOperatorTrailer(Request $request): JsonResponse
     {
-        $DRIVER_TRAILER = CompanyDriverTrailer::query();
+        $OPERATOR_TRAILER = CompanyOperatorTrailer::query();
         $id = $request->id ?? null;
-        $company_driver_id = $request->company_driver_id ?? null;
+        $company_operator_id = $request->company_operator_id ?? null;
         $number = $request->number ?? '';
         $plate_state = $request->plate_state ?? '';
         $plate_number = $request->plate_number ?? '';
@@ -1053,15 +1058,15 @@ class CompanyDriversController extends Controller
         $height = str_pad($height, 3, "000", STR_PAD_LEFT);
 
         if (!$id) {
-            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_driver_trailers'");
+            $table_info = DB::select("SHOW TABLE STATUS LIKE 'company_operator_trailers'");
             $number = str_pad($table_info[0]->Auto_increment, 6, $length . "0000", STR_PAD_LEFT);
         }
 
 
-        $trailer = $DRIVER_TRAILER->updateOrCreate([
+        $trailer = $OPERATOR_TRAILER->updateOrCreate([
             'id' => $id
         ], [
-            'company_driver_id' => $company_driver_id,
+            'company_operator_id' => $company_operator_id,
             'number' => $number,
             'plate_state' => strtoupper($plate_state),
             'plate_number' => $plate_number,
@@ -1079,7 +1084,7 @@ class CompanyDriversController extends Controller
             'ramps' => $ramps
         ]);
 
-        $newTrailer = CompanyDriverTrailer::where('id', $trailer->id)
+        $newTrailer = CompanyOperatorTrailer::where('id', $trailer->id)
             ->with([
                 'type'
             ])->first();
@@ -1091,12 +1096,12 @@ class CompanyDriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function deleteCompanyDriverTrailer(Request $request): JsonResponse
+    public function deleteCompanyOperatorTrailer(Request $request): JsonResponse
     {
-        $DRIVER_TRAILER = CompanyDriverTrailer::query();
+        $OPERATOR_TRAILER = CompanyOperatorTrailer::query();
         $id = $request->id ?? null;
 
-        $DRIVER_TRAILER->where('id', $id)->delete();
+        $OPERATOR_TRAILER->where('id', $id)->delete();
 
         return response()->json(['result' => 'OK']);
     }
