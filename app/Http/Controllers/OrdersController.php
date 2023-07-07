@@ -1098,6 +1098,23 @@ class OrdersController extends Controller
 
         $order_number = $request->order_number ?? 0;
         $user_code = $request->user_code ?? '';
+        $action = $request->action ?? null;
+
+        if ($action){
+            if ($action === 'next'){
+                $_order = DB::select("select order_number from orders where order_number = (select min(order_number) from orders where order_number > ?)",[$order_number]);
+                if (count($_order) > 0){
+                    $order_number = $_order[0]->order_number;
+                }
+            }
+
+            if ($action === 'previous'){
+                $_order = DB::select("select order_number from orders where order_number = (select max(order_number) from orders where order_number < ?)",[$order_number]);
+                if (count($_order) > 0){
+                    $order_number = $_order[0]->order_number;
+                }
+            }
+        }
 
         if ($user_code !== '') {
             $ORDER->whereHas('bill_to_company', function ($query) use ($user_code) {

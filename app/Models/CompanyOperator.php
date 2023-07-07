@@ -25,19 +25,20 @@ class CompanyOperator extends Model
         return $this->hasOne(CompanyOperatorLicense::class, 'company_operator_id', 'id')->with([
             'class',
             'endorsement',
-            'restriction'
+            'restriction',
+            'company_operator'
         ]);
     }
 
     public function medical_card(){
-        return $this->hasOne(CompanyOperatorMedicalCard::class, 'company_operator_id', 'id');
+        return $this->hasOne(CompanyOperatorMedicalCard::class, 'company_operator_id', 'id')->with(['company_operator']);
     }
 
     public function tractor(){
-        return $this->hasOne(CompanyOperatorTractor::class, 'company_operator_id', 'id')->with(['type']);
+        return $this->hasOne(CompanyOperatorTractor::class, 'company_operator_id', 'id')->with(['type', 'company_operator']);
     }
 
     public function trailer(){
-        return $this->hasOne(CompanyOperatorTrailer::class, 'company_operator_id', 'id')->with(['type']);
+        return $this->hasOne(CompanyOperatorTrailer::class, 'company_operator_id', 'id')->with(['type', 'company_operator']);
     }
 }

@@ -25,19 +25,20 @@ class CompanyDriver extends Model
         return $this->hasOne(CompanyDriverLicense::class, 'company_driver_id', 'id')->with([
             'class',
             'endorsement',
-            'restriction'
+            'restriction',
+            'company_driver'
         ]);
     }
 
     public function medical_card(){
-        return $this->hasOne(CompanyDriverMedicalCard::class, 'company_driver_id', 'id');
+        return $this->hasOne(CompanyDriverMedicalCard::class, 'company_driver_id', 'id')->with(['company_driver']);
     }
 
     public function tractor(){
-        return $this->hasOne(CompanyDriverTractor::class, 'company_driver_id', 'id')->with(['type']);
+        return $this->hasOne(CompanyDriverTractor::class, 'company_driver_id', 'id')->with(['type', 'company_driver']);
     }
 
     public function trailer(){
-        return $this->hasOne(CompanyDriverTrailer::class, 'company_driver_id', 'id')->with(['type']);
+        return $this->hasOne(CompanyDriverTrailer::class, 'company_driver_id', 'id')->with(['type', 'company_driver']);
     }
 }

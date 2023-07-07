@@ -193,7 +193,7 @@ class CustomersController extends Controller
         ]);
 
 
-        $ORDER->orderBy('order_number', 'desc');
+        $ORDER->orderBy('order_number', 'desc')->limit(20);
 
         $orders = $ORDER->get();
 

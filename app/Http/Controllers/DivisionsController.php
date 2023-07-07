@@ -159,7 +159,7 @@ class DivisionsController extends Controller
         ]);
 
 
-        $ORDER->orderBy('id', 'desc');
+        $ORDER->orderBy('id', 'desc')->limit(20);
 
         $orders = $ORDER->get();
 
