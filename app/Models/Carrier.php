@@ -36,7 +36,7 @@ class Carrier extends Model
 
     public function drivers()
     {
-        return $this->hasMany(CarrierDriver::class)->with(['equipment']);
+        return $this->hasMany(Driver::class)->with(['contacts','tractor','trailer']);
     }
 
     public function factoring_company()

@@ -49,13 +49,21 @@ class Order extends Model
 
     public function carrier()
     {
-        return $this->belongsTo(Carrier::class)
-            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents', 'equipments_information']);
+        return $this->belongsTo(Carrier::class)->with(['contacts', 'drivers', 'insurances']);
+    }
+
+    public function agent(){
+        return $this->belongsTo(Agent::class);
     }
 
     public function driver()
     {
-        return $this->belongsTo(CarrierDriver::class, 'carrier_driver_id', 'id')->with(['equipment']);
+        return $this->belongsTo(Driver::class, 'carrier_driver_id', 'id')
+            ->with([
+                'contacts',
+                'tractor',
+                'trailer'
+            ]);
     }
 
     public function notes_for_driver()

@@ -14,14 +14,14 @@ use Illuminate\Database\Eloquent\Builder;
 class DriverDocument extends Model
 {
     protected $guarded = [];
-    protected $table = 'company_driver_documents';
+    protected $table = 'driver_documents';
 
-    public function company(){
-        return $this->belongsTo(Company::class);
+    public function driver(){
+        return $this->belongsTo(Driver::class);
     }
 
     public function notes(){
-        return $this->hasMany(DriverDocumentNote::class, 'company_driver_document_id', 'id')->with(['user_code']);
+        return $this->hasMany(DriverDocumentNote::class, 'driver_document_id', 'id')->with(['user_code']);
     }
 
     public function user_code(){

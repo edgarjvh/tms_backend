@@ -45,7 +45,7 @@ class Agent extends Model
     }
 
     public function drivers(){
-        return $this->hasMany(AgentDriver::class)->with(['equipment']);
+        return $this->hasMany(Driver::class)->with(['contacts','tractor','trailer']);
     }
 
     public function division(){

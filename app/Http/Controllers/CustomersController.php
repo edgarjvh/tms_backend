@@ -83,6 +83,8 @@ class CustomersController extends Controller
         $CUSTOMER->orderBy('code');
         $CUSTOMER->orderBy('code_number');
 
+        $customers = [];
+
         if ($with_relations === 1) {
             $CUSTOMER->with([
                 'documents',
@@ -98,13 +100,12 @@ class CustomersController extends Controller
                 'division',
                 'salesman'
             ]);
-        } else {
-            $CUSTOMER->with([
-                'contacts'
-            ]);
-        }
 
-        $customers = $CUSTOMER->get();
+            $customers = $CUSTOMER->get();
+        }
+        else {
+            $customers = DB::table('customers')->select()->get();
+        }
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }

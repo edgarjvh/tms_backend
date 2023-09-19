@@ -10,6 +10,6 @@ class LicenseEndorsement extends Model
     protected $table = 'license_endorsements';
 
     public function licenses(){
-        return $this->hasMany(CompanyDriverLicense::class, 'endorsement_id', 'id');
+        return $this->hasMany(DriverLicense::class, 'endorsement_id', 'id');
     }
 }

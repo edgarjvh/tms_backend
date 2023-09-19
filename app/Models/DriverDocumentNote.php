@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 class DriverDocumentNote extends Model
 {
     protected $guarded = [];
-    protected $table = 'company_driver_document_notes';
+    protected $table = 'driver_document_notes';
 
     public function document(){
         return $this->belongsTo(DriverDocument::class);

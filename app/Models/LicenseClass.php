@@ -10,6 +10,6 @@ class LicenseClass extends Model
     protected $table = 'license_classes';
 
     public function licenses(){
-        return $this->hasMany(CompanyDriverLicense::class, 'class_id', 'id');
+        return $this->hasMany(DriverLicense::class, 'class_id', 'id');
     }
 }

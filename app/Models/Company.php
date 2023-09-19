@@ -23,10 +23,21 @@ class Company extends Model
     }
 
     public function drivers(){
-        return $this->hasMany(CompanyDriver::class, 'company_id', 'id')->with(['contacts'])->orderBy('id');
+        $instance = $this->hasMany(Driver::class);
+        $instance->getQuery()
+            ->whereRaw("LOWER(LEFT(code, 2)) = 'cd'")
+            ->with(['contacts'])
+            ->orderBy('id');
+        return $instance;
     }
 
     public function operators(){
-        return $this->hasMany(CompanyOperator::class, 'company_id', 'id')->with(['contacts'])->orderBy('id');
+        $instance = $this->hasMany(Driver::class);
+        $instance->getQuery()
+            ->whereRaw("LOWER(LEFT(code, 2)) = 'op'")
+            ->whereDoesntHave('agent')
+            ->with(['contacts'])
+            ->orderBy('id');
+        return $instance;
     }
 }

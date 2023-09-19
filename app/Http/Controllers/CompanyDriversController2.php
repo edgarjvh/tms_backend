@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Models\CompanyDriver;
+use App\Models\Driver;
 use App\Models\Company;
 
 class CompanyDriversController2 extends Controller
@@ -16,7 +16,7 @@ class CompanyDriversController2 extends Controller
      */
     public function saveDriver(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = new Driver();
         $COMPANY = new Company();
 
         $driver_id = $request->driver_id ?? ($request->id ?? 0);
@@ -157,7 +157,7 @@ class CompanyDriversController2 extends Controller
      */
     public function uploadAvatar(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = new Driver();
 
         $driver_id = $_POST['driver_id'];
         $company_id = $request->company_id;
@@ -204,7 +204,7 @@ class CompanyDriversController2 extends Controller
      */
     public function removeAvatar(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = new Driver();
 
         $driver_id = $request->driver_id ?? ($request->id ?? 0);
         $company_id = $request->company_id;
@@ -242,7 +242,7 @@ class CompanyDriversController2 extends Controller
      */
     public function deleteDriver(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = new Driver();
 
         $driver_id = $request->driver_id ?? ($request->id ?? 0);
 
@@ -264,7 +264,7 @@ class CompanyDriversController2 extends Controller
      */
     public function companyDriversSearch(Request $request): JsonResponse
     {
-        $DRIVER = new CompanyDriver();
+        $DRIVER = new Driver();
 
         $company_id = $request->search[0]['data'] ?? 0;
         $first_name = $request->search[1]['data'] ?? '';

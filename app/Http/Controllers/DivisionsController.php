@@ -189,6 +189,7 @@ class DivisionsController extends Controller
         $contact_phone = $request->contact_phone ?? '';
         $contact_phone_ext = $request->contact_phone_ext ?? ($request->ext ?? '');
         $email = $request->email ?? '';
+        $type = $request->type ?? 'company';
 
         $curDivision = $DIVISION->where('id', $id)->first();
 
@@ -238,6 +239,7 @@ class DivisionsController extends Controller
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email),
+                'type' => strtolower($type)
             ]);
 
         if ($with_contact) {

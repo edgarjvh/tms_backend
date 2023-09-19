@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agent;
 use App\Models\Carrier;
 use App\Models\Customer;
 use App\Models\Delivery;
+use App\Models\Driver;
 use App\Models\InternalNotes;
 use App\Models\NotesForCarrier;
 use App\Models\TemplateDelivery;
@@ -1100,17 +1102,17 @@ class OrdersController extends Controller
         $user_code = $request->user_code ?? '';
         $action = $request->action ?? null;
 
-        if ($action){
-            if ($action === 'next'){
-                $_order = DB::select("select order_number from orders where order_number = (select min(order_number) from orders where order_number > ?)",[$order_number]);
-                if (count($_order) > 0){
+        if ($action) {
+            if ($action === 'next') {
+                $_order = DB::select("select order_number from orders where order_number = (select min(order_number) from orders where order_number > ?)", [$order_number]);
+                if (count($_order) > 0) {
                     $order_number = $_order[0]->order_number;
                 }
             }
 
-            if ($action === 'previous'){
-                $_order = DB::select("select order_number from orders where order_number = (select max(order_number) from orders where order_number < ?)",[$order_number]);
-                if (count($_order) > 0){
+            if ($action === 'previous') {
+                $_order = DB::select("select order_number from orders where order_number = (select max(order_number) from orders where order_number < ?)", [$order_number]);
+                if (count($_order) > 0) {
                     $order_number = $_order[0]->order_number;
                 }
             }
@@ -2364,6 +2366,83 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+
+    public function getOrderCarrierByCode(Request $request): JsonResponse
+    {
+        $code = $request->code ?? '';
+        $division_type = strtolower($request->division_type ?? '');
+        $carrier = null;
+
+        if ($division_type !== '') {
+            if ($division_type === 'brokerage'){
+                $CARRIER = Carrier::query();
+
+                $carrier = Carrier::whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
+                    ->with([
+                        'contacts',
+                        'drivers',
+                        'insurances'
+                    ])->first();
+
+                if ($carrier){
+                    return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => 'carrier']);
+                }else{
+                    $carrier = Carrier::whereHas('drivers', function ($query) use ($code){
+                        return $query->whereRaw("code like '$code%'");
+                    })
+                    ->with([
+                        'contacts',
+                        'drivers',
+                        'insurances'
+                    ])->first();
+
+                    if ($carrier){
+                        return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => 'carrier', 'driver_code' => strtoupper($code)]);
+                    }else{
+                        $AGENT = Agent::query();
+
+                        $carrier = Carrier::whereRaw("code like '$code%'")
+                            ->with([
+                                'contacts',
+                                'drivers',
+                                'insurances'
+                            ])->first();
+
+                        if (!$carrier) {
+                            $carrier = Carrier::whereHas('drivers', function ($query) use ($code) {
+                                return $query->whereRaw("code like '$code%'");
+                            })->with([
+                                'contacts',
+                                'drivers',
+                                'insurances'
+                            ])->first();
+                        }else{
+                            $code = '';
+                        }
+
+                        return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => 'agent', 'driver_code' => strtoupper($code)]);
+                    }
+                }
+            }elseif ($division_type === 'company'){
+                $DRIVER = Driver::query();
+
+                $carrier = $DRIVER->whereRaw("code like '$code%'")
+                    ->whereNull(['carrier_id', 'agent_id'])
+                    ->with(['contacts','tractor','trailer'])->first();
+
+                return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => $carrier?->owner_type]);
+            }else{
+                return response()->json(['result' => 'NO DIVISION']);
+            }
+        } else {
+            return response()->json(['result' => 'NO DIVISION']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function arrayTest(): JsonResponse
     {
         $date_time1 = '08/20/2015 09:58:11';
@@ -2393,7 +2472,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'customer_check_number' => $customer_check_number
         ]);
 
@@ -2409,7 +2488,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'customer_date_received' => $customer_date_received
         ]);
 
@@ -2425,7 +2504,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'invoice_received_date' => $invoice_received_date
         ]);
 
@@ -2441,7 +2520,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'invoice_number' => $invoice_number
         ]);
 
@@ -2457,7 +2536,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'term_id' => $term_id
         ]);
 
@@ -2473,7 +2552,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'invoice_date_paid' => $invoice_date_paid
         ]);
 
@@ -2489,7 +2568,7 @@ class OrdersController extends Controller
 
         $order = $ORDER->updateOrCreate([
             'id' => $id
-        ],[
+        ], [
             'carrier_check_number' => $carrier_check_number
         ]);
 
