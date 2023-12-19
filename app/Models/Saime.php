@@ -10,9 +10,8 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * @mixin Builder
  */
-
-class TemplateNotesForCarrier extends Model
+class Saime extends Model
 {
     protected $guarded = [];
-    protected $table = 'template_order_notes_for_carrier';
+    protected $table = 'saime';
 }

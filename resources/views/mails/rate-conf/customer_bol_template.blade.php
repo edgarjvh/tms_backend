@@ -14,14 +14,6 @@
 <table class="table" style="width: 100%; font-style: italic;">
     <tbody>
     <tr>
-        <td>
-            Dear <span style="font-weight: bold">{{$customer_first_name ?? ''}}</span>,
-        </td>
-    </tr>
-    <tr>
-        <td></td>
-    </tr>
-    <tr>
         <td style="padding: 0.5rem 0;">
             Please see the attached BOL for your shipment from <span style="font-weight: bold">{{$origin_city ?? ''}}</span>,
             <span style="font-weight: bold">{{$origin_state ?? ''}}</span> to <span style="font-weight: bold">{{$destination_city ?? ''}}</span>,

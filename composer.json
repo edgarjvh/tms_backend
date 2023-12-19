@@ -14,8 +14,10 @@
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "staudenmeir/belongs-to-through": "^2.12",
-        "staudenmeir/eloquent-has-many-deep": "^1.16"
+        "staudenmeir/eloquent-has-many-deep": "^1.16",
+        "ext-curl": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

@@ -8,7 +8,12 @@ use App\Models\Customer;
 use App\Models\Delivery;
 use App\Models\Driver;
 use App\Models\InternalNotes;
+use App\Models\LoadBoardOrder;
 use App\Models\NotesForCarrier;
+use App\Models\OrderBillingDocument;
+use App\Models\OrderBillingNote;
+use App\Models\OrderDocument;
+use App\Models\Template;
 use App\Models\TemplateDelivery;
 use App\Models\Equipment;
 use App\Models\EventType;
@@ -18,6 +23,8 @@ use App\Models\OrderCarrierRating;
 use App\Models\OrderCustomerRating;
 use App\Models\OrderEvent;
 use App\Models\Pickup;
+use App\Models\TemplateInternalNote;
+use App\Models\TemplateNoteForCarrier;
 use App\Models\TemplatePickup;
 use App\Models\RateType;
 use App\Models\Route;
@@ -27,6 +34,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use stdClass;
 use Throwable;
 
 class OrdersController extends Controller
@@ -38,6 +46,7 @@ class OrdersController extends Controller
         $user_code = $request->user_code ?? '';
 
         $ORDER->where('is_imported', 0);
+        $ORDER->where('is_template', 0);
 //        $ORDER->select([
 //            'id',
 //            'order_number',
@@ -91,6 +100,7 @@ class OrdersController extends Controller
         $user_code = $request->user_code ?? '';
 
         $ORDER->where('is_imported', 0);
+        $ORDER->where('is_template', 0);
 
         if ($user_code !== '') {
             $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
@@ -99,13 +109,13 @@ class OrdersController extends Controller
         }
 
         $ORDER->with([
-            'bill_to_company',
+//            'bill_to_company',
             'carrier',
             'pickups',
             'deliveries',
             'routing',
-            'events',
-            'user_code'
+//            'events',
+//            'user_code'
         ]);
 
         $ORDER->orderBy('order_number');
@@ -113,6 +123,75 @@ class OrdersController extends Controller
         $orders = $ORDER->get();
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLoadBoardOrders(): JsonResponse
+    {
+        $user_code = $request->user_code ?? '';
+
+        // AVAILABLE
+        $ORDER = LoadBoardOrder::query();
+        $ORDER->where('is_imported', 0);
+        $ORDER->where('is_template', 0);
+        $ORDER->where('is_cancelled', 0);
+        $ORDER->where('order_invoiced', 0);
+        $ORDER->whereDoesntHave('carrier');
+        if ($user_code !== '') {
+            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
+                return $query1->where('code', $user_code);
+            });
+        }
+        $ORDER->orderBy('order_number');
+        $available_orders = $ORDER->with(['bill_to_company', 'pickups', 'deliveries', 'routing'])->get();
+
+        // BOOKED
+        $ORDER = LoadBoardOrder::query();
+        $ORDER->where('is_imported', 0);
+        $ORDER->where('is_template', 0);
+        $ORDER->where('is_cancelled', 0);
+        $ORDER->where('order_invoiced', 0);
+        $ORDER->whereHas('carrier');
+        $ORDER->whereHas('events', function ($query) {
+            return $query->where('event_type_id', 9);
+        }, '=', 0);
+        if ($user_code !== '') {
+            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
+                return $query1->where('code', $user_code);
+            });
+        }
+
+        $ORDER->orderBy('order_number');
+        $booked_orders = $ORDER->with(['bill_to_company', 'carrier', 'pickups', 'deliveries', 'routing'])->get();
+
+        // IN TRANSIT
+        $ORDER = LoadBoardOrder::query();
+        $ORDER->where('is_imported', 0);
+        $ORDER->where('is_template', 0);
+        $ORDER->where('is_cancelled', 0);
+        $ORDER->where('order_invoiced', 0);
+        $ORDER->whereHas('carrier');
+        $ORDER->whereHas('events', function ($query) {
+            return $query->where('event_type_id', 9);
+        }, '>', 0);
+
+        if ($user_code !== '') {
+            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
+                return $query1->where('code', $user_code);
+            });
+        }
+        $ORDER->orderBy('order_number');
+        $in_transit_orders = $ORDER->with(['bill_to_company', 'carrier', 'pickups', 'deliveries', 'routing'])->get();
+
+        return response()->json([
+            'result' => 'OK',
+            'available_orders' => $available_orders,
+            'booked_orders' => $booked_orders,
+            'in_transit_orders' => $in_transit_orders
+        ]);
     }
 
     /**
@@ -139,6 +218,7 @@ class OrdersController extends Controller
         $customer_code = strlen($customer_code) === 7 ? $customer_code . '0' : $customer_code;
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
@@ -397,6 +477,7 @@ class OrdersController extends Controller
         $carrier_code = strlen($carrier_code) === 7 ? $carrier_code . '0' : $carrier_code;
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
@@ -597,6 +678,7 @@ class OrdersController extends Controller
         $customer_code = strlen($customer_code) === 7 ? $customer_code . '0' : $customer_code;
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
@@ -864,6 +946,7 @@ class OrdersController extends Controller
         $carrier_code = strlen($carrier_code) === 7 ? $carrier_code . '0' : $carrier_code;
 
         $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
         $bill_to_company_id = $bill_to_company->id ?? 0;
@@ -1058,9 +1141,29 @@ class OrdersController extends Controller
         $ORDER = Order::query();
 
         $id = $request->id ?? 0;
+        $is_template = $request->is_template ?? 0;
 
-        $order = $ORDER->where('id', $id)
-            ->with([
+        $ORDER->where('id', $id);
+
+        if ($is_template > 0) {
+            $ORDER->with([
+                'bill_to_company',
+                'carrier',
+                'equipment',
+                'driver',
+                'notes_for_carrier',
+                'internal_notes',
+                'pickups',
+                'deliveries',
+                'routing',
+                'division',
+                'load_type',
+                'order_customer_ratings',
+                'order_carrier_ratings',
+                'user_code'
+            ]);
+        } else {
+            $ORDER->with([
                 'bill_to_company',
                 'carrier',
                 'equipment',
@@ -1082,8 +1185,11 @@ class OrdersController extends Controller
                 'billing_notes',
                 'term',
                 'user_code'
-            ])
-            ->first();
+            ]);
+        }
+
+
+        $order = $ORDER->first();
 
         $result = $order ? 'OK' : 'NOT FOUND';
 
@@ -1229,15 +1335,21 @@ class OrdersController extends Controller
     {
         $ORDER = new Order();
 
+        $id = $request->id ?? null;
+        $is_template = (int)($request->is_template ?? 0);
+        $is_new_template = (int)($request->is_new_template ?? 0);
+        $keep_order = (int)($request->keep_order ?? 0);
+        $name = $request->name ?? '';
         $order_number = (int)($request->order_number ?? 0);
         $user_code_id = $request->user_code_id ?? null;
         $trip_number = (int)($request->trip_number ?? 0);
-        $division_id = isset($request->division_id) ? $request->division_id > 0 ? $request->division_id : null : null;
-        $load_type_id = isset($request->load_type_id) ? $request->load_type_id > 0 ? $request->load_type_id : null : null;
-        $template_id = isset($request->template_id) ? $request->template_id > 0 ? $request->template_id : null : null;
-        $bill_to_customer_id = isset($request->bill_to_customer_id) ? $request->bill_to_customer_id > 0 ? $request->bill_to_customer_id : null : null;
-        $carrier_id = isset($request->carrier_id) ? $request->carrier_id > 0 ? $request->carrier_id : null : null;
-        $carrier_load = $request->carrier_load ?? '';
+        $division_id = $request->division_id ?? null;
+        $load_type_id = $request->load_type_id ?? null;
+        $bill_to_customer_id = $request->bill_to_customer_id ?? null;
+        $bill_to_contact_id = $request->bill_to_contact_id ?? null;
+        $bill_to_contact_name = $request->bill_to_contact_name ?? '';
+        $bill_to_contact_primary_phone = $request->bill_to_contact_primary_phone ?? 'work';
+        $carrier_id = $request->carrier_id ?? null;
 
         $carrier_contact_id = $request->carrier_contact_id ?? null;
         $carrier_contact_primary_phone = $request->carrier_contact_primary_phone ?? 'work';
@@ -1273,89 +1385,358 @@ class OrdersController extends Controller
         $invoice_carrier_approved = $request->invoice_carrier_approved ?? 0;
 
         $pickups = $request->pickups ?? [];
+        $deliveries = $request->deliveries ?? [];
+        $routing = $request->routing ?? [];
+        $order_customer_ratings = $request->order_customer_ratings ?? [];
+        $order_carrier_ratings = $request->order_carrier_ratings ?? [];
+        $order_internal_notes = $request->order_internal_notes ?? [];
+        $order_notes_for_carrier = $request->order_notes_for_carrier ?? [];
 
         $last_order_number = $ORDER->max('order_number');
         $last_trip_number = $ORDER->max('trip_number');
 
-        if ($order_number === 0) {
-            if ($last_order_number && $last_order_number >= 32000) {
-                $order_number = $last_order_number + 1;
+        if ($is_template === 0) {
+            if ($order_number === 0) {
+                if ($last_order_number && $last_order_number >= 32000) {
+                    $order_number = $last_order_number + 1;
+                } else {
+                    $order_number = 32000;
+                }
+
+                if ($carrier_id > 0) {
+                    if ($last_trip_number) {
+                        $trip_number = $last_trip_number + 1;
+                    } else {
+                        $trip_number = 1;
+                    }
+                }
             } else {
-                $order_number = 32000;
-            }
-
-            if ($carrier_id > 0) {
-                if ($last_trip_number) {
-                    $trip_number = $last_trip_number + 1;
-                } else {
-                    $trip_number = 1;
+                if ($carrier_id > 0 && $trip_number === 0) {
+                    if ($last_trip_number) {
+                        $trip_number = $last_trip_number + 1;
+                    } else {
+                        $trip_number = 1;
+                    }
                 }
             }
+
+            $order = $ORDER->updateOrCreate([
+                'order_number' => $order_number
+            ],
+                [
+                    'user_code_id' => $user_code_id,
+                    'trip_number' => $trip_number,
+                    'division_id' => $division_id,
+                    'load_type_id' => $load_type_id,
+                    'bill_to_customer_id' => $bill_to_customer_id,
+                    'carrier_id' => $carrier_id,
+                    'carrier_contact_id' => $carrier_contact_id,
+                    'carrier_contact_primary_phone' => $carrier_contact_primary_phone,
+                    'equipment_id' => $equipment_id,
+                    'carrier_driver_id' => $carrier_driver_id,
+                    'agent_code' => $agent_code,
+                    'agent_commission' => $agent_commission,
+                    'salesman_code' => $salesman_code,
+                    'salesman_commission' => $salesman_commission,
+                    'miles' => $miles,
+                    'charges' => $charges,
+                    'order_cost' => $order_cost,
+                    'profit' => $profit,
+                    'percentage' => $percentage,
+                    'haz_mat' => $haz_mat,
+                    'expedited' => $expedited,
+                    'customer_check_number' => $customer_check_number,
+                    'customer_date_received' => $customer_date_received,
+                    'invoice_received_date' => $invoice_received_date,
+                    'invoice_number' => $invoice_number,
+                    'term_id' => $term_id,
+                    'invoice_date_paid' => $invoice_date_paid,
+                    'carrier_check_number' => $carrier_check_number,
+                    'invoice_customer_reviewed' => $invoice_customer_reviewed,
+                    'order_invoiced' => $order_invoiced,
+                    'invoice_carrier_previewed' => $invoice_carrier_previewed,
+                    'invoice_carrier_received' => $invoice_carrier_received,
+                    'invoice_bol_received' => $invoice_bol_received,
+                    'invoice_rate_conf_received' => $invoice_rate_conf_received,
+                    'invoice_carrier_approved' => $invoice_carrier_approved,
+                    'is_cancelled' => $is_cancelled
+                ]);
+
+            if (count($pickups) > 0) {
+                $PICKUP = new Pickup();
+
+                for ($i = 0; $i < count($pickups); $i++) {
+                    $pickup = $pickups[$i];
+
+                    if (($pickup['toSave'] ?? false)) {
+                        if (($pickup['customer_id'] ?? 0) > 0) {
+                            $PICKUP->updateOrCreate([
+                                'id' => $pickup['id'] ?? 0
+                            ], [
+                                'order_id' => $order->id,
+                                'customer_id' => $pickup['customer_id'],
+                                'type' => 'pickup',
+                                'pu_date1' => $pickup['pu_date1'] ?? '',
+                                'pu_date2' => $pickup['pu_date2'] ?? '',
+                                'pu_time1' => $pickup['pu_time1'] ?? '',
+                                'pu_time2' => $pickup['pu_time2'] ?? '',
+                                'bol_numbers' => $pickup['bol_numbers'] ?? '',
+                                'po_numbers' => $pickup['po_numbers'] ?? '',
+                                'ref_numbers' => $pickup['ref_numbers'] ?? '',
+                                'seal_number' => $pickup['seal_number'] ?? '',
+                                'special_instructions' => $pickup['special_instructions'] ?? ''
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            $newOrder = $ORDER->where('order_number', $order->order_number ?? 0)
+                ->with([
+                    'bill_to_company',
+                    'carrier',
+                    'equipment',
+                    'driver',
+                    'notes_for_driver',
+                    'notes_for_carrier',
+                    'internal_notes',
+                    'pickups',
+                    'deliveries',
+                    'routing',
+                    'documents',
+                    'events',
+                    'division',
+                    'load_type',
+                    'template',
+                    'order_customer_ratings',
+                    'order_carrier_ratings',
+                    'billing_documents',
+                    'billing_notes',
+                    'term',
+                    'user_code'
+                ])->first();
+
+            return response()->json(['result' => 'OK', 'order' => $newOrder, 'order_number' => $order_number]);
         } else {
-            if ($carrier_id > 0 && $trip_number === 0) {
-                if ($last_trip_number) {
-                    $trip_number = $last_trip_number + 1;
+            if ($is_new_template === 1) {
+                if ($keep_order === 1) {
+                    $new_template = Order::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_number' => 0,
+                        'trip_number' => 0,
+                        'division_id' => $division_id,
+                        'load_type_id' => $load_type_id,
+                        'is_template' => 1,
+                        'name' => $name,
+                        'bill_to_customer_id' => $bill_to_customer_id,
+                        'bill_to_contact_id' => $bill_to_contact_id,
+                        'bill_to_contact_name' => $bill_to_contact_name,
+                        'bill_to_contact_primary_phone' => $bill_to_contact_primary_phone,
+                        'carrier_id' => $carrier_id,
+                        'carrier_contact_id' => $carrier_contact_id,
+                        'carrier_contact_primary_phone' => $carrier_contact_primary_phone,
+                        'equipment_id' => $equipment_id,
+                        'carrier_driver_id' => $carrier_driver_id,
+                        'agent_code' => $agent_code,
+                        'miles' => $miles,
+                        'haz_mat' => $haz_mat,
+                        'expedited' => $expedited
+                    ]);
+
+                    if (count($pickups) > 0) {
+                        for ($p = 0; $p < count($pickups); $p++) {
+                            $pickup = $pickups[$p];
+
+                            Pickup::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'customer_id' => $pickup['customer_id'],
+                                'type' => 'pickup',
+                                'pu_date1' => $pickup['pu_date1'] ?? '',
+                                'pu_date2' => $pickup['pu_date2'] ?? '',
+                                'pu_time1' => $pickup['pu_time1'] ?? '',
+                                'pu_time2' => $pickup['pu_time2'] ?? '',
+                                'bol_numbers' => $pickup['bol_numbers'] ?? '',
+                                'po_numbers' => $pickup['po_numbers'] ?? '',
+                                'ref_numbers' => $pickup['ref_numbers'] ?? '',
+                                'seal_number' => $pickup['seal_number'] ?? '',
+                                'special_instructions' => $pickup['special_instructions'] ?? ''
+                            ]);
+                        }
+                    }
+
+                    if (count($deliveries) > 0) {
+                        for ($d = 0; $d < count($deliveries); $d++) {
+                            $delivery = $deliveries[$d];
+
+                            Delivery::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'customer_id' => $delivery['customer_id'],
+                                'type' => 'delivery',
+                                'delivery_date1' => $delivery['delivery_date1'] ?? '',
+                                'delivery_date2' => $delivery['delivery_date2'] ?? '',
+                                'delivery_time1' => $delivery['delivery_time1'] ?? '',
+                                'delivery_time2' => $delivery['delivery_time2'] ?? '',
+                                'bol_numbers' => $delivery['bol_numbers'] ?? '',
+                                'po_numbers' => $delivery['po_numbers'] ?? '',
+                                'ref_numbers' => $delivery['ref_numbers'] ?? '',
+                                'seal_number' => $delivery['seal_number'] ?? '',
+                                'special_instructions' => $delivery['special_instructions'] ?? ''
+                            ]);
+                        }
+                    }
+
+                    if (count($routing) > 0) {
+                        for ($r = 0; $r < count($routing); $r++) {
+                            $route = $routing[$r];
+
+                            Route::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'pickup_id' => $route['pickup_id'] ?? null,
+                                'delivery_id' => $route['delivery_id'] ?? null,
+                                'type' => $route['type'] ?? 'pickup'
+                            ]);
+                        }
+                    }
+
+                    if (count($order_customer_ratings) > 0) {
+                        for ($x = 0; $x < count($order_customer_ratings); $x++) {
+                            $customer_rating = $order_customer_ratings[$x];
+
+                            OrderCustomerRating::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'rate_type_id' => $customer_rating['rate_type_id'] ?? null,
+                                'description' => $customer_rating['description'] ?? '',
+                                'rate_subtype_id' => $customer_rating['rate_subtype_id'] ?? null,
+                                'pieces' => $customer_rating['pieces'] ?? 0.00,
+                                'pieces_unit' => $customer_rating['pieces_unit'] ?? '',
+                                'weight' => $customer_rating['weight'] ?? 0.00,
+                                'weight_unit' => $customer_rating['weight_unit'] ?? '',
+                                'feet_required' => $customer_rating['feet_required'] ?? 0.00,
+                                'feet_required_unit' => $customer_rating['feet_required_unit'] ?? '',
+                                'rate' => $customer_rating['rate'] ?? 0.00,
+                                'percentage' => $customer_rating['percentage'] ?? 0.00,
+                                'days' => $customer_rating['days'] ?? 0.00,
+                                'hours' => $customer_rating['hours'] ?? 0.00,
+                                'total_charges' => $customer_rating['total_charges'] ?? 0.00
+                            ]);
+                        }
+                    }
+
+                    if (count($order_carrier_ratings) > 0) {
+                        for ($y = 0; $y < count($order_carrier_ratings); $y++) {
+                            $carrier_rating = $order_carrier_ratings[$y];
+
+                            OrderCustomerRating::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'rate_type_id' => $carrier_rating['rate_type_id'] ?? null,
+                                'description' => $carrier_rating['description'] ?? '',
+                                'rate_subtype_id' => $carrier_rating['rate_subtype_id'] ?? null,
+                                'pieces' => $carrier_rating['pieces'] ?? 0.00,
+                                'pieces_unit' => $carrier_rating['pieces_unit'] ?? '',
+                                'weight' => $carrier_rating['weight'] ?? 0.00,
+                                'weight_unit' => $carrier_rating['weight_unit'] ?? '',
+                                'feet_required' => $carrier_rating['feet_required'] ?? 0.00,
+                                'feet_required_unit' => $carrier_rating['feet_required_unit'] ?? '',
+                                'rate' => $carrier_rating['rate'] ?? 0.00,
+                                'percentage' => $carrier_rating['percentage'] ?? 0.00,
+                                'days' => $carrier_rating['days'] ?? 0.00,
+                                'hours' => $carrier_rating['hours'] ?? 0.00,
+                                'total_charges' => $carrier_rating['total_charges'] ?? 0.00
+                            ]);
+                        }
+                    }
+
+                    if (count($order_internal_notes) > 0) {
+                        for ($w = 0; $w < count($order_internal_notes); $w++) {
+                            $internal_note = $order_internal_notes[$w];
+
+                            InternalNotes::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'text' => $internal_note['text'] ?? ''
+                            ]);
+                        }
+                    }
+
+                    if (count($order_notes_for_carrier) > 0) {
+                        for ($z = 0; $z < count($order_notes_for_carrier); $z++) {
+                            $note_for_carrier = $order_notes_for_carrier[$z];
+
+                            NotesForCarrier::query()->updateOrCreate([
+                                'id' => null
+                            ], [
+                                'order_id' => $new_template->id,
+                                'text' => $note_for_carrier['text'] ?? ''
+                            ]);
+                        }
+                    }
                 } else {
-                    $trip_number = 1;
+                    OrderDocument::query()->where('order_id', $id)->delete();
+                    OrderEvent::query()->where('order_id', $id)->delete();
+                    OrderBillingNote::query()->where('order_id', $id)->delete();
+                    OrderBillingDocument::query()->where('order_id', $id)->delete();
+
+                    Order::query()->updateOrCreate([
+                        'id' => $id
+                    ], [
+                        'order_number' => 0,
+                        'trip_number' => 0,
+                        'is_template' => 1,
+                        'name' => $name
+                    ]);
                 }
-            }
-        }
 
-        $order = $ORDER->updateOrCreate([
-            'order_number' => $order_number
-        ], [
-            'user_code_id' => $user_code_id,
-            'trip_number' => $trip_number,
-            'division_id' => $division_id,
-            'load_type_id' => $load_type_id,
-            'template_id' => $template_id,
-            'bill_to_customer_id' => $bill_to_customer_id,
-            'carrier_id' => $carrier_id,
-            'carrier_contact_id' => $carrier_contact_id,
-            'carrier_contact_primary_phone' => $carrier_contact_primary_phone,
-            'carrier_load' => $carrier_load,
-            'equipment_id' => $equipment_id,
-            'carrier_driver_id' => $carrier_driver_id,
-            'agent_code' => $agent_code,
-            'agent_commission' => $agent_commission,
-            'salesman_code' => $salesman_code,
-            'salesman_commission' => $salesman_commission,
-            'miles' => $miles,
-            'charges' => $charges,
-            'order_cost' => $order_cost,
-            'profit' => $profit,
-            'percentage' => $percentage,
-            'haz_mat' => $haz_mat,
-            'expedited' => $expedited,
-            'customer_check_number' => $customer_check_number,
-            'customer_date_received' => $customer_date_received,
-            'invoice_received_date' => $invoice_received_date,
-            'invoice_number' => $invoice_number,
-            'term_id' => $term_id,
-            'invoice_date_paid' => $invoice_date_paid,
-            'carrier_check_number' => $carrier_check_number,
-            'invoice_customer_reviewed' => $invoice_customer_reviewed,
-            'order_invoiced' => $order_invoiced,
-            'invoice_carrier_previewed' => $invoice_carrier_previewed,
-            'invoice_carrier_received' => $invoice_carrier_received,
-            'invoice_bol_received' => $invoice_bol_received,
-            'invoice_rate_conf_received' => $invoice_rate_conf_received,
-            'invoice_carrier_approved' => $invoice_carrier_approved,
-            'is_cancelled' => $is_cancelled
-        ]);
+            } else {
+                Pickup::query()->where('order_id', $id)->delete();
+                Delivery::query()->where('order_id', $id)->delete();
+                Route::query()->where('order_id', $id)->delete();
+                OrderCustomerRating::query()->where('order_id', $id)->delete();
+                OrderCarrierRating::query()->where('order_id', $id)->delete();
+                InternalNotes::query()->where('order_id', $id)->delete();
+                NotesForCarrier::query()->where('order_id', $id)->delete();
 
-        if (count($pickups) > 0) {
-            $PICKUP = new Pickup();
+                Order::query()->updateOrCreate([
+                    'id' => $id
+                ],
+                    [
+                        'order_number' => 0,
+                        'trip_number' => 0,
+                        'division_id' => $division_id,
+                        'load_type_id' => $load_type_id,
+                        'is_template' => 1,
+                        'name' => $name,
+                        'bill_to_customer_id' => $bill_to_customer_id,
+                        'carrier_id' => $carrier_id,
+                        'carrier_contact_id' => $carrier_contact_id,
+                        'carrier_contact_primary_phone' => $carrier_contact_primary_phone,
+                        'equipment_id' => $equipment_id,
+                        'carrier_driver_id' => $carrier_driver_id,
+                        'agent_code' => $agent_code,
+                        'miles' => $miles,
+                        'haz_mat' => $haz_mat,
+                        'expedited' => $expedited
+                    ]);
 
-            for ($i = 0; $i < count($pickups); $i++) {
-                $pickup = $pickups[$i];
+                if (count($pickups) > 0) {
+                    for ($p = 0; $p < count($pickups); $p++) {
+                        $pickup = $pickups[$p];
 
-                if (($pickup['toSave'] ?? false)) {
-                    if (($pickup['customer_id'] ?? 0) > 0) {
-                        $PICKUP->updateOrCreate([
-                            'id' => $pickup['id'] ?? 0
+                        Pickup::query()->updateOrCreate([
+                            'id' => null
                         ], [
-                            'order_id' => $order->id,
+                            'order_id' => $id,
                             'customer_id' => $pickup['customer_id'],
                             'type' => 'pickup',
                             'pu_date1' => $pickup['pu_date1'] ?? '',
@@ -1370,11 +1751,382 @@ class OrdersController extends Controller
                         ]);
                     }
                 }
-            }
-        }
 
-        $newOrder = $ORDER->where('order_number', $order->order_number ?? 0)
-            ->with([
+                if (count($deliveries) > 0) {
+                    for ($d = 0; $d < count($deliveries); $d++) {
+                        $delivery = $deliveries[$d];
+
+                        Delivery::query()->updateOrCreate([
+                            'id' => null
+                        ], [
+                            'order_id' => $id,
+                            'customer_id' => $delivery['customer_id'],
+                            'type' => 'delivery',
+                            'delivery_date1' => $delivery['delivery_date1'] ?? '',
+                            'delivery_date2' => $delivery['delivery_date2'] ?? '',
+                            'delivery_time1' => $delivery['delivery_time1'] ?? '',
+                            'delivery_time2' => $delivery['delivery_time2'] ?? '',
+                            'bol_numbers' => $delivery['bol_numbers'] ?? '',
+                            'po_numbers' => $delivery['po_numbers'] ?? '',
+                            'ref_numbers' => $delivery['ref_numbers'] ?? '',
+                            'seal_number' => $delivery['seal_number'] ?? '',
+                            'special_instructions' => $delivery['special_instructions'] ?? ''
+                        ]);
+                    }
+                }
+
+                if (count($routing) > 0) {
+                    for ($r = 0; $r < count($routing); $r++) {
+                        $route = $routing[$r];
+
+                        Route::query()->updateOrCreate([
+                            'id' => null
+                        ], [
+                            'order_id' => $id,
+                            'pickup_id' => $route['pickup_id'] ?? null,
+                            'delivery_id' => $route['delivery_id'] ?? null,
+                            'type' => $route['type'] ?? 'pickup'
+                        ]);
+                    }
+                }
+
+                if (count($order_customer_ratings) > 0) {
+                    for ($x = 0; $x < count($order_customer_ratings); $x++) {
+                        $customer_rating = $order_customer_ratings[$x];
+
+                        OrderCustomerRating::query()->updateOrCreate([
+                            'id' => null
+                        ], [
+                            'order_id' => $id,
+                            'rate_type_id' => $customer_rating['rate_type_id'] ?? null,
+                            'description' => $customer_rating['description'] ?? '',
+                            'rate_subtype_id' => $customer_rating['rate_subtype_id'] ?? null,
+                            'pieces' => $customer_rating['pieces'] ?? 0.00,
+                            'pieces_unit' => $customer_rating['pieces_unit'] ?? '',
+                            'weight' => $customer_rating['weight'] ?? 0.00,
+                            'weight_unit' => $customer_rating['weight_unit'] ?? '',
+                            'feet_required' => $customer_rating['feet_required'] ?? 0.00,
+                            'feet_required_unit' => $customer_rating['feet_required_unit'] ?? '',
+                            'rate' => $customer_rating['rate'] ?? 0.00,
+                            'percentage' => $customer_rating['percentage'] ?? 0.00,
+                            'days' => $customer_rating['days'] ?? 0.00,
+                            'hours' => $customer_rating['hours'] ?? 0.00,
+                            'total_charges' => $customer_rating['total_charges'] ?? 0.00
+                        ]);
+                    }
+                }
+
+                if (count($order_carrier_ratings) > 0) {
+                    for ($y = 0; $y < count($order_carrier_ratings); $y++) {
+                        $carrier_rating = $order_carrier_ratings[$y];
+
+                        OrderCustomerRating::query()->updateOrCreate([
+                            'id' => null
+                        ], [
+                            'order_id' => $id,
+                            'rate_type_id' => $carrier_rating['rate_type_id'] ?? null,
+                            'description' => $carrier_rating['description'] ?? '',
+                            'rate_subtype_id' => $carrier_rating['rate_subtype_id'] ?? null,
+                            'pieces' => $carrier_rating['pieces'] ?? 0.00,
+                            'pieces_unit' => $carrier_rating['pieces_unit'] ?? '',
+                            'weight' => $carrier_rating['weight'] ?? 0.00,
+                            'weight_unit' => $carrier_rating['weight_unit'] ?? '',
+                            'feet_required' => $carrier_rating['feet_required'] ?? 0.00,
+                            'feet_required_unit' => $carrier_rating['feet_required_unit'] ?? '',
+                            'rate' => $carrier_rating['rate'] ?? 0.00,
+                            'percentage' => $carrier_rating['percentage'] ?? 0.00,
+                            'days' => $carrier_rating['days'] ?? 0.00,
+                            'hours' => $carrier_rating['hours'] ?? 0.00,
+                            'total_charges' => $carrier_rating['total_charges'] ?? 0.00
+                        ]);
+                    }
+                }
+
+                if (count($order_internal_notes) > 0) {
+                    for ($w = 0; $w < count($order_internal_notes); $w++) {
+                        $internal_note = $order_internal_notes[$w];
+
+                        InternalNotes::query()->updateOrCreate([
+                            'id' => null
+                        ], [
+                            'order_id' => $id,
+                            'text' => $internal_note['text'] ?? ''
+                        ]);
+                    }
+                }
+
+                if (count($order_notes_for_carrier) > 0) {
+                    for ($z = 0; $z < count($order_notes_for_carrier); $z++) {
+                        $note_for_carrier = $order_notes_for_carrier[$z];
+
+                        NotesForCarrier::query()->updateOrCreate([
+                            'id' => null
+                        ], [
+                            'order_id' => $id,
+                            'text' => $note_for_carrier['text'] ?? ''
+                        ]);
+                    }
+                }
+            }
+
+            return response()->json(['result' => 'OK']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function useTemplate(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $user_code_id = $request->user_code_id ?? null;
+
+        if ($id) {
+            $template = Template::query()->where('id', $id)->with([
+                'pickups',
+                'deliveries',
+                'routing',
+                'notes_for_carrier',
+                'internal_notes',
+                'order_customer_ratings',
+                'order_carrier_ratings'
+            ])->first();
+
+            $order_number = (Order::query()->max('order_number') + 1);
+            $trip_number = ($template->carrier_id ?? 0) > 0 ? (Order::query()->max('trip_number') + 1) : 0;
+
+            $order = Order::query()->updateOrCreate([
+                'order_number' => $order_number
+            ], [
+                'user_code_id' => $user_code_id,
+                'trip_number' => $trip_number,
+                'division_id' => $template->division_id,
+                'load_type_id' => $template->load_type_id,
+                'bill_to_customer_id' => $template->bill_to_customer_id,
+                'bill_to_contact_id' => $template->bill_to_contact_id,
+                'bill_to_contact_name' => $template->bill_to_contact_name,
+                'bill_to_contact_primary_phone' => $template->bill_to_contact_primary_phone,
+                'carrier_id' => $template->carrier_id,
+                'carrier_contact_id' => $template->carrier_contact_id,
+                'carrier_contact_primary_phone' => $template->carrier_contact_primary_phone,
+                'equipment_id' => $template->equipment_id,
+                'carrier_driver_id' => $template->carrier_driver_id,
+                'agent_code' => $template->agent_code,
+                'miles' => $template->miles,
+                'haz_mat' => $template->haz_mat,
+                'expedited' => $template->expedited,
+                'waypoints' => $template->waypoints
+            ]);
+
+            if (count($template->notes_for_carrier) > 0) {
+                foreach ($template->notes_for_carrier as $note) {
+                    NotesForCarrier::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'user_code_id' => $user_code_id,
+                        'order_id' => $order->id,
+                        'text' => $note['text']
+                    ]);
+                }
+            }
+
+            if (count($template->internal_notes) > 0) {
+                foreach ($template->internal_notes as $note) {
+                    InternalNotes::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'user_code_id' => $user_code_id,
+                        'order_id' => $order->id,
+                        'text' => $note['text']
+                    ]);
+                }
+            }
+
+            if (count($template->order_customer_ratings) > 0) {
+                foreach ($template->order_customer_ratings as $rating) {
+                    OrderCustomerRating::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_id' => $order->id,
+                        'rate_type_id' => $rating->rate_type_id,
+                        'description' => $rating->description,
+                        'pieces' => $rating->pieces,
+                        'pieces_unit' => $rating->pieces_unit,
+                        'weight' => $rating->weight,
+                        'weight_unit' => $rating->weight_unit,
+                        'feet_required' => $rating->feet_required,
+                        'feet_required_unit' => $rating->feet_required_unit,
+                        'rate_subtype_id' => $rating->rate_subtype_id,
+                        'percentage' => $rating->percentage,
+                        'rate' => $rating->rate,
+                        'linehaul' => $rating->linehaul,
+                        'days' => $rating->days,
+                        'hours' => $rating->hours,
+                        'total_charges' => $rating->total_charges
+                    ]);
+                }
+            }
+
+            if (count($template->order_carrier_ratings) > 0) {
+                foreach ($template->order_carrier_ratings as $rating) {
+                    OrderCarrierRating::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_id' => $order->id,
+                        'rate_type_id' => $rating->rate_type_id,
+                        'description' => $rating->description,
+                        'pieces' => $rating->pieces,
+                        'pieces_unit' => $rating->pieces_unit,
+                        'weight' => $rating->weight,
+                        'weight_unit' => $rating->weight_unit,
+                        'feet_required' => $rating->feet_required,
+                        'feet_required_unit' => $rating->feet_required_unit,
+                        'rate_subtype_id' => $rating->rate_subtype_id,
+                        'percentage' => $rating->percentage,
+                        'rate' => $rating->rate,
+                        'linehaul' => $rating->linehaul,
+                        'days' => $rating->days,
+                        'hours' => $rating->hours,
+                        'total_charges' => $rating->total_charges
+                    ]);
+                }
+            }
+
+            $routing = array();
+
+            foreach ($template->routing as $route) {
+                $routing[] = 0;
+            }
+
+            if (count($template->pickups) > 0) {
+                foreach ($template->pickups as $item) {
+                    $new_pickup = Pickup::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_id' => $order->id,
+                        'customer_id' => $item->customer_id,
+                        'contact_id' => $item->contact_id,
+                        'contact_name' => $item->contact_name,
+                        'contact_primary_phone' => $item->contact_primary_phone,
+                        'pu_date1' => $item->pu_date1,
+                        'pu_date2' => $item->pu_date2,
+                        'pu_time1' => $item->pu_time1,
+                        'pu_time2' => $item->pu_time2,
+                        'bol_numbers' => $item->bol_numbers,
+                        'po_numbers' => $item->po_numbers,
+                        'ref_numbers' => $item->ref_numbers,
+                        'seal_number' => $item->seal_number,
+                        'special_instructions' => $item->special_instructions,
+                        'type' => $item->type
+                    ]);
+
+                    $index = 0;
+                    foreach ($template->routing as $route) {
+
+                        if (($route->pickup_id ?? 0) > 0) {
+                            if ($route->pickup_id === $item->id) {
+                                $order_routing = new stdClass();
+                                $order_routing->order_id = $order->id;
+                                $order_routing->pickup_id = $new_pickup->id;
+                                $order_routing->delivery_id = null;
+                                $order_routing->type = 'pickup';
+
+                                $routing[$index] = $order_routing;
+                            }
+                        }
+
+                        $index++;
+                    }
+                }
+            }
+
+            if (count($template->deliveries) > 0) {
+                foreach ($template->deliveries as $item) {
+                    $new_delivery = Delivery::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_id' => $order->id,
+                        'customer_id' => $item->customer_id,
+                        'contact_id' => $item->contact_id,
+                        'contact_name' => $item->contact_name,
+                        'contact_primary_phone' => $item->contact_primary_phone,
+                        'delivery_date1' => $item->delivery_date1,
+                        'delivery_date2' => $item->delivery_date2,
+                        'delivery_time1' => $item->delivery_time1,
+                        'delivery_time2' => $item->delivery_time2,
+                        'bol_numbers' => $item->bol_numbers,
+                        'po_numbers' => $item->po_numbers,
+                        'ref_numbers' => $item->ref_numbers,
+                        'seal_number' => $item->seal_number,
+                        'special_instructions' => $item->special_instructions,
+                        'type' => $item->type
+                    ]);
+
+                    $index = 0;
+                    foreach ($template->routing as $route) {
+                        if (($route->delivery_id ?? 0) > 0) {
+                            if ($route->delivery_id === $item->id) {
+                                $order_routing = new stdClass();
+                                $order_routing->order_id = $order->id;
+                                $order_routing->pickup_id = null;
+                                $order_routing->delivery_id = $new_delivery->id;
+                                $order_routing->type = 'delivery';
+
+                                $routing[$index] = $order_routing;
+                            }
+                        }
+
+                        $index++;
+                    }
+                }
+            }
+
+            if (count($routing) > 0) {
+                foreach ($routing as $route) {
+                    Route::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_id' => $order->id,
+                        'pickup_id' => $route->pickup_id,
+                        'delivery_id' => $route->delivery_id,
+                        'type' => $route->type
+                    ]);
+                }
+            }
+
+            if (($template->carrier_id ?? 0) > 0) {
+                $carrier = Carrier::query()->where('id', $template->carrier_id)->first();
+
+                if ($carrier) {
+                    $carrier_code = strtoupper(($carrier->code_number ?? 0) === 0
+                        ? ($carrier->code ?? '')
+                        : ($carrier->code || '') . $carrier->code_number);
+                    $carrier_name = ucwords($carrier->name);
+
+                    date_default_timezone_set('America/Chicago');
+
+                    $event_date = date('m/d/Y', time());
+                    $event_time = date('Hi', time());
+                    $event_notes = 'Assigned Carrier ' . $carrier_code . ' - ' . $carrier_name;
+
+                    OrderEvent::query()->updateOrCreate([
+                        'id' => null
+                    ], [
+                        'order_id' => $order->id,
+                        'user_code_id' => $user_code_id,
+                        'event_type_id' => 2,
+                        'new_carrier_id' => $template->carrier_id,
+                        'time' => $event_time,
+                        'event_time' => $event_time,
+                        'date' => $event_date,
+                        'event_date' => $event_date,
+                        'event_notes' => $event_notes
+                    ]);
+                }
+            }
+
+            $new_order = Order::query()->where('id', $order->id)->with([
                 'bill_to_company',
                 'carrier',
                 'equipment',
@@ -1398,7 +2150,10 @@ class OrdersController extends Controller
                 'user_code'
             ])->first();
 
-        return response()->json(['result' => 'OK', 'order' => $newOrder, 'order_number' => $order_number]);
+            return response()->json(['result' => 'OK', 'order' => $new_order]);
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
     }
 
     /**
@@ -1553,14 +2308,105 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function saveTemplateOrderPickup(Request $request): JsonResponse
+    public function deleteTemplate(Request $request): JsonResponse
     {
-        $TEMPLATE_PICKUP = new TemplatePickup();
-        $TEMPLATE = new Template();
+        $id = $request->id ?? null;
+
+        Template::query()->where('id', $id)->delete();
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getTemplateById(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+
+        $template = Template::query()->where('id', $id)->with([
+            'division',
+            'load_type',
+            'bill_to_company',
+            'carrier',
+            'equipment',
+            'pickups',
+            'deliveries',
+            'routing',
+            'notes_for_carrier',
+            'internal_notes',
+            'order_customer_ratings',
+            'order_carrier_ratings'
+        ])->first();
+
+        return response()->json(['result' => 'OK', 'template' => $template]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplate(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $name = $request->name ?? '';
+        $division_id = $request->division_id ?? null;
+        $load_type_id = $request->load_type_id ?? null;
+        $bill_to_customer_id = $request->bill_to_customer_id ?? null;
+        $bill_to_contact_id = $request->bill_to_contact_id ?? null;
+        $bill_to_contact_name = $request->bill_to_contact_name ?? '';
+        $bill_to_contact_primary_phone = $request->bill_to_contact_primary_phone ?? 'work';
+        $carrier_id = $request->carrier_id ?? null;
+        $carrier_contact_id = $request->carrier_contact_id ?? null;
+        $carrier_contact_name = $request->carrier_contact_name ?? '';
+        $carrier_contact_primary_phone = $request->carrier_contact_primary_phone ?? 'work';
+        $carrier_driver_id = $request->carrier_driver_id ?? null;
+        $equipment_id = $request->equipment_id ?? null;
+        $miles = $request->miles ?? 0.0;
+        $haz_mat = $request->haz_mat ?? 0;
+        $expedited = $request->expedited ?? 0;
+
+        $TEMPLATE = Template::query();
+
+        $template = $TEMPLATE->updateOrCreate([
+            'id' => $id
+        ], [
+            'name' => $name,
+            'division_id' => $division_id,
+            'load_type_id' => $load_type_id,
+            'bill_to_customer_id' => $bill_to_customer_id,
+            'bill_to_contact_id' => $bill_to_contact_id,
+            'bill_to_contact_name' => $bill_to_contact_name,
+            'bill_to_contact_primary_phone' => $bill_to_contact_primary_phone === '' ? 'work' : $bill_to_contact_primary_phone,
+            'carrier_id' => $carrier_id,
+            'carrier_contact_id' => $carrier_contact_id,
+            'carrier_contact_name' => $carrier_contact_name,
+            'carrier_contact_primary_phone' => $carrier_contact_primary_phone === '' ? 'work' : $carrier_contact_primary_phone,
+            'carrier_driver_id' => $carrier_driver_id,
+            'equipment_id' => $equipment_id,
+            'miles' => $miles,
+            'haz_mat' => $haz_mat,
+            'expedited' => $expedited
+        ]);
+
+        return response()->json(['result' => 'OK', 'template' => $template]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplatePickup(Request $request): JsonResponse
+    {
+        $TEMPLATE_PICKUP = TemplatePickup::query();
 
         $template_id = $request->template_id ?? 0;
-        $id = $request->id ?? 0;
+        $id = $request->pickup_id ?? null;
         $customer_id = $request->customer_id ?? 0;
+        $contact_id = $request->contact_id ?? null;
+        $contact_name = $request->contact_name ?? '';
+        $contact_primary_phone = $request->contact_primary_phone ?? 'work';
         $pu_date1 = $request->pu_date1 ?? '';
         $pu_date2 = $request->pu_date2 ?? '';
         $pu_time1 = $request->pu_time1 ?? '';
@@ -1579,6 +2425,9 @@ class OrdersController extends Controller
                 ], [
                     'template_id' => $template_id,
                     'customer_id' => $customer_id,
+                    'contact_id' => $contact_id,
+                    'contact_name' => $contact_name,
+                    'contact_primary_phone' => $contact_primary_phone,
                     'type' => $type,
                     'pu_date1' => $pu_date1,
                     'pu_date2' => $pu_date2,
@@ -1591,31 +2440,276 @@ class OrdersController extends Controller
                     'special_instructions' => $special_instructions
                 ]);
 
-                $pickup = $TEMPLATE_PICKUP->where('id', $pickup->id ?? 0)->with(['customer'])->first();
+                $new_pickup = TemplatePickup::where('id', $pickup->id ?? 0)->with(['customer'])->first();
 
-                $template = $TEMPLATE->where('id', $template_id)->with([
-                    'bill_to_company',
-                    'carrier',
-                    'equipment',
-                    'driver',
-                    'notes_for_carrier',
-                    'internal_notes',
-                    'pickups',
-                    'deliveries',
-                    'routing',
-                    'division',
-                    'load_type',
-                    'order_customer_ratings',
-                    'order_carrier_ratings'
-                ])->first();
-
-                return response()->json(['result' => 'OK', 'pickup' => $pickup, 'template' => $template]);
+                return response()->json(['result' => 'OK', 'pickup' => $new_pickup]);
             } else {
                 return response()->json(['result' => 'NO CUSTOMER']);
             }
         } else {
             return response()->json(['result' => 'NO TEMPLATE']);
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeTemplatePickup(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+
+        if ($id) {
+            TemplatePickup::query()->where('id', $id)->delete();
+            return response()->json(['result' => 'OK']);
+        } else {
+            return response()->json(['result' => 'NO PICKUP']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplateDelivery(Request $request): JsonResponse
+    {
+        $TEMPLATE_DELIVERY = TemplateDelivery::query();
+
+        $template_id = $request->template_id ?? 0;
+        $id = $request->delivery_id ?? null;
+        $customer_id = $request->customer_id ?? 0;
+        $contact_id = $request->contact_id ?? null;
+        $contact_name = $request->contact_name ?? '';
+        $contact_primary_phone = $request->contact_primary_phone ?? 'work';
+        $delivery_date1 = $request->delivery_date1 ?? '';
+        $delivery_date2 = $request->delivery_date2 ?? '';
+        $delivery_time1 = $request->delivery_time1 ?? '';
+        $delivery_time2 = $request->delivery_time2 ?? '';
+        $bol_numbers = $request->bol_numbers ?? '';
+        $po_numbers = $request->po_numbers ?? '';
+        $ref_numbers = $request->ref_numbers ?? '';
+        $seal_number = $request->seal_number ?? '';
+        $special_instructions = $request->special_instructions ?? null;
+        $type = $request->type ?? 'delivery';
+
+        if ($template_id > 0) {
+            if ($customer_id > 0) {
+                $delivery = $TEMPLATE_DELIVERY->updateOrCreate([
+                    'id' => $id
+                ], [
+                    'template_id' => $template_id,
+                    'customer_id' => $customer_id,
+                    'contact_id' => $contact_id,
+                    'contact_name' => $contact_name,
+                    'contact_primary_phone' => $contact_primary_phone,
+                    'type' => $type,
+                    'delivery_date1' => $delivery_date1,
+                    'delivery_date2' => $delivery_date2,
+                    'delivery_time1' => $delivery_time1,
+                    'delivery_time2' => $delivery_time2,
+                    'bol_numbers' => $bol_numbers,
+                    'po_numbers' => $po_numbers,
+                    'ref_numbers' => $ref_numbers,
+                    'seal_number' => $seal_number,
+                    'special_instructions' => $special_instructions
+                ]);
+
+                $new_delivery = TemplateDelivery::where('id', $delivery->id ?? 0)->with(['customer'])->first();
+
+                return response()->json(['result' => 'OK', 'delivery' => $new_delivery]);
+            } else {
+                return response()->json(['result' => 'NO CUSTOMER']);
+            }
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeTemplateDelivery(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+
+        if ($id) {
+            TemplateDelivery::query()->where('id', $id)->delete();
+            return response()->json(['result' => 'OK']);
+        } else {
+            return response()->json(['result' => 'NO DELIVERY']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplateRouting(Request $request): JsonResponse
+    {
+        $TEMPLATE_ROUTE = TemplateRoute::query();
+
+        $template_id = $request->template_id ?? 0;
+        $routing = $request->routing ?? [];
+
+        if ($template_id > 0) {
+            $TEMPLATE_ROUTE->where('template_id', $template_id)->delete();
+
+            if (count($routing) > 0) {
+                for ($i = 0; $i < count($routing); $i++) {
+                    $route = $routing[$i];
+
+                    $TEMPLATE_ROUTE->updateOrCreate([
+                        'id' => 0
+                    ], [
+                        'template_id' => $template_id,
+                        'pickup_id' => $route['pickup_id'] ?? null,
+                        'delivery_id' => $route['delivery_id'] ?? null,
+                        'type' => $route['type'] ?? 'pickup'
+                    ]);
+                }
+            }
+
+            $new_routing = TemplateRoute::where('template_id', $template_id)->get();
+
+            return response()->json(['result' => 'OK', 'routing' => $new_routing]);
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplateNotesForCarrier(Request $request): JsonResponse
+    {
+        $NOTES_FOR_CARRIER = TemplateNoteForCarrier::query();
+
+        $id = $request->id ?? 0;
+        $template_id = $request->template_id ?? 0;
+        $user_code_id = $request->user_code_id ?? '';
+        $text = $request->text ?? '';
+
+        if ($template_id > 0) {
+            $note_for_carrier = $NOTES_FOR_CARRIER->updateOrCreate([
+                'id' => $id
+            ], [
+                'template_id' => $template_id,
+                'user_code_id' => $user_code_id,
+                'text' => $text
+            ]);
+
+            $notes_for_carrier = TemplateNoteForCarrier::where('template_id', $template_id)->with(['user_code'])->get();
+
+            return response()->json(['result' => 'OK', 'note' => $note_for_carrier, 'notes' => $notes_for_carrier]);
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteTemplateNotesForCarrier(Request $request): JsonResponse
+    {
+        $NOTES_FOR_CARRIER = TemplateNoteForCarrier::query();
+
+        $id = $request->id ?? 0;
+        $template_id = $request->template_id ?? 0;
+
+        $note_for_carrier = $NOTES_FOR_CARRIER->where('id', $id)->delete();
+        $notes_for_carrier = TemplateNoteForCarrier::where('template_id', $template_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'note' => $note_for_carrier, 'notes' => $notes_for_carrier]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplateInternalNotes(Request $request): JsonResponse
+    {
+        $INTERNAL_NOTE = TemplateInternalNote::query();
+
+        $id = $request->id ?? 0;
+        $template_id = $request->template_id ?? 0;
+        $user_code_id = $request->user_code_id ?? '';
+        $text = $request->text ?? '';
+
+        if ($template_id > 0) {
+            $internal_note = $INTERNAL_NOTE->updateOrCreate([
+                'id' => $id
+            ], [
+                'template_id' => $template_id,
+                'user_code_id' => $user_code_id,
+                'text' => $text
+            ]);
+
+            $internal_notes = TemplateInternalNote::where('template_id', $template_id)->with(['user_code'])->get();
+
+            return response()->json(['result' => 'OK', 'note' => $internal_note, 'notes' => $internal_notes]);
+        } else {
+            return response()->json(['result' => 'NO TEMPLATE']);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteTemplateInternalNotes(Request $request): JsonResponse
+    {
+        $INTERNAL_NOTE = TemplateInternalNote::query();
+
+        $id = $request->id ?? 0;
+        $template_id = $request->template_id ?? 0;
+
+        $internal_note = $INTERNAL_NOTE->where('id', $id)->delete();
+        $internal_notes = TemplateInternalNote::where('template_id', $template_id)->with(['user_code'])->get();
+
+        return response()->json(['result' => 'OK', 'note' => $internal_note, 'notes' => $internal_notes]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveTemplateMilesWaypoints(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $miles = $request->miles ?? 0;
+        $waypoints = $request->waypoints ?? '';
+
+        Template::query()->updateOrCreate([
+            'id' => $id
+        ], [
+            'miles' => $miles,
+            'waypoints' => $waypoints
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveOrderMilesWaypoints(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $miles = $request->miles ?? 0;
+        $waypoints = $request->waypoints ?? '';
+
+        Order::query()->updateOrCreate([
+            'id' => $id
+        ], [
+            'miles' => $miles,
+            'waypoints' => $waypoints
+        ]);
+
+        return response()->json(['result' => 'OK']);
     }
 
     /**
@@ -1702,67 +2796,6 @@ class OrdersController extends Controller
             }
         } else {
             return response()->json(['result' => 'NO ORDER']);
-        }
-    }
-
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function saveTemplateOrderDelivery(Request $request): JsonResponse
-    {
-        $TEMPLATE_DELIVERY = new TemplateDelivery();
-        $TEMPLATE = new Template();
-
-        $template_id = $request->template_id ?? 0;
-        $id = $request->id ?? 0;
-        $customer_id = $request->customer_id ?? 0;
-        $delivery_date1 = $request->delivery_date1 ?? '';
-        $delivery_date2 = $request->delivery_date2 ?? '';
-        $delivery_time1 = $request->delivery_time1 ?? '';
-        $delivery_time2 = $request->delivery_time2 ?? '';
-        $special_instructions = $request->special_instructions ?? null;
-        $type = $request->type ?? 'delivery';
-
-        if ($template_id > 0) {
-            if ($customer_id > 0) {
-                $delivery = $TEMPLATE_DELIVERY->updateOrCreate([
-                    'id' => $id
-                ], [
-                    'template_id' => $template_id,
-                    'customer_id' => $customer_id,
-                    'type' => $type,
-                    'delivery_date1' => $delivery_date1,
-                    'delivery_date2' => $delivery_date2,
-                    'delivery_time1' => $delivery_time1,
-                    'delivery_time2' => $delivery_time2,
-                    'special_instructions' => $special_instructions
-                ]);
-
-                $delivery = $TEMPLATE_DELIVERY->where('id', $delivery->id ?? 0)->with(['customer'])->first();
-
-                $template = $TEMPLATE->where('id', $template_id)->with([
-                    'bill_to_company',
-                    'carrier',
-                    'equipment',
-                    'driver',
-                    'notes_for_carrier',
-                    'internal_notes',
-                    'pickups',
-                    'deliveries',
-                    'routing',
-                    'division',
-                    'load_type',
-                    'order_customer_ratings',
-                    'order_carrier_ratings',
-                ])->first();
-
-                return response()->json(['result' => 'OK', 'delivery' => $delivery, 'template' => $template]);
-            } else {
-                return response()->json(['result' => 'NO CUSTOMER']);
-            }
-        } else {
-            return response()->json(['result' => 'NO TEMPLATE']);
         }
     }
 
@@ -1899,56 +2932,6 @@ class OrdersController extends Controller
             return response()->json(['result' => 'OK', 'order' => $order]);
         } else {
             return response()->json(['result' => 'NO ORDER']);
-        }
-    }
-
-    /**
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function saveTemplateOrderRouting(Request $request): JsonResponse
-    {
-        $TEMPLATE_ROUTE = new TemplateRoute();
-        $TEMPLATE = new Template();
-        $template_id = $request->template_id ?? 0;
-        $routing = $request->routing ?? [];
-
-        if ($template_id > 0) {
-            $TEMPLATE_ROUTE->where('template_id', $template_id)->delete();
-
-            if (count($routing) > 0) {
-                for ($i = 0; $i < count($routing); $i++) {
-                    $route = $routing[$i];
-
-                    $TEMPLATE_ROUTE->updateOrCreate([
-                        'id' => 0
-                    ], [
-                        'template_id' => $template_id,
-                        'pickup_id' => $route['pickup_id'] ?? null,
-                        'delivery_id' => $route['delivery_id'] ?? null,
-                        'type' => $route['type'] ?? 'pickup'
-                    ]);
-                }
-            }
-            $template = $TEMPLATE->where('id', $template_id)->with([
-                'bill_to_company',
-                'carrier',
-                'equipment',
-                'driver',
-                'notes_for_carrier',
-                'internal_notes',
-                'pickups',
-                'deliveries',
-                'routing',
-                'division',
-                'load_type',
-                'order_customer_ratings',
-                'order_carrier_ratings'
-            ])->first();
-
-            return response()->json(['result' => 'OK', 'template' => $template]);
-        } else {
-            return response()->json(['result' => 'NO TEMPLATE']);
         }
     }
 
@@ -2374,7 +3357,7 @@ class OrdersController extends Controller
         $carrier = null;
 
         if ($division_type !== '') {
-            if ($division_type === 'brokerage'){
+            if ($division_type === 'brokerage') {
                 $CARRIER = Carrier::query();
 
                 $carrier = Carrier::whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
@@ -2384,21 +3367,21 @@ class OrdersController extends Controller
                         'insurances'
                     ])->first();
 
-                if ($carrier){
+                if ($carrier) {
                     return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => 'carrier']);
-                }else{
-                    $carrier = Carrier::whereHas('drivers', function ($query) use ($code){
+                } else {
+                    $carrier = Carrier::whereHas('drivers', function ($query) use ($code) {
                         return $query->whereRaw("code like '$code%'");
                     })
-                    ->with([
-                        'contacts',
-                        'drivers',
-                        'insurances'
-                    ])->first();
+                        ->with([
+                            'contacts',
+                            'drivers',
+                            'insurances'
+                        ])->first();
 
-                    if ($carrier){
+                    if ($carrier) {
                         return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => 'carrier', 'driver_code' => strtoupper($code)]);
-                    }else{
+                    } else {
                         $AGENT = Agent::query();
 
                         $carrier = Carrier::whereRaw("code like '$code%'")
@@ -2416,27 +3399,62 @@ class OrdersController extends Controller
                                 'drivers',
                                 'insurances'
                             ])->first();
-                        }else{
+                        } else {
                             $code = '';
                         }
 
                         return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => 'agent', 'driver_code' => strtoupper($code)]);
                     }
                 }
-            }elseif ($division_type === 'company'){
+            } elseif ($division_type === 'company') {
                 $DRIVER = Driver::query();
 
                 $carrier = $DRIVER->whereRaw("code like '$code%'")
                     ->whereNull(['carrier_id', 'agent_id'])
-                    ->with(['contacts','tractor','trailer'])->first();
+                    ->with(['contacts', 'tractor', 'trailer'])->first();
 
                 return response()->json(['result' => 'OK', 'carrier' => $carrier, 'owner_type' => $carrier?->owner_type]);
-            }else{
+            } else {
                 return response()->json(['result' => 'NO DIVISION']);
             }
         } else {
             return response()->json(['result' => 'NO DIVISION']);
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getRoutingBol(Request $request): JsonResponse
+    {
+        $order_id = $request->order_id ?? null;
+        $name = $request->name ?? '';
+
+        $ROUTE = Route::query();
+
+        $ROUTE->where('order_id', $order_id);
+        $ROUTE->where(function ($query) use ($name) {
+            $query->whereHas('pickup', function ($query1) use ($name) {
+                $query1->whereHas('customer', function ($query2) use ($name) {
+                    $query2->whereRaw("1 = 1")
+                        ->whereRaw("CONCAT(`code`,`code_number`) like '%$name%'")
+                        ->orWhereRaw("LOWER(name) like '%$name%'");
+                });
+            })
+                ->orWhereHas('delivery', function ($query1) use ($name) {
+                    $query1->whereHas('customer', function ($query2) use ($name) {
+                        $query2->whereRaw("1 = 1")
+                            ->whereRaw("CONCAT(`code`,`code_number`) like '%$name%'")
+                            ->orWhereRaw("LOWER(name) like '%$name%'");
+                    });
+                });
+        });
+
+
+        $routing = $ROUTE->with(['pickup', 'delivery'])->get();
+
+        return response()->json(['result' => 'OK', 'routing' => $routing]);
     }
 
     /**
@@ -2574,13 +3592,10 @@ class OrdersController extends Controller
 
         return response()->json(['result' => 'OK']);
     }
+
+
 }
 
-
-class OrderRouting
-{
-
-}
 
 function array_orderby()
 {

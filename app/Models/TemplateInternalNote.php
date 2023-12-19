@@ -11,8 +11,12 @@ use Illuminate\Database\Eloquent\Builder;
  * @mixin Builder
  */
 
-class TemplateInternalNotes extends Model
+class TemplateInternalNote extends Model
 {
     protected $guarded = [];
     protected $table = 'template_order_internal_notes';
+
+    public function user_code(){
+        return $this->belongsTo(UserCode::class);
+    }
 }

@@ -100,6 +100,22 @@ class DivisionsController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getDivisionsDropdown(Request $request): JsonResponse
+    {
+        $name = strtolower($request->name ?? '');
+        $DIVISION = Division::query();
+
+        $DIVISION->whereRaw("1 = 1");
+        $DIVISION->whereRaw("LOWER(name) like '$name%'");
+        $divisions = $DIVISION->select(['id', 'name', 'type'])->get();
+
+        return response()->json(['result'=>'OK', 'divisions'=>$divisions]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function divisionSearch(Request $request): JsonResponse
     {
         $DIVISION = new Division();

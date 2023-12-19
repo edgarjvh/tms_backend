@@ -18,17 +18,20 @@ class CustomerBolMailable extends Mailable
     public $destination_state;
     public $user_first_name;
     public $user_last_name;
+    public $user_phone;
+    public $user_email_address;
     public $order_number;
     public $recipient_to;
     public $recipient_cc;
     public $recipient_bcc;
+    public $pdf;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($customer_first_name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $order_number, $recipient_to, $recipient_cc, $recipient_bcc)
+    public function __construct($customer_first_name, $origin_city, $origin_state, $destination_city, $destination_state, $user_first_name, $user_last_name, $user_phone, $user_email_address, $order_number, $recipient_to, $recipient_cc, $recipient_bcc, $pdf)
     {
         $this->customer_first_name = $customer_first_name;
         $this->origin_city = $origin_city;
@@ -37,10 +40,13 @@ class CustomerBolMailable extends Mailable
         $this->destination_state = $destination_state;
         $this->user_first_name = $user_first_name;
         $this->user_last_name = $user_last_name;
+        $this->user_phone = $user_phone;
+        $this->user_email_address = $user_email_address;
         $this->order_number = $order_number;
         $this->recipient_to = $recipient_to;
         $this->recipient_cc = $recipient_cc;
         $this->recipient_bcc = $recipient_bcc;
+        $this->pdf = $pdf;
     }
 
     /**
@@ -56,6 +62,7 @@ class CustomerBolMailable extends Mailable
             ->cc($this->recipient_cc)
             ->bcc($this->recipient_bcc)
             ->subject("BOL - Order $this->order_number")
+            ->attachData($this->pdf->output(), "BOL-Order-$this->order_number.pdf", ['mime' => 'application/pdf'])
             ->view('mails.rate-conf.customer_bol_template');
     }
 }

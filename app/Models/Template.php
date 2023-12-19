@@ -19,14 +19,13 @@ class Template extends Model
 
     public function bill_to_company()
     {
-        return $this->belongsTo(Customer::class, 'bill_to_customer_id', 'id')
-            ->with(['contacts']);
+        return $this->belongsTo(Customer::class, 'bill_to_customer_id', 'id');
     }
 
     public function carrier()
     {
         return $this->belongsTo(Carrier::class)
-            ->with(['contacts', 'drivers', 'notes', 'insurances', 'factoring_company', 'mailing_address', 'documents', 'equipments_information']);
+            ->with(['contacts', 'drivers', 'insurances']);
     }
 
     public function driver()
@@ -36,12 +35,12 @@ class Template extends Model
 
     public function notes_for_carrier()
     {
-        return $this->hasMany(TemplateNotesForCarrier::class, 'template_id', 'id');
+        return $this->hasMany(TemplateNoteForCarrier::class, 'template_id', 'id');
     }
 
     public function internal_notes()
     {
-        return $this->hasMany(TemplateInternalNotes::class, 'template_id', 'id');
+        return $this->hasMany(TemplateInternalNote::class, 'template_id', 'id');
     }
 
     public function pickups()
@@ -71,13 +70,13 @@ class Template extends Model
 
     public function order_customer_ratings()
     {
-        return $this->hasMany(TemplateOrderCustomerRating::class, 'template_id', 'id')
+        return $this->hasMany(TemplateCustomerRating::class, 'template_id', 'id')
             ->with(['rate_type', 'rate_subtype']);
     }
 
     public function order_carrier_ratings()
     {
-        return $this->hasMany(TemplateOrderCarrierRating::class, 'template_id', 'id')
+        return $this->hasMany(TemplateCarrierRating::class, 'template_id', 'id')
             ->with(['rate_type', 'rate_subtype']);
     }
 

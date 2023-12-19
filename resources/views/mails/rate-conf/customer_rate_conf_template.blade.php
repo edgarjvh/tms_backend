@@ -14,15 +14,6 @@
 <table class="table" style="width: 100%; font-style: italic;">
     <tbody>
     <tr>
-        <td>
-{{--            Dear {{$carrier_name}}--}}
-            Dear <span style="font-weight: bold">{{$customer_first_name ?? ''}}</span>,
-        </td>
-    </tr>
-    <tr>
-        <td></td>
-    </tr>
-    <tr>
         <td style="padding: 0.5rem 0;">
 {{--            Please see the attached order confirmation for your shipment from {{$origin_city}}, {{$origin_state}} to {{$destination_city}}, {{$destination_state}}. Please sign and return back.--}}
             Please see the attached order confirmation for your shipment from <span style="font-weight: bold">{{$origin_city ?? ''}}</span>,

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @mixin Builder
  */
 
-class TemplateOrderCarrierRating extends Model
+class TemplateCarrierRating extends Model
 {
     protected $guarded = [];
     protected $table = 'template_order_carrier_ratings';

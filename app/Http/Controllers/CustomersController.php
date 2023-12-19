@@ -51,6 +51,29 @@ class CustomersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getCustomerByCode(Request $request): JsonResponse
+    {
+        $code = $request->code ?? '';
+        $user_code = $request->user_code ?? '';
+
+        $CUSTOMER = Customer::query();
+
+        $CUSTOMER->whereRaw("1 = 1");
+        $CUSTOMER->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'");
+
+        if ($user_code !== '') {
+            $CUSTOMER->where('agent_code', $user_code);
+        }
+
+        $customer = $CUSTOMER->with(['zip_data'])->first();
+
+        return response()->json(['result' => 'OK', 'customer' => $customer]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function customers(Request $request): JsonResponse
     {
         $CUSTOMER = Customer::query();
@@ -76,7 +99,7 @@ class CustomersController extends Controller
             ->whereRaw("contact_phone like '%$contact_phone%'")
             ->whereRaw("LOWER(email) like '%$email%'");
 
-        if ($user_code !== ''){
+        if ($user_code !== '') {
             $CUSTOMER->where('agent_code', $user_code);
         }
 
@@ -102,8 +125,7 @@ class CustomersController extends Controller
             ]);
 
             $customers = $CUSTOMER->get();
-        }
-        else {
+        } else {
             $customers = DB::table('customers')->select()->get();
         }
 
@@ -141,7 +163,7 @@ class CustomersController extends Controller
             $customers->where('agent_code', $user_code);
         }
 
-        if ($origin === 'agent'){
+        if ($origin === 'agent') {
             $customers->whereRaw('agent_code <> ""');
         }
 
@@ -163,7 +185,7 @@ class CustomersController extends Controller
 //        $ORDER = Order::query()->whereRaw('orders.is_imported = 0');
         $ORDER = Order::query();
 
-        $ORDER->where(function ($query) use ($id){
+        $ORDER->where(function ($query) use ($id) {
             $query->whereHas('bill_to_company', function ($query1) use ($id) {
                 $query1->where('id', $id);
             });
@@ -244,7 +266,7 @@ class CustomersController extends Controller
 
         // get incoming customer by id, code and code_number
         $curCustomer = $CUSTOMER
-            ->where('id',$id)
+            ->where('id', $id)
             ->whereRaw("CONCAT(code,code_number) = '$full_code'")
             ->first();
 
@@ -312,12 +334,12 @@ class CustomersController extends Controller
                 'mailing_customer_contact_primary_email' => $mailing_customer_contact_primary_email
             ]);
 
-        if ($user_code !== ''){
+        if ($user_code !== '') {
             $CUSTOMER_MAILING_ADDRESS = new CustomerMailingAddress();
 
             $CUSTOMER_MAILING_ADDRESS->updateOrCreate([
                 'customer_id' => $customer->id
-            ],[
+            ], [
                 'agent_code' => strtoupper($user_code)
             ]);
         }
@@ -377,11 +399,11 @@ class CustomersController extends Controller
         }
 
         $CUSTOMER_CONTACT->where('customer_id', $customer->id)->update([
-           'address1' => $customer->address1,
-           'address2' => $customer->address2,
-           'city' => $customer->city,
-           'state' => $customer->state,
-           'zip_code' => $customer->zip,
+            'address1' => $customer->address1,
+            'address2' => $customer->address2,
+            'city' => $customer->city,
+            'state' => $customer->state,
+            'zip_code' => $customer->zip,
         ]);
 
         $newCustomer = $CUSTOMER->where('id', $customer->id)
@@ -570,22 +592,22 @@ class CustomersController extends Controller
 
                 $zip = str_replace(" ", "", $zip);
 
-                if (preg_match('/[a-z]/i', $zip)){
+                if (preg_match('/[a-z]/i', $zip)) {
                     $zip = str_replace("-", "", $zip);
                     $len = strlen($zip);
                     $rem = $len - 6;
 
-                    if ($rem > 0){
+                    if ($rem > 0) {
                         $zip = substr_replace($zip, "", 0, $rem);
                     }
 
                     $zip = substr_replace($zip, " ", 3, 0);
-                }else if (preg_match('/[0-9]/', $zip)){
+                } else if (preg_match('/[0-9]/', $zip)) {
                     $zip = explode("-", $zip)[0];
 
                     $len = strlen($zip);
 
-                    if ($len < 5){
+                    if ($len < 5) {
                         $zip = str_pad($zip, 5, "0", STR_PAD_LEFT);
                     }
                 }
@@ -735,7 +757,8 @@ class CustomersController extends Controller
     /**
      * @throws Exception
      */
-    public function customerTest(Request $request): JsonResponse{
+    public function customerTest(Request $request): JsonResponse
+    {
         $CUSTOMER = new PlainCustomer();
         $MAILING_ADDRESS = new CustomerMailingAddress();
 

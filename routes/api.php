@@ -18,6 +18,7 @@ use App\Http\Controllers\DivisionDocumentsController;
 use App\Http\Controllers\DivisionHoursController;
 use App\Http\Controllers\DivisionMailingAddressesController;
 use App\Http\Controllers\DivisionNotesController;
+use App\Http\Controllers\SaimeController;
 use App\Http\Controllers\SalesmenController;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
@@ -67,6 +68,7 @@ use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\AgentDriversController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
+Route::post('/getCustomerByCode', [CustomersController::class, 'getCustomerByCode']);
 Route::post('/getCustomerById', [CustomersController::class, 'getCustomerById']);
 Route::post('/customerSearch', [CustomersController::class, 'customerSearch']);
 Route::post('/getFullCustomers', [CustomersController::class, 'getFullCustomers'])->name('customers');
@@ -114,6 +116,7 @@ Route::post('/saveContact', [ContactsController::class, 'saveContact']);
 Route::post('/deleteContact', [ContactsController::class, 'deleteContact']);
 Route::post('/uploadAvatar', [ContactsController::class, 'uploadAvatar']);
 Route::post('/removeAvatar', [ContactsController::class, 'removeAvatar']);
+Route::post('/getEmailContacts', [ContactsController::class, 'getEmailContacts']);
 
 Route::post('/getCarrierContacts', [ContactsController::class, 'getCarrierContacts']);
 Route::post('/carrierContacts', [ContactsController::class, 'carrierContacts'])->name('contacts');
@@ -240,6 +243,7 @@ Route::post('/getAgentHours', [AgentHoursController::class, 'getAgentHours']);
 Route::post('/saveAgentHours', [AgentHoursController::class, 'saveAgentHours']);
 
 Route::post('/getOrders', [OrdersController::class, 'getOrders']);
+Route::post('/getLoadBoardOrders', [OrdersController::class, 'getLoadBoardOrders']);
 Route::post('/getOrders2', [OrdersController::class, 'getOrders2']);
 Route::post('/getOrderById', [OrdersController::class, 'getOrderById']);
 Route::post('/getOrderByOrderNumber', [OrdersController::class, 'getOrderByOrderNumber']);
@@ -250,11 +254,23 @@ Route::post('/saveOrderEvent', [OrdersController::class, 'saveOrderEvent']);
 Route::post('/removeOrderPickup', [OrdersController::class, 'removeOrderPickup']);
 Route::post('/removeOrderDelivery', [OrdersController::class, 'removeOrderDelivery']);
 Route::post('/saveOrderPickup', [OrdersController::class, 'saveOrderPickup']);
-Route::post('/saveTemplateOrderPickup', [OrdersController::class, 'saveTemplateOrderPickup']);
 Route::post('/saveOrderDelivery', [OrdersController::class, 'saveOrderDelivery']);
-Route::post('/saveTemplateOrderDelivery', [OrdersController::class, 'saveTemplateOrderDelivery']);
 Route::post('/saveOrderRouting', [OrdersController::class, 'saveOrderRouting']);
-Route::post('/saveTemplateOrderRouting', [OrdersController::class, 'saveTemplateOrderRouting']);
+Route::post('/useTemplate', [OrdersController::class, 'useTemplate']);
+Route::post('/deleteTemplate', [OrdersController::class, 'deleteTemplate']);
+Route::post('/saveOrderMilesWaypoints', [OrdersController::class, 'saveOrderMilesWaypoints']);
+Route::post('/getTemplateById', [OrdersController::class, 'getTemplateById']);
+Route::post('/saveTemplate', [OrdersController::class, 'saveTemplate']);
+Route::post('/saveTemplatePickup', [OrdersController::class, 'saveTemplatePickup']);
+Route::post('/removeTemplatePickup', [OrdersController::class, 'removeTemplatePickup']);
+Route::post('/saveTemplateDelivery', [OrdersController::class, 'saveTemplateDelivery']);
+Route::post('/removeTemplateDelivery', [OrdersController::class, 'removeTemplateDelivery']);
+Route::post('/saveTemplateRouting', [OrdersController::class, 'saveTemplateRouting']);
+Route::post('/saveTemplateNotesForCarrier', [OrdersController::class, 'saveTemplateNotesForCarrier']);
+Route::post('/deleteTemplateNotesForCarrier', [OrdersController::class, 'deleteTemplateNotesForCarrier']);
+Route::post('/saveTemplateInternalNotes', [OrdersController::class, 'saveTemplateInternalNotes']);
+Route::post('/deleteTemplateInternalNotes', [OrdersController::class, 'deleteTemplateInternalNotes']);
+Route::post('/saveTemplateMilesWaypoints', [OrdersController::class, 'saveTemplateMilesWaypoints']);
 Route::post('/getOrdersRelatedData', [OrdersController::class, 'getOrdersRelatedData']);
 Route::post('/submitOrderImport', [OrdersController::class, 'submitOrderImport']);
 Route::post('/submitOrderImport2', [OrdersController::class, 'submitOrderImport2']);
@@ -267,9 +283,11 @@ Route::post('/saveInvoiceTerm', [OrdersController::class, 'saveInvoiceTerm']);
 Route::post('/saveInvoiceDatePaid', [OrdersController::class, 'saveInvoiceDatePaid']);
 Route::post('/saveInvoiceCarrierCheckNumber', [OrdersController::class, 'saveInvoiceCarrierCheckNumber']);
 Route::post('/getOrderCarrierByCode', [OrdersController::class, 'getOrderCarrierByCode']);
+Route::post('/getRoutingBol', [OrdersController::class, 'getRoutingBol']);
 
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
+Route::post('/getDivisionsDropdown', [DivisionsController::class, 'getDivisionsDropdown']);
 Route::post('/getSalesmen', [SalesmenController::class, 'getSalesmen']);
 Route::post('/getDivisionById', [DivisionsController::class, 'getDivisionById']);
 Route::post('/divisionSearch', [DivisionsController::class, 'divisionSearch']);
@@ -308,6 +326,7 @@ Route::post('/deleteDivisionDocumentNote', [DivisionDocumentsController::class, 
 
 Route::post('/getEventTypes', [EventTypesController::class, 'getEventTypes']);
 Route::post('/getLoadTypes', [LoadTypesController::class, 'getLoadTypes']);
+Route::post('/getLoadTypesDropdown', [LoadTypesController::class, 'getLoadTypesDropdown']);
 Route::post('/getTemplates', [TemplatesController::class, 'getTemplates']);
 Route::post('/getRateTypes', [RateTypesController::class, 'getRateTypes']);
 Route::post('/getRateSubtypes', [RateTypesController::class, 'getRateSubtypes']);
@@ -320,6 +339,8 @@ Route::post('/saveMileage', [MileagesController::class, 'saveMileage']);
 Route::post('/getOrderCustomerRatings', [OrderCustomerRatingsController::class, 'getOrderCustomerRatings']);
 Route::post('/saveOrderCustomerRating', [OrderCustomerRatingsController::class, 'saveOrderCustomerRating']);
 Route::post('/deleteOrderCustomerRating', [OrderCustomerRatingsController::class, 'deleteOrderCustomerRating']);
+Route::post('/saveTemplateCustomerRating', [OrderCustomerRatingsController::class, 'saveTemplateCustomerRating']);
+Route::post('/deleteTemplateCustomerRating', [OrderCustomerRatingsController::class, 'deleteTemplateCustomerRating']);
 
 Route::post('/getRevenueCustomer', [OrdersController::class, 'getRevenueCustomer']);
 Route::post('/getOrderHistoryCustomer', [OrdersController::class, 'getOrderHistoryCustomer']);
@@ -329,6 +350,8 @@ Route::post('/getOrderHistoryCarrier', [OrdersController::class, 'getOrderHistor
 Route::post('/getOrderCarrierRatings', [OrderCarrierRatingsController::class, 'getOrderCarrierRatings']);
 Route::post('/saveOrderCarrierRating', [OrderCarrierRatingsController::class, 'saveOrderCarrierRating']);
 Route::post('/deleteOrderCarrierRating', [OrderCarrierRatingsController::class, 'deleteOrderCarrierRating']);
+Route::post('/saveTemplateCarrierRating', [OrderCarrierRatingsController::class, 'saveTemplateCarrierRating']);
+Route::post('/deleteTemplateCarrierRating', [OrderCarrierRatingsController::class, 'deleteTemplateCarrierRating']);
 
 Route::post('/getCompanyById', [CompaniesController::class, 'getCompanyById']);
 Route::post('/companies', [CompaniesController::class, 'companies']);
@@ -547,12 +570,16 @@ Route::post('/sendCarrierLoadedShipperEmail', [EmailsController::class, 'sendCar
 Route::post('/sendCarrierUnloadedConsigneeEmail', [EmailsController::class, 'sendCarrierUnloadedConsigneeEmail']);
 Route::post('/sendCarrierCheckCallsEmail', [EmailsController::class, 'sendCarrierCheckCallsEmail']);
 Route::post('/sendOrderEmail', [EmailsController::class, 'sendOrderEmail']);
+Route::post('/sendBolEmail', [EmailsController::class, 'sendBolEmail']);
 
 
 Route::post('/getAgentDriverByCode', [AgentDriversController::class, 'getAgentDriverByCode']);
 Route::post('/getDriversByAgentId', [AgentDriversController::class, 'getDriversByAgentId']);
 Route::post('/saveAgentDriver', [AgentDriversController::class, 'saveAgentDriver']);
 Route::post('/deleteAgentDriver', [AgentDriversController::class, 'deleteAgentDriver']);
+
+Route::post('/getSaimeConfig', [SaimeController::class, 'getSaimeConfig']);
+Route::post('/saveSaimeConfig', [SaimeController::class, 'saveSaimeConfig']);
 
 
 Route::post('/testPdf', [EmailsController::class, 'testPdf']);

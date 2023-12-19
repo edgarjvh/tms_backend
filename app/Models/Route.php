@@ -17,7 +17,7 @@ class Route extends Model
 
     public function customer(){
         return $this->belongsTo(Customer::class)
-            ->with(['contacts', 'zip_data']);
+            ->with(['zip_data']);
     }
 
     public function pickup(){

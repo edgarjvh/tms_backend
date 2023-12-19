@@ -503,12 +503,12 @@ class ContactsController extends Controller
         $main_customer_id = $request->main_customer_id ?? 0;
         $customer_id = $request->customer_id ?? 0;
 
-        if ($main_customer_id > 0 && ($main_customer_id !== $customer_id )){
+        if ($main_customer_id > 0 && ($main_customer_id !== $customer_id)) {
             $CONTACT_CUSTOMER->where([
                 'contact_id' => $contact_id,
                 'customer_id' => $main_customer_id
             ])->delete();
-        }else{
+        } else {
             $CONTACT->where('id', $contact_id)->delete();
         }
 
@@ -1189,5 +1189,23 @@ class ContactsController extends Controller
             ->first();
 
         return response()->json(['result' => 'OK', 'customer' => $customer]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getEmailContacts(): JsonResponse
+    {
+        $CONTACT = Contact::query();
+
+        $CONTACT->selectRaw("id, email_work, email_personal, email_other, TRIM(CONCAT(first_name, ' ', last_name)) as name");
+        $CONTACT->whereRaw("TRIM(email_work) <> ''");
+        $CONTACT->orWhereRaw("TRIM(email_personal) <> ''");
+        $CONTACT->orWhereRaw("TRIM(email_other) <> ''");
+        $contacts = $CONTACT->orderBy('first_name')->get();
+
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 }
