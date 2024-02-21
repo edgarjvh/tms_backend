@@ -238,6 +238,7 @@ Route::post('/getCustomerMailingAddressByCode', [CustomerMailingAddressesControl
 
 Route::post('/saveCarrierMailingAddress', [CarrierMailingAddressesController::class, 'saveCarrierMailingAddress']);
 Route::post('/deleteCarrierMailingAddress', [CarrierMailingAddressesController::class, 'deleteCarrierMailingAddress']);
+Route::post('/getCarrierMailingAddressByCode', [CarrierMailingAddressesController::class, 'getCarrierMailingAddressByCode']);
 
 Route::post('/getAgentHours', [AgentHoursController::class, 'getAgentHours']);
 Route::post('/saveAgentHours', [AgentHoursController::class, 'saveAgentHours']);

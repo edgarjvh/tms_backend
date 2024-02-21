@@ -51,6 +51,7 @@ class Customer extends Model
             return $query1
                 ->where('is_imported', 0)
                 ->where('order_invoiced', 0)
+                ->where('is_cancelled', 0)
                 ->whereNull('customer_check_number')
                 ->whereHas('bill_to_company', function ($query2) {
                     return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->bill_to_code%'");
@@ -73,6 +74,7 @@ class Customer extends Model
             return $query1
                 ->where('is_imported', 0)
                 ->where('order_invoiced', 1)
+                ->where('is_cancelled', 0)
                 ->whereNull('customer_check_number')
                 ->whereHas('bill_to_company', function ($query2) {
                     return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->bill_to_code%'");
@@ -91,6 +93,7 @@ class Customer extends Model
     {
         return $this->hasManyDeep(OrderCustomerRating::class, [Order::class], ['bill_to_customer_id'], ['id'])
             ->whereRaw('orders.is_imported = 0')
+            ->whereRaw('orders.is_cancelled = 0')
             ->whereRaw('orders.customer_check_number IS NOT NULL');
     }
 

@@ -217,7 +217,7 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $customer_code = strlen($customer_code) === 7 ? $customer_code . '0' : $customer_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
         $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
@@ -476,7 +476,7 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $carrier_code = strlen($carrier_code) === 7 ? $carrier_code . '0' : $carrier_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
         $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
@@ -677,7 +677,7 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $customer_code = strlen($customer_code) === 7 ? $customer_code . '0' : $customer_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
         $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
@@ -945,7 +945,7 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $carrier_code = strlen($carrier_code) === 7 ? $carrier_code . '0' : $carrier_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time']);
+        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
         $ORDER->where('is_template', 0);
 
         $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
@@ -1445,7 +1445,7 @@ class OrdersController extends Controller
                     'percentage' => $percentage,
                     'haz_mat' => $haz_mat,
                     'expedited' => $expedited,
-                    'customer_check_number' => $customer_check_number,
+                    'customer_check_number' => trim($customer_check_number) === '' ? null : $customer_check_number,
                     'customer_date_received' => $customer_date_received,
                     'invoice_received_date' => $invoice_received_date,
                     'invoice_number' => $invoice_number,

@@ -156,4 +156,39 @@ class CarrierMailingAddressesController extends Controller
 
         return response()->json(['result' => 'OK', 'mailing_address' => $mailing_address]);
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCarrierMailingAddressByCode(Request $request): JsonResponse
+    {
+        $CARRIER = new Carrier();
+        $CARRIER_MAILING_ADDRESS = new CarrierMailingAddress();
+        $code = strtolower($request->code ?? '');
+
+
+        $carriers = $CARRIER->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'")
+            ->selectRaw('id,code,code_number,name,address1,address2,city,state,zip,contact_name,contact_phone,ext,email,concat("carrier") as type')
+            ->orderBy('code')
+            ->orderBy('code_number')
+            ->get();
+        $mailing_addresses = $CARRIER_MAILING_ADDRESS->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'")
+            ->selectRaw('id,code,code_number,name,address1,address2,city,state,zip,contact_name,contact_phone,ext,email,concat("mailing") as type')
+            ->orderBy('code')
+            ->orderBy('code_number')
+            ->get();
+
+        $collection = $carriers->merge($mailing_addresses)->toArray();
+
+        usort($collection, function ($a, $b) {
+            if ($a['code'] == $b['code']){
+                return $a['code_number'] - $b['code_number'];
+            }
+
+            return strcmp(strtolower($a['code']), strtolower($b['code']));
+        });
+
+        return response()->json(['result' => 'OK', 'mailing_address' => $collection]);
+    }
 }
