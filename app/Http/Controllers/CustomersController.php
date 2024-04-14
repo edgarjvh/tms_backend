@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use function PHPUnit\TestFixture\func;
 
 class CustomersController extends Controller
 {
@@ -150,14 +151,38 @@ class CustomersController extends Controller
         $origin = strtolower($request->search[9]['data'] ?? '');
 
         $customers = Customer::query();
-        $customers->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'")
-            ->whereRaw("LOWER(name) like '$name%'")
-            ->whereRaw("LOWER(city) like '$city%'")
-            ->whereRaw("LOWER(state) like '$state%'")
-            ->whereRaw("zip like '$zip%'")
-            ->whereRaw("LOWER(contact_name) like '$contact_name%'")
-            ->whereRaw("contact_phone like '$contact_phone%'")
-            ->whereRaw("LOWER(email) like '$email%'");
+
+        if (trim($code) !== '') {
+            $customers->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'");
+        }
+
+        if (trim($name) !== '') {
+            $customers->whereRaw("LOWER(name) like '$name%'");
+        }
+
+        if (trim($city) !== '') {
+            $customers->whereRaw("LOWER(city) like '$city%'");
+        }
+
+        if (trim($state) !== '') {
+            $customers->whereRaw("LOWER(state) like '$state%'");
+        }
+
+        if (trim($zip) !== '') {
+            $customers->whereRaw("zip like '$zip%'");
+        }
+
+        if (trim($contact_name) !== '') {
+            $customers->whereRaw("LOWER(contact_name) like '$contact_name%'");
+        }
+
+        if (trim($contact_phone) !== '') {
+            $customers->whereRaw("contact_phone like '$contact_phone%'");
+        }
+
+        if (trim($email) !== '') {
+            $customers->whereRaw("LOWER(email) like '$email%'");
+        }
 
         if ($user_code !== '') {
             $customers->where('agent_code', $user_code);
@@ -182,43 +207,31 @@ class CustomersController extends Controller
     {
         $id = $request->id ?? 0;
 
-//        $ORDER = Order::query()->whereRaw('orders.is_imported = 0');
-        $ORDER = Order::query();
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql = /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state
+            FROM orders AS o
+            WHERE o.is_imported = 0
+                AND o.bill_to_customer_id = ?
+                OR (EXISTS (SELECT * FROM order_routing AS r WHERE o.id = r.order_id AND (EXISTS (SELECT * FROM order_pickups AS p WHERE r.pickup_id = p.id AND p.customer_id = ?) OR EXISTS (SELECT * FROM order_deliveries AS d WHERE r.delivery_id = d.id AND d.customer_id = ?)) ORDER BY r.id ASC limit 1))
+                OR (EXISTS (SELECT * FROM order_routing AS r WHERE o.id = r.order_id AND (EXISTS (SELECT * FROM order_pickups AS p WHERE r.pickup_id = p.id AND p.customer_id = ?) OR EXISTS (SELECT * FROM order_deliveries AS d WHERE r.delivery_id = d.id AND d.customer_id = ?)) ORDER BY r.id DESC limit 1))
+            ORDER BY o.order_number DESC";
 
-        $ORDER->where(function ($query) use ($id) {
-            $query->whereHas('bill_to_company', function ($query1) use ($id) {
-                $query1->where('id', $id);
-            });
-            $query->orWhereHas('pickups', function ($query1) use ($id) {
-                $query1->whereHas('customer', function ($query2) use ($id) {
-                    $query2->where('id', $id);
-                });
-            });
-            $query->orWhereHas('deliveries', function ($query1) use ($id) {
-                $query1->whereHas('customer', function ($query2) use ($id) {
-                    $query2->where('id', $id);
-                });
-            });
-        });
+        $params = [$id, $id, $id, $id, $id];
 
-
-        $ORDER->select([
-            'id',
-            'order_number',
-            'is_imported'
-        ]);
-
-        $ORDER->with([
-//            'bill_to_company',
-            'pickups',
-            'deliveries',
-            'routing'
-        ]);
-
-
-        $ORDER->orderBy('order_number', 'desc')->limit(20);
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }

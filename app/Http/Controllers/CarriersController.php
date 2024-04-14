@@ -15,6 +15,7 @@ use App\Models\Order;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CarriersController extends Controller
 {
@@ -40,6 +41,33 @@ class CarriersController extends Controller
                 'documents',
                 'equipments_information'
             ])->first();
+
+        return response()->json(['result' => 'OK', 'carrier' => $carrier]);
+    }
+
+    public function getCarrierByCode(Request $request): JsonResponse
+    {
+        $CARRIER = new Carrier();
+
+        $code = $request->code ?? '';
+
+        $carrier = $CARRIER->whereRaw("1 = 1")
+            ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")            
+            ->orderBy('code')
+            ->orderBy('code_number')
+            ->with([
+                'contacts',
+                'drivers',
+                'notes',
+                'insurances',
+                'factoring_company',
+                'mailing_same',
+                'mailing_address',
+                'mailing_carrier',
+                'documents',
+                'equipments_information'
+            ])
+            ->first();
 
         return response()->json(['result' => 'OK', 'carrier' => $carrier]);
     }
@@ -169,29 +197,30 @@ class CarriersController extends Controller
     {
         $id = $request->id ?? 0;
 
-        $ORDER = Order::query();
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state
+            FROM orders AS o
+            WHERE o.is_imported = 0
+                AND o.carrier_id = ?
+            ORDER BY o.order_number DESC";
 
-        $ORDER->whereRaw("1 = 1");
-        $ORDER->whereHas('carrier', function ($query1) use ($id) {
-            $query1->where('id', $id);
-        });
+        $params = [$id];
 
-        $ORDER->select([
-            'id',
-            'order_number'
-        ]);
-
-        $ORDER->with([
-            'carrier',
-            'pickups',
-            'deliveries',
-            'routing'
-        ]);
-
-
-        $ORDER->orderBy('order_number', 'desc')->limit(20);
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -274,9 +303,10 @@ class CarriersController extends Controller
             $with_contact = false;
         }
 
-        $carrier = $CARRIER->updateOrCreate([
-            'id' => $id
-        ],
+        $carrier = $CARRIER->updateOrCreate(
+            [
+                'id' => $id
+            ],
             [
                 'factoring_company_id' => empty($factoring_company_id) ? null : $factoring_company_id,
                 'code' => strtoupper($code),
@@ -303,7 +333,8 @@ class CarriersController extends Controller
                 'mailing_carrier_contact_id' => $mailing_carrier_contact_id,
                 'mailing_carrier_contact_primary_phone' => $mailing_carrier_contact_primary_phone,
                 'mailing_carrier_contact_primary_email' => $mailing_carrier_contact_primary_email
-            ]);
+            ]
+        );
 
         if ($with_contact) {
             $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier->id)->get();
@@ -465,30 +496,30 @@ class CarriersController extends Controller
         $fid = $request->fid ?? '';
         $do_not_use = $request->doNotUse ?? 'N';
 
-//        $curCarrier = $CARRIER->where('id', $id)->first();
-//
-//        if ($curCarrier) {
-//            if ($curCarrier->code !== $code) {
-//                $codeExist = $CARRIER->where('id', '<>', $id)
-//                    ->where('code', $code)->get();
-//
-//                if (count($codeExist) > 0) {
-//                    $max_code_number = $CARRIER->where('code', $code)->max('code_number');
-//                    $code_number = $max_code_number + 1;
-//                } else {
-//                    $code_number = 0;
-//                }
-//            }
-//        } else {
-//            $codeExist = $CARRIER->where('code', $code)->get();
-//
-//            if (count($codeExist) > 0) {
-//                $max_code_number = $CARRIER->where('code', $code)->max('code_number');
-//                $code_number = $max_code_number + 1;
-//            } else {
-//                $code_number = 0;
-//            }
-//        }
+        //        $curCarrier = $CARRIER->where('id', $id)->first();
+        //
+        //        if ($curCarrier) {
+        //            if ($curCarrier->code !== $code) {
+        //                $codeExist = $CARRIER->where('id', '<>', $id)
+        //                    ->where('code', $code)->get();
+        //
+        //                if (count($codeExist) > 0) {
+        //                    $max_code_number = $CARRIER->where('code', $code)->max('code_number');
+        //                    $code_number = $max_code_number + 1;
+        //                } else {
+        //                    $code_number = 0;
+        //                }
+        //            }
+        //        } else {
+        //            $codeExist = $CARRIER->where('code', $code)->get();
+        //
+        //            if (count($codeExist) > 0) {
+        //                $max_code_number = $CARRIER->where('code', $code)->max('code_number');
+        //                $code_number = $max_code_number + 1;
+        //            } else {
+        //                $code_number = 0;
+        //            }
+        //        }
 
         $with_contact = true;
 
@@ -496,9 +527,10 @@ class CarriersController extends Controller
             $with_contact = false;
         }
 
-        $carrier = $CARRIER->updateOrCreate([
-            'id' => $id
-        ],
+        $carrier = $CARRIER->updateOrCreate(
+            [
+                'id' => $id
+            ],
             [
                 'code' => strtoupper($code),
                 'code_number' => $code_number,
@@ -517,7 +549,8 @@ class CarriersController extends Controller
                 'scac' => strtoupper($scac),
                 'fid' => $fid,
                 'do_not_use' => strtoupper($do_not_use) === 'Y' ? 1 : 0,
-            ]);
+            ]
+        );
 
         if ($with_contact) {
             $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier->id)->get();
@@ -635,9 +668,10 @@ class CarriersController extends Controller
                 }
 
                 try {
-                    $saved_carrier = Carrier::updateOrCreate([
-                        'id' => 0
-                    ],
+                    $saved_carrier = Carrier::updateOrCreate(
+                        [
+                            'id' => 0
+                        ],
                         [
                             'code' => strtoupper($code),
                             'code_number' => $code_number,
@@ -656,10 +690,11 @@ class CarriersController extends Controller
                             'scac' => strtoupper($scac),
                             'fid' => $fid,
                             'do_not_use' => $do_not_use
-                        ]);
+                        ]
+                    );
 
                     $carrier_id = $saved_carrier->id;
-                } catch (Throwable|Exception $e) {
+                } catch (Throwable | Exception $e) {
                     $carrier_id = 0;
                 }
 
@@ -685,8 +720,7 @@ class CarriersController extends Controller
                         Carrier::where('id', $carrier_id)->update([
                             'primary_contact_id' => $saved_contact->id
                         ]);
-                    } catch (Throwable|Exception $e) {
-
+                    } catch (Throwable | Exception $e) {
                     }
                 }
             }

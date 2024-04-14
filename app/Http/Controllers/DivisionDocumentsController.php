@@ -127,7 +127,8 @@ class DivisionDocumentsController extends Controller
         ], [
             'division_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $DIVISION_DOCUMENT_NOTE->where('division_document_id', $doc_id)->with(['user_code'])->get();

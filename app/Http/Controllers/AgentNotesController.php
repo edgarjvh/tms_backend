@@ -54,7 +54,8 @@ class AgentNotesController extends Controller
             ], [
                 'agent_id' => $agent_id,
                 'text' => $text,
-                'user_code_id' => $user_code_id
+                'user_code_id' => $user_code_id,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();

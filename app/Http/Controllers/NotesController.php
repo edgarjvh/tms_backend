@@ -40,7 +40,8 @@ class NotesController extends Controller
             ], [
                 'customer_id' => $customer_id,
                 'text' => $text,
-                'user_code_id' => $user_code_id
+                'user_code_id' => $user_code_id,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();
@@ -58,6 +59,7 @@ class NotesController extends Controller
      */
     public function saveCustomerNote(Request $request): JsonResponse
     {
+
         $NOTE = new Note();
         $id = $request->id ?? 0;
         $customer_id = $request->customer_id ?? 0;
@@ -70,7 +72,8 @@ class NotesController extends Controller
             ], [
                 'customer_id' => $customer_id,
                 'text' => $text,
-                'user_code_id' => $user_code_id
+                'user_code_id' => $user_code_id,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();
@@ -127,7 +130,8 @@ class NotesController extends Controller
             ], [
                 'carrier_id' => $carrier_id,
                 'text' => $text,
-                'user_code_id' => $user_code_id
+                'user_code_id' => $user_code_id,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $note = $NOTE->where('id', $note->id)->with(['user_code'])->first();

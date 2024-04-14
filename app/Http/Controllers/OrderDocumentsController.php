@@ -132,7 +132,8 @@ class OrderDocumentsController extends Controller
         ], [
             'order_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $ORDER_DOCUMENT_NOTE->where('order_document_id', $doc_id)->with(['user_code'])->get();
@@ -362,7 +363,7 @@ class OrderDocumentsController extends Controller
             'order_invoice_carrier_document_id' => $doc_id,
             'text' => $note,
             'user' => $user,
-            'date_time' => $date_time
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = OrderInvoiceCarrierDocumentNote::query()->where('order_invoice_carrier_document_id', $doc_id)->get();

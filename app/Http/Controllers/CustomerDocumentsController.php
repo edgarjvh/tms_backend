@@ -129,7 +129,8 @@ class CustomerDocumentsController extends Controller
         ], [
             'customer_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $CUSTOMER_DOCUMENT_NOTE->where('customer_document_id', $doc_id)->with(['user_code'])->get();

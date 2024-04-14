@@ -115,7 +115,8 @@ class FactoringCompanyDocumentsController extends Controller
         ], [
             'factoring_company_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $FACTORING_COMPANY_DOCUMENT_NOTE->where('factoring_company_document_id', $doc_id)->with(['user_code'])->get();

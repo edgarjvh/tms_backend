@@ -20,6 +20,12 @@ class Pickup extends Model
             ->with(['zip_data', 'directions']);
     }
 
+    public function customerPO()
+    {
+        return $this->belongsTo(PastOrderCustomer::class)
+            ->select(['id', 'city', 'state']);
+    }
+
     public function order(){
         return $this->belongsTo(Order::class)
             ->with([

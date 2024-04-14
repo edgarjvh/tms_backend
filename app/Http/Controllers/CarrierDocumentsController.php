@@ -128,7 +128,8 @@ class CarrierDocumentsController extends Controller
         ], [
             'carrier_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $doc_id)->with(['user_code'])->get();

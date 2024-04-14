@@ -129,7 +129,8 @@ class EmployeeDocumentsController extends Controller
         ], [
             'company_employee_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $EMPLOYEE_DOCUMENT_NOTE->where('company_employee_document_id', $doc_id)->with(['user_code'])->get();

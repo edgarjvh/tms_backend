@@ -66,6 +66,7 @@ use App\Http\Controllers\OperatorDocumentsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\AgentDriversController;
+use App\Http\Controllers\WidgetsController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
 Route::post('/getCustomerByCode', [CustomersController::class, 'getCustomerByCode']);
@@ -85,6 +86,7 @@ Route::post('/removeAutomaticEmail', [AutomaticEmailsController::class, 'removeA
 
 Route::post('/getCarrierById', [CarriersController::class, 'getCarrierById']);
 Route::post('/carriers', [CarriersController::class, 'carriers'])->name('carriers');
+Route::post('/getCarrierByCode', [CarriersController::class, 'getCarrierByCode']);
 Route::post('/carrierSearch', [CarriersController::class, 'carrierSearch']);
 Route::post('/getFullCarriers', [CarriersController::class, 'getFullCarriers']);
 Route::post('/getCarrierOrders', [CarriersController::class, 'getCarrierOrders']);
@@ -243,8 +245,12 @@ Route::post('/getCarrierMailingAddressByCode', [CarrierMailingAddressesControlle
 Route::post('/getAgentHours', [AgentHoursController::class, 'getAgentHours']);
 Route::post('/saveAgentHours', [AgentHoursController::class, 'saveAgentHours']);
 
+Route::post('/getWidgets', [WidgetsController::class, 'getWidgets']);
+Route::post('/saveWidget', [WidgetsController::class, 'saveWidget']);
+
 Route::post('/getOrders', [OrdersController::class, 'getOrders']);
 Route::post('/getLoadBoardOrders', [OrdersController::class, 'getLoadBoardOrders']);
+Route::post('/getLoadBoardOrderById', [OrdersController::class, 'getLoadBoardOrderById']);
 Route::post('/getOrders2', [OrdersController::class, 'getOrders2']);
 Route::post('/getOrderById', [OrdersController::class, 'getOrderById']);
 Route::post('/getOrderByOrderNumber', [OrdersController::class, 'getOrderByOrderNumber']);

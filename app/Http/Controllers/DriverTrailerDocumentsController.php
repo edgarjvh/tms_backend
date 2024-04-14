@@ -129,7 +129,8 @@ class DriverTrailerDocumentsController extends Controller
         ], [
             'company_driver_trailer_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $TRAILER_DOCUMENT_NOTE->where('company_driver_trailer_document_id', $doc_id)->with(['user_code'])->get();

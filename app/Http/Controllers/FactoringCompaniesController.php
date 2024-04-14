@@ -380,7 +380,8 @@ class FactoringCompaniesController extends Controller
         ], [
             'factoring_company_id' => $factoring_company_id,
             'user_code_id' => $user_code_id,
-            'text' => $text
+            'text' => $text,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $factoring_company_note = $FACTORING_COMPANY_NOTE->where('id', $factoring_company_note->id)->with(['user_code'])->get();

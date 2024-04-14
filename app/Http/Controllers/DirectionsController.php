@@ -43,7 +43,8 @@ class DirectionsController extends Controller
             ], [
                 'customer_id' => $customer_id,
                 'text' => $text,
-                'user_code_id' => $user_code_id
+                'user_code_id' => $user_code_id,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();
@@ -73,7 +74,8 @@ class DirectionsController extends Controller
             ], [
                 'customer_id' => $customer_id,
                 'text' => $text,
-                'user_code_id' => $user_code_id
+                'user_code_id' => $user_code_id,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $directions = $CUSTOMER_DIRECTION->where('customer_id', $customer_id)->with(['user_code'])->get();

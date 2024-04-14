@@ -1152,9 +1152,24 @@ class ContactsController extends Controller
             });
         });
 
-        $CONTACT->with(['customer' => function ($query) {
-            $query->select('id', 'code', 'code_number', 'name')->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
-        }]);
+
+
+        $CONTACT->select([
+            'contacts.id',
+            'contacts.customer_id',
+            'contacts.first_name',
+            'contacts.last_name',
+            'contacts.phone_work',
+            'contacts.email_work',
+            'customers.code as code',
+            'customers.code_number as code_number',
+            'customers.name as name'
+        ])
+        ->join('customers', 'contacts.customer_id', '=', 'customers.id');
+
+//        $CONTACT->with(['customer' => function ($query) {
+//            $query->select('id', 'code', 'code_number', 'name')->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
+//        }]);
 
         $CONTACT->orderBy('first_name');
         $CONTACT->orderBy('last_name');

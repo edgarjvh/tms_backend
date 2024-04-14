@@ -129,7 +129,8 @@ class CompanyOperatorMedicalCardDocumentsController extends Controller
         ], [
             'company_operator_medical_card_document_id' => $doc_id,
             'text' => $text,
-            'user_code_id' => $user_code_id
+            'user_code_id' => $user_code_id,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $documentNotes = $MEDICAL_CARD_DOCUMENT_NOTE->where('company_operator_medical_card_document_id', $doc_id)->with(['user_code'])->get();

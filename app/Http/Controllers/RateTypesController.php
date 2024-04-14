@@ -30,12 +30,12 @@ class RateTypesController extends Controller
         }
 
         $rate_types = $RATE_TYPE->whereRaw("1 = 1")
-            ->whereRaw("name like '%$name%'")
-            ->whereRaw("truckload like '%$truckload%'")
-            ->whereRaw("partial like '%$partial%'")
-            ->whereRaw("ltl like '%$ltl%'")
-            ->whereRaw("air_freight like '%$air_freight%'")
-            ->whereRaw("customer like '%$customer%'")
+            ->whereRaw("name like '$name%'")
+//            ->whereRaw("truckload like '%$truckload%'")
+//            ->whereRaw("partial like '%$partial%'")
+//            ->whereRaw("ltl like '%$ltl%'")
+//            ->whereRaw("air_freight like '%$air_freight%'")
+//            ->whereRaw("customer like '%$customer%'")
             ->orderBy('name')
             ->get();
 

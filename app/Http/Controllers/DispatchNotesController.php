@@ -56,7 +56,8 @@ class DispatchNotesController extends Controller
         ], [
             'order_id' => $order_id,
             'user_code_id' => $user_code_id,
-            'text' => $text
+            'text' => $text,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $internal_notes = $INTERNAL_NOTES->where('order_id', $order_id)->with(['user_code'])->get();
@@ -113,7 +114,8 @@ class DispatchNotesController extends Controller
             ], [
                 'order_id' => $order_id,
                 'user_code_id' => $user_code_id,
-                'text' => $text
+                'text' => $text,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $notes_for_carrier = $NOTES_FOR_CARRIER->where('order_id', $order_id)->with(['user_code'])->get();
@@ -173,7 +175,8 @@ class DispatchNotesController extends Controller
             ], [
                 'order_id' => $order_id,
                 'user_code_id' => $user_code_id,
-                'text' => $text
+                'text' => $text,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $notes_for_driver = $NOTES_FOR_DRIVER->where('order_id', $order_id)->with(['user_code'])->get();
@@ -270,7 +273,8 @@ class DispatchNotesController extends Controller
         ], [
             'order_id' => $order_id,
             'user_code_id' => $user_code_id,
-            'text' => $text
+            'text' => $text,
+            'date_time' => date('Y-m-d H:i:s')
         ]);
 
         $query1 = OrderBillingNote::query();

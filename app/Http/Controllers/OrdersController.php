@@ -47,28 +47,28 @@ class OrdersController extends Controller
 
         $ORDER->where('is_imported', 0);
         $ORDER->where('is_template', 0);
-//        $ORDER->select([
-//            'id',
-//            'order_number',
-//            'total_loaded_events',
-//            'total_delivered_events',
-//            'total_deliveries'
-//        ]);
+        //        $ORDER->select([
+        //            'id',
+        //            'order_number',
+        //            'total_loaded_events',
+        //            'total_delivered_events',
+        //            'total_deliveries'
+        //        ]);
         // AVAILABLE ===========================
-//        $ORDER->whereDoesntHave('carrier');
+        //        $ORDER->whereDoesntHave('carrier');
 
         // BOOKED
-//        $ORDER->whereHas('carrier');
-//        $ORDER->whereDoesntHave('events', function ($query1){
-//           return $query1->whereHas('event_type', function($query2){
-//              return $query2->where('name', 'loaded');
-//           });
-//        });
+        //        $ORDER->whereHas('carrier');
+        //        $ORDER->whereDoesntHave('events', function ($query1){
+        //           return $query1->whereHas('event_type', function($query2){
+        //              return $query2->where('name', 'loaded');
+        //           });
+        //        });
 
         // IN TRANSIT
         $ORDER->whereHas('carrier');
         $ORDER->totalDeliveries();
-//        $ORDER->whereColumn('total_delivered_events', '<', 'total_deliveries');
+        //        $ORDER->whereColumn('total_delivered_events', '<', 'total_deliveries');
 
         if ($user_code !== '') {
             $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
@@ -109,13 +109,13 @@ class OrdersController extends Controller
         }
 
         $ORDER->with([
-//            'bill_to_company',
+            //            'bill_to_company',
             'carrier',
             'pickups',
             'deliveries',
             'routing',
-//            'events',
-//            'user_code'
+            //            'events',
+            //            'user_code'
         ]);
 
         $ORDER->orderBy('order_number');
@@ -129,68 +129,176 @@ class OrdersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getLoadBoardOrders(): JsonResponse
+    public function getLoadBoardOrderById(Request $request): JsonResponse
+    {
+        $id = $request->id;
+
+        $order = Order::query()
+            ->select([
+                'id',
+                'order_number',
+                'bill_to_customer_id',
+                'bill_to_contact_id',
+                'bill_to_contact_primary_phone',
+                'carrier_id',
+                'carrier_contact_id',
+                'carrier_contact_primary_phone',
+                'equipment_id',
+                'carrier_driver_id'
+            ])
+            ->where('id', $id)
+            ->with([
+                'bill_to_company',
+                'carrier',
+                'pickups',
+                'deliveries',
+                'routing',
+                'equipment',
+                'driver'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'order' => $order]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getLoadBoardOrders(Request $request): JsonResponse
     {
         $user_code = $request->user_code ?? '';
+        $order_id = $request->order_id;
 
-        // AVAILABLE
-        $ORDER = LoadBoardOrder::query();
-        $ORDER->where('is_imported', 0);
-        $ORDER->where('is_template', 0);
-        $ORDER->where('is_cancelled', 0);
-        $ORDER->where('order_invoiced', 0);
-        $ORDER->whereDoesntHave('carrier');
-        if ($user_code !== '') {
-            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
-                return $query1->where('code', $user_code);
-            });
+        $sql_available =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state,
+                (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+            FROM orders AS o
+            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NULL
+            ORDER BY o.order_number ASC;";
+
+        $sql_booked =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state,
+                c.code,
+                c.code_number,
+                (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+            FROM orders AS o
+            INNER JOIN carriers AS c ON o.carrier_id = c.id
+            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+            AND NOT EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+            ORDER BY o.order_number ASC;";
+
+        $sql_in_transit =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state,
+                c.code,
+                c.code_number,
+                (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+            FROM orders AS o
+            INNER JOIN carriers AS c ON o.carrier_id = c.id
+            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+            AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+            AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) > (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
+            ORDER BY o.order_number ASC;";
+
+        $sql_not_invoiced =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state,
+                c.code,
+                c.code_number,
+                (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+            FROM orders AS o
+            INNER JOIN carriers AS c ON o.carrier_id = c.id
+            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+            AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+            AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) = (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
+            ORDER BY o.order_number ASC;";
+
+        $available_orders = DB::select($sql_available);
+        $booked_orders = DB::select($sql_booked);
+        $in_transit_orders = DB::select($sql_in_transit);
+        $not_invoiced_orders = DB::select($sql_not_invoiced);
+
+        $selected_order = null;
+
+        if (($order_id ?? 0) > 0) {
+            $selected_order = Order::query()
+                ->select([
+                    'id',
+                    'order_number',
+                    'bill_to_customer_id',
+                    'bill_to_contact_id',
+                    'bill_to_contact_primary_phone',
+                    'carrier_id',
+                    'carrier_contact_id',
+                    'carrier_contact_primary_phone',
+                    'equipment_id',
+                    'carrier_driver_id'
+                ])
+                ->where('id', $order_id)
+                ->with([
+                    'bill_to_company',
+                    'carrier',
+                    'pickups',
+                    'deliveries',
+                    'routing',
+                    'equipment',
+                    'driver'
+                ])->first();
         }
-        $ORDER->orderBy('order_number');
-        $available_orders = $ORDER->with(['bill_to_company', 'pickups', 'deliveries', 'routing'])->get();
-
-        // BOOKED
-        $ORDER = LoadBoardOrder::query();
-        $ORDER->where('is_imported', 0);
-        $ORDER->where('is_template', 0);
-        $ORDER->where('is_cancelled', 0);
-        $ORDER->where('order_invoiced', 0);
-        $ORDER->whereHas('carrier');
-        $ORDER->whereHas('events', function ($query) {
-            return $query->where('event_type_id', 9);
-        }, '=', 0);
-        if ($user_code !== '') {
-            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
-                return $query1->where('code', $user_code);
-            });
-        }
-
-        $ORDER->orderBy('order_number');
-        $booked_orders = $ORDER->with(['bill_to_company', 'carrier', 'pickups', 'deliveries', 'routing'])->get();
-
-        // IN TRANSIT
-        $ORDER = LoadBoardOrder::query();
-        $ORDER->where('is_imported', 0);
-        $ORDER->where('is_template', 0);
-        $ORDER->where('is_cancelled', 0);
-        $ORDER->where('order_invoiced', 0);
-        $ORDER->whereHas('carrier');
-        $ORDER->whereHas('events', function ($query) {
-            return $query->where('event_type_id', 9);
-        }, '>', 0);
-
-        if ($user_code !== '') {
-            $ORDER->whereHas('user_code', function ($query1) use ($user_code) {
-                return $query1->where('code', $user_code);
-            });
-        }
-        $ORDER->orderBy('order_number');
-        $in_transit_orders = $ORDER->with(['bill_to_company', 'carrier', 'pickups', 'deliveries', 'routing'])->get();
 
         return response()->json([
             'result' => 'OK',
             'available_orders' => $available_orders,
             'booked_orders' => $booked_orders,
-            'in_transit_orders' => $in_transit_orders
+            'in_transit_orders' => $in_transit_orders,
+            'not_invoiced_orders' => $not_invoiced_orders,
+            'selected_order' => $selected_order
         ]);
     }
 
@@ -200,8 +308,6 @@ class OrdersController extends Controller
      */
     public function getRevenueCustomer(Request $request): JsonResponse
     {
-        $ORDER = Order::query();
-
         $bill_to_code = trim($request->bill_to_code ?? '');
         $customer_id = trim($request->customer_id ?? 0);
         $customer_code = trim($request->customer_code ?? '');
@@ -217,238 +323,220 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $customer_code = strlen($customer_code) === 7 ? $customer_code . '0' : $customer_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
-        $ORDER->where('is_template', 0);
+        if ($customer_id === 0 && $customer_code !== '') {
+            $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
+            $customer_id = $customer->id ?? 0;
+        }
 
-        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-        $bill_to_company_id = $bill_to_company->id ?? 0;
+        $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_customer_id = $bill_to_customer->id ?? 0;
 
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.bill_to_customer_id,
+                    c.code,
+                    c.code_number,
+                    c.name,
+                    c.city,
+                    c.state,
+                    o.order_date_time,
+                    o.customer_check_number,
+                    CASE op.customer_id WHEN ? THEN op.customer_id ELSE NULL END AS shipper_customer_id,
+                    CASE od.customer_id WHEN ? THEN od.customer_id ELSE NULL END AS consignee_customer_id,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+                FROM orders AS o
+                INNER JOIN customers AS c ON o.bill_to_customer_id = c.id
+                INNER JOIN order_pickups AS op ON o.id = op.order_id
+                INNER JOIN order_deliveries AS od ON o.id = od.order_id
+                WHERE is_template = 0 ";
+
+        $params[] = $customer_id;
+        $params[] = $customer_id;
+
+        /**
+         * CHECKING THE BILL-TO/CUSTOMER IDs
+         */
         if ($customer_id > 0) {
-            $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                if ($bill_to_code !== '') {
-                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
-                        return $query1->where('id', $bill_to_company_id);
-                    });
+            if ($bill_to_code !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN (?))
+                         AND (op.customer_id IN (?) OR od.customer_id in (?)) ";
 
-                    $query->where(function ($query1) use ($customer_id) {
-                        $query1->whereHas('pickups', function ($query2) use ($customer_id) {
-                            return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                return $query3->where('id', $customer_id);
-                            });
-                        });
+                $params[] = $bill_to_customer_id;
+                $params[] = $customer_id;
+                $params[] = $customer_id;
+            } else {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN (?) OR op.customer_id IN (?) OR od.customer_id in (?)) ";
 
-                        $query1->orWhereHas('deliveries', function ($query2) use ($customer_id) {
-                            return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                return $query3->where('id', $customer_id);
-                            });
-                        });
-                    });
-                } else {
-                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
-                        return $query1->where('id', $customer_id);
-                    });
-
-                    $query->orWhereHas('pickups', function ($query1) use ($customer_id) {
-                        return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                            return $query2->where('id', $customer_id);
-                        });
-                    });
-
-                    $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
-                        return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                            return $query2->where('id', $customer_id);
-                        });
-                    });
-                }
-            });
+                $params[] = $customer_id;
+                $params[] = $customer_id;
+                $params[] = $customer_id;
+            }
         } else {
-            if ($customer_code !== '') {
-                $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
+            if ($bill_to_customer_id > 0) {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN ($bill_to_customer_id)) ";
 
-                if ($customer) {
-                    $customer_id = $customer->id;
-
-                    $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                        if ($bill_to_code !== '') {
-                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
-                                return $query1->where('id', $bill_to_company_id);
-                            });
-
-                            $query->where(function ($query1) use ($customer_id) {
-                                $query1->whereHas('pickups', function ($query2) use ($customer_id) {
-                                    return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                        return $query3->where('id', $customer_id);
-                                    });
-                                });
-
-                                $query1->orWhereHas('deliveries', function ($query2) use ($customer_id) {
-                                    return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                        return $query3->where('id', $customer_id);
-                                    });
-                                });
-                            });
-                        } else {
-                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
-                                return $query1->where('id', $customer_id);
-                            });
-
-                            $query->orWhereHas('pickups', function ($query1) use ($customer_id) {
-                                return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                                    return $query2->where('id', $customer_id);
-                                });
-                            });
-
-                            $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
-                                return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                                    return $query2->where('id', $customer_id);
-                                });
-                            });
-                        }
-                    });
-                }
+                $params[] = $bill_to_customer_id;
             }
         }
 
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
         if ($date_start !== '' && $date_end !== '') {
-            $ORDER->where(function ($query) use ($date_start, $date_end) {
-                $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
-            });
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
         } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start) {
-                    $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
-                });
-            }
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
 
-            if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end) {
-                    $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
-                });
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
             }
         }
 
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
         if ($city_origin !== '') {
-            $ORDER->where(function ($query) use ($city_origin) {
-                $query->whereHas('routing', function ($query1) use ($city_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
         }
 
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use ($city_destination) {
-                $query->whereHas('routing', function ($query1) use ($city_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
         }
 
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin) {
-                $query->whereHas('routing', function ($query1) use ($state_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
         }
 
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination) {
-                $query->whereHas('routing', function ($query1) use ($state_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
         }
 
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin) {
-                $query->whereHas('routing', function ($query1) use ($zip_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
         }
 
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use ($zip_destination) {
-                $query->whereHas('routing', function ($query1) use ($zip_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
         }
 
-        $ORDER->with('bill_to_customer', function ($query) {
-//           return $query->without(['contacts', 'term'])->orderBy('code')->orderBy('code_number');
-            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-        });
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            "GROUP BY o.order_number) AS result ORDER BY result.order_date_time DESC;";
 
-//        $ORDER->orderBy('order_date_time', 'desc');
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -476,180 +564,209 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $carrier_code = strlen($carrier_code) === 7 ? $carrier_code . '0' : $carrier_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
-        $ORDER->where('is_template', 0);
+        if ($carrier_id === 0 && $carrier_code !== '') {
+            $carrier = Carrier::query()->whereRaw("CONCAT(`code`, `code_number`) = '$carrier_code'")->first();
+            $carrier_id = $carrier->id ?? 0;
+        }
 
-        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-        $bill_to_company_id = $bill_to_company->id ?? 0;
+        $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_customer_id = $bill_to_customer->id ?? 0;
 
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.bill_to_customer_id,
+                    c.code,
+                    c.code_number,
+                    c.name,
+                    c.city,
+                    c.state,
+                    o.order_date_time,
+                    o.customer_check_number,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+                FROM orders AS o
+                INNER JOIN customers AS c ON o.bill_to_customer_id = c.id
+                WHERE is_template = 0 ";
+
+        /**
+         * CHECKING THE BILL-TO/CUSTOMER IDs
+         */
         if ($carrier_id > 0) {
-            $ORDER->where(function ($query) use ($carrier_id) {
-                $query->whereHas('carrier', function ($query1) use ($carrier_id) {
-                    return $query1->where('id', $carrier_id);
-                });
-            });
+            if ($bill_to_code !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.carrier_id IN (?)) AND (o.bill_to_customer_id in (?)) ";
+
+                $params[] = $carrier_id;
+                $params[] = $bill_to_customer_id;
+            } else {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.carrier_id IN (?)) ";
+
+                $params[] = $carrier_id;
+            }
         } else {
-            if ($carrier_code !== '') {
-                $carrier = Carrier::query()->whereRaw("CONCAT(`code`, `code_number`) = '$carrier_code'")->first();
+            if ($bill_to_customer_id > 0) {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN ($bill_to_customer_id)) ";
 
-                if ($carrier) {
-                    $carrier_id = $carrier->id;
-
-                    $ORDER->where(function ($query) use ($carrier_id) {
-                        $query->whereHas('carrier', function ($query1) use ($carrier_id) {
-                            return $query1->where('id', $carrier_id);
-                        });
-                    });
-                }
+                $params[] = $bill_to_customer_id;
             }
         }
 
-        if ($bill_to_code !== '') {
-            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
-                return $query1->where('id', $bill_to_company_id);
-            });
-        }
-
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
         if ($date_start !== '' && $date_end !== '') {
-            $ORDER->where(function ($query) use ($date_start, $date_end) {
-                $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
-            });
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
         } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start) {
-                    $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
-                });
-            }
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
 
-            if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end) {
-                    $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
-                });
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
             }
         }
 
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
         if ($city_origin !== '') {
-            $ORDER->where(function ($query) use ($city_origin) {
-                $query->whereHas('routing', function ($query1) use ($city_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
         }
 
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use ($city_destination) {
-                $query->whereHas('routing', function ($query1) use ($city_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
         }
 
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin) {
-                $query->whereHas('routing', function ($query1) use ($state_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
         }
 
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination) {
-                $query->whereHas('routing', function ($query1) use ($state_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
         }
 
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin) {
-                $query->whereHas('routing', function ($query1) use ($zip_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
         }
 
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use ($zip_destination) {
-                $query->whereHas('routing', function ($query1) use ($zip_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
         }
 
-        $ORDER->with('bill_to_customer', function ($query) {
-//           return $query->without(['contacts', 'term'])->orderBy('code')->orderBy('code_number');
-            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-        });
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            "GROUP BY o.order_number) AS result ORDER BY result.order_date_time DESC;";
 
-//        $ORDER->orderBy('order_date_time', 'desc');
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -660,8 +777,6 @@ class OrdersController extends Controller
      */
     public function getOrderHistoryCustomer(Request $request): JsonResponse
     {
-        $ORDER = Order::query();
-
         $bill_to_code = trim($request->bill_to_code ?? '');
         $customer_id = trim($request->customer_id ?? 0);
         $customer_code = trim($request->customer_code ?? '');
@@ -677,247 +792,214 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $customer_code = strlen($customer_code) === 7 ? $customer_code . '0' : $customer_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
-        $ORDER->where('is_template', 0);
+        if ($customer_id === 0 && $customer_code !== '') {
+            $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
+            $customer_id = $customer->id ?? 0;
+        }
 
-        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-        $bill_to_company_id = $bill_to_company->id ?? 0;
+        $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_customer_id = $bill_to_customer->id ?? 0;
 
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.bill_to_customer_id,
+                    o.order_date_time,
+                    o.customer_check_number,
+                    CASE op.customer_id WHEN ? THEN op.customer_id ELSE NULL END AS shipper_customer_id,
+                    CASE od.customer_id WHEN ? THEN od.customer_id ELSE NULL END AS consignee_customer_id,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+                FROM orders AS o
+                INNER JOIN order_pickups AS op ON o.id = op.order_id
+                INNER JOIN order_deliveries AS od ON o.id = od.order_id
+                WHERE is_template = 0 ";
+
+        $params[] = $customer_id;
+        $params[] = $customer_id;
+
+        /**
+         * CHECKING THE BILL-TO/CUSTOMER IDs
+         */
         if ($customer_id > 0) {
-            $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                if ($bill_to_code !== '') {
-                    $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
-                        return $query1->where('id', $bill_to_company_id);
-                    });
+            if ($bill_to_code !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN (?))
+                         AND (op.customer_id IN (?) OR od.customer_id in (?)) ";
 
-                    $query->where(function ($query1) use ($customer_id) {
-                        $query1->whereHas('pickups', function ($query2) use ($customer_id) {
-                            return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                return $query3->where('id', $customer_id);
-                            });
-                        });
+                $params[] = $bill_to_customer_id;
+                $params[] = $customer_id;
+                $params[] = $customer_id;
+            } else {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN (?) OR op.customer_id IN (?) OR od.customer_id in (?)) ";
 
-                        $query1->orWhereHas('deliveries', function ($query2) use ($customer_id) {
-                            return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                return $query3->where('id', $customer_id);
-                            });
-                        });
-                    });
-                } else {
-                    $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
-                        return $query1->where('id', $customer_id);
-                    });
-
-                    $query->orWhereHas('pickups', function ($query1) use ($customer_id) {
-                        return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                            return $query2->where('id', $customer_id);
-                        });
-                    });
-
-                    $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
-                        return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                            return $query2->where('id', $customer_id);
-                        });
-                    });
-                }
-            });
+                $params[] = $customer_id;
+                $params[] = $customer_id;
+                $params[] = $customer_id;
+            }
         } else {
-            if ($customer_code !== '') {
-                $customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$customer_code'")->first();
+            if ($bill_to_customer_id > 0) {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN ($bill_to_customer_id)) ";
 
-                if ($customer) {
-                    $customer_id = $customer->id;
-
-                    $ORDER->where(function ($query) use ($customer_id, $bill_to_code, $bill_to_company_id) {
-                        if ($bill_to_code !== '') {
-                            $query->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
-                                return $query1->where('id', $bill_to_company_id);
-                            });
-
-                            $query->where(function ($query1) use ($customer_id) {
-                                $query1->whereHas('pickups', function ($query2) use ($customer_id) {
-                                    return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                        return $query3->where('id', $customer_id);
-                                    });
-                                });
-
-                                $query1->orWhereHas('deliveries', function ($query2) use ($customer_id) {
-                                    return $query2->whereHas('customer', function ($query3) use ($customer_id) {
-                                        return $query3->where('id', $customer_id);
-                                    });
-                                });
-                            });
-                        } else {
-                            $query->whereHas('bill_to_customer', function ($query1) use ($customer_id) {
-                                return $query1->where('id', $customer_id);
-                            });
-
-                            $query->orWhereHas('pickups', function ($query1) use ($customer_id) {
-                                return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                                    return $query2->where('id', $customer_id);
-                                });
-                            });
-
-                            $query->orWhereHas('deliveries', function ($query1) use ($customer_id) {
-                                return $query1->whereHas('customer', function ($query2) use ($customer_id) {
-                                    return $query2->where('id', $customer_id);
-                                });
-                            });
-                        }
-                    });
-                }
+                $params[] = $bill_to_customer_id;
             }
         }
 
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
         if ($date_start !== '' && $date_end !== '') {
-            $ORDER->where(function ($query) use ($date_start, $date_end) {
-                $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
-            });
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
         } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start) {
-                    $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
-                });
-            }
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
 
-            if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end) {
-                    $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
-                });
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
             }
         }
 
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
         if ($city_origin !== '') {
-            $ORDER->where(function ($query) use ($city_origin) {
-                $query->whereHas('routing', function ($query1) use ($city_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
         }
 
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use ($city_destination) {
-                $query->whereHas('routing', function ($query1) use ($city_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
         }
 
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin) {
-                $query->whereHas('routing', function ($query1) use ($state_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
         }
 
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination) {
-                $query->whereHas('routing', function ($query1) use ($state_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
         }
 
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin) {
-                $query->whereHas('routing', function ($query1) use ($zip_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
         }
 
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use ($zip_destination) {
-                $query->whereHas('routing', function ($query1) use ($zip_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
         }
 
-        $ORDER->with('bill_to_customer', function ($query) {
-            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-        });
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            "GROUP BY o.order_number) AS result ORDER BY result.order_date_time DESC;";
 
-        $ORDER->with('pickups', function ($query) {
-            $query->with('customer', function ($query1) {
-                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-            });
-        });
-
-        $ORDER->with('deliveries', function ($query) {
-            $query->with('customer', function ($query1) {
-                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-            });
-        });
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -928,8 +1010,6 @@ class OrdersController extends Controller
      */
     public function getOrderHistoryCarrier(Request $request): JsonResponse
     {
-        $ORDER = Order::query();
-
         $bill_to_code = trim($request->bill_to_code ?? '');
         $carrier_id = trim($request->carrier_id ?? 0);
         $carrier_code = trim($request->carrier_code ?? '');
@@ -945,189 +1025,203 @@ class OrdersController extends Controller
         $bill_to_code = strlen($bill_to_code) === 7 ? $bill_to_code . '0' : $bill_to_code;
         $carrier_code = strlen($carrier_code) === 7 ? $carrier_code . '0' : $carrier_code;
 
-        $ORDER->select(['id', 'order_number', 'bill_to_customer_id', 'order_date_time', 'customer_check_number']);
-        $ORDER->where('is_template', 0);
+        if ($carrier_id === 0 && $carrier_code !== '') {
+            $carrier = Carrier::query()->whereRaw("CONCAT(`code`, `code_number`) = '$carrier_code'")->first();
+            $carrier_id = $carrier->id ?? 0;
+        }
 
-        $bill_to_company = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
-        $bill_to_company_id = $bill_to_company->id ?? 0;
+        $bill_to_customer = Customer::query()->whereRaw("CONCAT(`code`, `code_number`) = '$bill_to_code'")->first();
+        $bill_to_customer_id = $bill_to_customer->id ?? 0;
 
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.bill_to_customer_id,
+                    o.order_date_time,
+                    o.customer_check_number,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
+                FROM orders AS o
+                WHERE is_template = 0 ";
+
+        /**
+         * CHECKING THE BILL-TO/CUSTOMER IDs
+         */
         if ($carrier_id > 0) {
-            $ORDER->where(function ($query) use ($carrier_id) {
-                $query->whereHas('carrier', function ($query1) use ($carrier_id) {
-                    return $query1->where('id', $carrier_id);
-                });
-            });
+            if ($bill_to_code !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.carrier_id IN (?)) AND (o.bill_to_customer_id in (?)) ";
+
+                $params[] = $carrier_id;
+                $params[] = $bill_to_customer_id;
+            } else {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.carrier_id IN (?)) ";
+
+                $params[] = $carrier_id;
+            }
         } else {
-            if ($carrier_code !== '') {
-                $carrier = Carrier::query()->whereRaw("CONCAT(`code`, `code_number`) = '$carrier_code'")->first();
+            if ($bill_to_customer_id > 0) {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.bill_to_customer_id IN ($bill_to_customer_id)) ";
 
-                if ($carrier) {
-                    $carrier_id = $carrier->id;
-
-                    $ORDER->where(function ($query) use ($carrier_id) {
-                        $query->whereHas('carrier', function ($query1) use ($carrier_id) {
-                            return $query1->where('id', $carrier_id);
-                        });
-                    });
-                }
+                $params[] = $bill_to_customer_id;
             }
         }
 
-        if ($bill_to_code !== '') {
-            $ORDER->whereHas('bill_to_customer', function ($query1) use ($bill_to_company_id) {
-                return $query1->where('id', $bill_to_company_id);
-            });
-        }
-
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
         if ($date_start !== '' && $date_end !== '') {
-            $ORDER->where(function ($query) use ($date_start, $date_end) {
-                $query->whereRaw("DATE(order_date_time) BETWEEN STR_TO_DATE('$date_start', '%m/%d/%Y') AND STR_TO_DATE('$date_end', '%m/%d/%Y')");
-            });
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
         } else {
             if ($date_start !== '') {
-                $ORDER->where(function ($query) use ($date_start) {
-                    $query->whereRaw("DATE(order_date_time) >= STR_TO_DATE('$date_start', '%m/%d/%Y')");
-                });
-            }
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
 
-            if ($date_end !== '') {
-                $ORDER->where(function ($query) use ($date_end) {
-                    $query->whereRaw("DATE(order_date_time) <= STR_TO_DATE('$date_end', '%m/%d/%Y')");
-                });
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
             }
         }
 
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
         if ($city_origin !== '') {
-            $ORDER->where(function ($query) use ($city_origin) {
-                $query->whereHas('routing', function ($query1) use ($city_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_origin) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
         }
 
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
         if ($city_destination !== '') {
-            $ORDER->where(function ($query) use ($city_destination) {
-                $query->whereHas('routing', function ($query1) use ($city_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($city_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($city_destination) {
-                                return $query3->whereRaw("LOWER(`city`) = '$city_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
         }
 
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
         if ($state_origin !== '') {
-            $ORDER->where(function ($query) use ($state_origin) {
-                $query->whereHas('routing', function ($query1) use ($state_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_origin) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
         }
 
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
         if ($state_destination !== '') {
-            $ORDER->where(function ($query) use ($state_destination) {
-                $query->whereHas('routing', function ($query1) use ($state_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($state_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($state_destination) {
-                                return $query3->whereRaw("LOWER(`state`) = '$state_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
         }
 
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
         if ($zip_origin !== '') {
-            $ORDER->where(function ($query) use ($zip_origin) {
-                $query->whereHas('routing', function ($query1) use ($zip_origin) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_origin) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_origin) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_origin'");
-                            });
-                        })
-                        ->orderBy('id')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
         }
 
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
         if ($zip_destination !== '') {
-            $ORDER->where(function ($query) use ($zip_destination) {
-                $query->whereHas('routing', function ($query1) use ($zip_destination) {
-                    return $query1
-                        ->whereHas('pickup', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orWhereHas('delivery', function ($query2) use ($zip_destination) {
-                            return $query2->whereHas('customer', function ($query3) use ($zip_destination) {
-                                return $query3->whereRaw("LOWER(`zip`) = '$zip_destination'");
-                            });
-                        })
-                        ->orderBy('id', 'desc')->limit(1);
-                });
-            });
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
         }
 
-        $ORDER->with('bill_to_customer', function ($query) {
-            return $query->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-        });
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            "GROUP BY o.order_number) AS result ORDER BY result.order_date_time DESC;";
 
-        $ORDER->with('pickups', function ($query) {
-            $query->with('customer', function ($query1) {
-                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-            });
-        });
-
-        $ORDER->with('deliveries', function ($query) {
-            $query->with('customer', function ($query1) {
-                return $query1->select(['id', 'code', 'code_number', 'name', 'city', 'state']);
-            });
-        });
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -1420,9 +1514,10 @@ class OrdersController extends Controller
                 }
             }
 
-            $order = $ORDER->updateOrCreate([
-                'order_number' => $order_number
-            ],
+            $order = $ORDER->updateOrCreate(
+                [
+                    'order_number' => $order_number
+                ],
                 [
                     'user_code_id' => $user_code_id,
                     'trip_number' => $trip_number,
@@ -1460,7 +1555,8 @@ class OrdersController extends Controller
                     'invoice_rate_conf_received' => $invoice_rate_conf_received,
                     'invoice_carrier_approved' => $invoice_carrier_approved,
                     'is_cancelled' => $is_cancelled
-                ]);
+                ]
+            );
 
             if (count($pickups) > 0) {
                 $PICKUP = new Pickup();
@@ -1697,7 +1793,6 @@ class OrdersController extends Controller
                         'name' => $name
                     ]);
                 }
-
             } else {
                 Pickup::query()->where('order_id', $id)->delete();
                 Delivery::query()->where('order_id', $id)->delete();
@@ -1707,9 +1802,10 @@ class OrdersController extends Controller
                 InternalNotes::query()->where('order_id', $id)->delete();
                 NotesForCarrier::query()->where('order_id', $id)->delete();
 
-                Order::query()->updateOrCreate([
-                    'id' => $id
-                ],
+                Order::query()->updateOrCreate(
+                    [
+                        'id' => $id
+                    ],
                     [
                         'order_number' => 0,
                         'trip_number' => 0,
@@ -1727,7 +1823,8 @@ class OrdersController extends Controller
                         'miles' => $miles,
                         'haz_mat' => $haz_mat,
                         'expedited' => $expedited
-                    ]);
+                    ]
+                );
 
                 if (count($pickups) > 0) {
                     for ($p = 0; $p < count($pickups); $p++) {
@@ -2644,7 +2741,8 @@ class OrdersController extends Controller
             ], [
                 'template_id' => $template_id,
                 'user_code_id' => $user_code_id,
-                'text' => $text
+                'text' => $text,
+                'date_time' => date('Y-m-d H:i:s')
             ]);
 
             $internal_notes = TemplateInternalNote::where('template_id', $template_id)->with(['user_code'])->get();
@@ -3171,8 +3269,8 @@ class OrdersController extends Controller
                 $bill_to_customer_id = ($item['bill_to_customer_id'] ?? 0) === 0 ? null : $item['bill_to_customer_id'];
                 $carrier_id = ($item['carrier_id'] ?? 0) === 0 ? null : $item['carrier_id'];
                 $equipment_id = ($item['equipment_id'] ?? 0) === 0 ? null : $item['equipment_id'];
-//                $order_pickups = $item['pickups'] ?? [];
-//                $order_deliveries = $item['deliveries'] ?? [];
+                //                $order_pickups = $item['pickups'] ?? [];
+                //                $order_deliveries = $item['deliveries'] ?? [];
                 $order_routing = $item['routing'] ?? [];
                 $order_customer_rating = $item['customer_rating'] ?? [];
                 $order_carrier_rating = $item['carrier_rating'] ?? [];
@@ -3335,8 +3433,6 @@ class OrdersController extends Controller
                         ]);
                     }
                 }
-
-
             }
 
             return response()->json(['result' => 'OK']);
@@ -3592,8 +3688,6 @@ class OrdersController extends Controller
 
         return response()->json(['result' => 'OK']);
     }
-
-
 }
 
 

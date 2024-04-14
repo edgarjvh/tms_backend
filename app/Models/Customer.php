@@ -155,7 +155,6 @@ class Customer extends Model
 
     public function orders()
     {
-
         return $this->hasMany(Order::class, 'bill_to_customer_id', 'id')
             ->with([
                 'bill_to_company',
