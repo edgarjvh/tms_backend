@@ -361,11 +361,11 @@ class ContactsController extends Controller
 
             if ($pivot) {
                 if (($pivot['is_primary'] ?? 0) === 1) {
-                    $CUSTOMER->where('id', $main_customer_id)->update([
+                    $CUSTOMER->where('id', $customer_id)->update([
                         'primary_contact_id' => $contact->id
                     ]);
                 } else {
-                    $CUSTOMER->where(['id' => $main_customer_id, 'primary_contact_id' => $contact->id])->update([
+                    $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
                         'primary_contact_id' => null
                     ]);
                 }
@@ -386,13 +386,7 @@ class ContactsController extends Controller
                 ->has('customer')
                 ->first();
 
-//            $contacts = $CUSTOMER_CONTACT->where('customer_id', $main_customer_id)
-//                ->with('customer')
-//                ->has('customer')
-//                ->orderBy('first_name')
-//                ->get();
-
-            $newCustomer = $CUSTOMER->where('id', $main_customer_id)->first();
+            $newCustomer = $CUSTOMER->where('id', $customer_id)->first();
 
             return response()->json([
                 'result' => 'OK',
@@ -605,13 +599,11 @@ class ContactsController extends Controller
 
         $carrier_id = $request->carrier_id ?? 0;
 
-        $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier_id)
-            ->with('carrier')
-            ->has('carrier')
+        $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier_id)            
             ->orderBy('first_name')
             ->get();
 
-        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'contact' => null]);
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 
     /**

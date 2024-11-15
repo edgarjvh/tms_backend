@@ -32,6 +32,23 @@ class FactoringCompaniesController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getFactoringCompanyByCode(Request $request) : JsonResponse
+    {
+        $FACTORING_COMPANY = new FactoringCompany();
+
+        $code = $request->code ?? '';
+
+        $factoring_company = $FACTORING_COMPANY->whereRaw("1 = 1")
+            ->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'")
+            ->with(['documents', 'contacts', 'invoices', 'carriers', 'mailing_address', 'notes'])->first();
+
+        return response()->json(['result' => 'OK', 'factoring_company' => $factoring_company]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function factoringCompanies(Request $request) : JsonResponse
     {
         $FACTORING_COMPANY = new FactoringCompany();
@@ -134,6 +151,20 @@ class FactoringCompaniesController extends Controller
         $ext = $request->ext ?? '';
         $email = $request->email ?? '';
         $codeExist = [];
+        $ach_banking_info = $request->ach_banking_info ?? '';
+        $ach_account_info = $request->ach_account_info ?? '';
+        $ach_aba_routing = $request->ach_aba_routing ?? '';
+        $ach_remittence_email = $request->ach_remittence_email ?? '';
+        $ach_type = $request->ach_type ?? 'checking';
+        $wiring_banking_info = $request->wiring_banking_info ?? '';
+        $wiring_account_info = $request->wiring_account_info ?? '';
+        $wiring_aba_routing = $request->wiring_aba_routing ?? '';
+        $wiring_remittence_email = $request->wiring_remittence_email ?? '';
+        $wiring_type = $request->wiring_type ?? 'checking';
+        $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
+        $mailing_factoring_company_contact_id = $request->mailing_factoring_company_contact_id ?? null;
+        $mailing_factoring_company_contact_primary_phone = $request->mailing_factoring_company_contact_primary_phone ?? 'work';
+        $mailing_factoring_company_contact_primary_email = $request->mailing_factoring_company_contact_primary_email ?? 'work';
 
         $curFactoringCompany = $FACTORING_COMPANY
             ->where('id',$id)
@@ -188,7 +219,21 @@ class FactoringCompaniesController extends Controller
                 'contact_name' => ucwords($contact_name),
                 'contact_phone' => $contact_phone,
                 'ext' => $ext,
-                'email' => strtolower($email)
+                'email' => strtolower($email),
+                'ach_banking_info' => $ach_banking_info,
+                'ach_account_info' => $ach_account_info,
+                'ach_aba_routing' => $ach_aba_routing,
+                'ach_remittence_email' => $ach_remittence_email,
+                'ach_type' => $ach_type,
+                'wiring_banking_info' => $wiring_banking_info,
+                'wiring_account_info' => $wiring_account_info,
+                'wiring_aba_routing' => $wiring_aba_routing,
+                'wiring_remittence_email' => $wiring_remittence_email,
+                'wiring_type' => $wiring_type,
+                'remit_to_address_is_the_same' => $remit_to_address_is_the_same,
+                'mailing_factoring_company_contact_id' => $mailing_factoring_company_contact_id,
+                'mailing_factoring_company_contact_primary_phone' => $mailing_factoring_company_contact_primary_phone,
+                'mailing_factoring_company_contact_primary_email' => $mailing_factoring_company_contact_primary_email
             ]);
 
         if ($with_contact) {
@@ -359,6 +404,15 @@ class FactoringCompaniesController extends Controller
 
         $mailing_address = $FACTORING_COMPANY_MAILING_ADDRESS->where('factoring_company_id', $factoring_company_id)->delete();
 
+        FactoringCompany::query()->updateOrCreate([
+            'id' => $factoring_company_id
+        ],[
+            'remit_to_address_is_the_same' => 0,
+            'mailing_factoring_company_contact_id' => null,
+            'mailing_factoring_company_contact_primary_phone' => 'work',
+            'mailing_factoring_company_contact_primary_email' => 'work',
+        ]);
+
         return response()->json(['result' => 'OK', 'mailing_address' => $mailing_address]);
     }
 
@@ -384,10 +438,25 @@ class FactoringCompaniesController extends Controller
             'date_time' => date('Y-m-d H:i:s')
         ]);
 
-        $factoring_company_note = $FACTORING_COMPANY_NOTE->where('id', $factoring_company_note->id)->with(['user_code'])->get();
+        $factoring_company_note = $FACTORING_COMPANY_NOTE->where('id', $factoring_company_note->id)->with(['user_code'])->first();
         $factoring_company_notes = $FACTORING_COMPANY_NOTE->where('factoring_company_id', $factoring_company_id)->with(['user_code'])->get();
 
         return response()->json(['result' => 'OK', 'note' => $factoring_company_note, 'notes' => $factoring_company_notes]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteFactoringCompanyNotes(Request $request) : JsonResponse
+    {
+        $FACTORING_COMPANY_NOTE = new FactoringCompanyNote();
+
+        $id = $request->id ?? 0;
+
+        $FACTORING_COMPANY_NOTE->where('id', $id)->delete();
+
+        return response()->json(['result' => 'OK']);
     }
 
     /**

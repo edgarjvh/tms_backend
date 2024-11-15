@@ -9,6 +9,7 @@ use App\Models\Order;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DivisionsController extends Controller
 {
@@ -27,7 +28,31 @@ class DivisionsController extends Controller
                 'documents',
                 'hours',
                 'notes',
-                'mailing_address'
+                'mailing_address',
+                'mailing_same'
+            ])
+            ->first();
+
+        return response()->json(['result' => 'OK', 'division' => $division]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getDivisionByCode(Request $request): JsonResponse
+    {
+        $DIVISION = Division::query();
+        $code = $request->code ?? '';
+
+        $division = $DIVISION->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
+            ->with([
+                'contacts',
+                'documents',
+                'hours',
+                'notes',
+                'mailing_address',
+                'mailing_same'
             ])
             ->first();
 
@@ -70,7 +95,8 @@ class DivisionsController extends Controller
                     'documents',
                     'hours',
                     'notes',
-                    'mailing_address'
+                    'mailing_address',
+                'mailing_same'
                 ])
                 ->get();
         } else {
@@ -155,29 +181,30 @@ class DivisionsController extends Controller
     {
         $id = $request->id ?? 0;
 
-        $ORDER = Order::query();
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state
+            FROM orders AS o
+            WHERE o.is_imported = 0
+                AND o.division_id = ?
+            ORDER BY o.order_number DESC";
 
-        $ORDER->whereRaw("1 = 1");
-        $ORDER->whereHas('division', function ($query1) use ($id) {
-            $query1->where('id', $id);
-        });
+        $params = [$id];
 
-        $ORDER->select([
-            'id',
-            'order_number'
-        ]);
-
-        $ORDER->with([
-            'bill_to_company',
-            'pickups',
-            'deliveries',
-            'routing'
-        ]);
-
-
-        $ORDER->orderBy('id', 'desc')->limit(20);
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -205,6 +232,11 @@ class DivisionsController extends Controller
         $contact_phone = $request->contact_phone ?? '';
         $contact_phone_ext = $request->contact_phone_ext ?? ($request->ext ?? '');
         $email = $request->email ?? '';
+        $mailing_address_id = $request->mailing_address_id ?? null;
+        $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
+        $mailing_division_contact_id = $request->mailing_division_contact_id ?? null;
+        $mailing_division_contact_primary_phone = $request->mailing_division_contact_primary_phone ?? 'work';
+        $mailing_division_contact_primary_email = $request->mailing_division_contact_primary_email ?? 'work';
         $type = $request->type ?? 'company';
 
         $curDivision = $DIVISION->where('id', $id)->first();
@@ -255,6 +287,11 @@ class DivisionsController extends Controller
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email),
+                'mailing_address_id' => $mailing_address_id,
+                'remit_to_address_is_the_same' => $remit_to_address_is_the_same,
+                'mailing_division_contact_id' => $mailing_division_contact_id,
+                'mailing_division_contact_primary_phone' => $mailing_division_contact_primary_phone,
+                'mailing_division_contact_primary_email' => $mailing_division_contact_primary_email,
                 'type' => strtolower($type)
             ]);
 
@@ -306,7 +343,8 @@ class DivisionsController extends Controller
                 'documents',
                 'hours',
                 'notes',
-                'mailing_address'
+                'mailing_address',
+                'mailing_same'
             ])->first();
 
         return response()->json(['result' => 'OK', 'division' => $newDivision]);

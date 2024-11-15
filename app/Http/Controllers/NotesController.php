@@ -120,7 +120,7 @@ class NotesController extends Controller
     {
         $NOTE = new CarrierNote();
         $id = $request->id ?? 0;
-        $carrier_id = $request->customer_id ?? 0;
+        $carrier_id = $request->customer_id ?? $request->carrier_id ?? 0;
         $text = $request->text;
         $user_code_id = $request->user_code_id;
 

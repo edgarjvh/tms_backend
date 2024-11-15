@@ -137,6 +137,59 @@ class CustomersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getCustomerReport(): JsonResponse
+    {
+        $sql = /** @lang text */
+        "SELECT
+            cu.id,
+            CONCAT(cu.code, CASE WHEN cu.code_number = 0 THEN '' ELSE cu.code_number END) AS code,
+            cu.name,
+            cu.address1,
+            cu.address2,
+            cu.city,
+            cu.state,
+            cu.zip,
+            TRIM(CONCAT(p1.first_name, ' ', p1.last_name)) AS contact_name1,
+            (CASE
+                WHEN (p1.primary_phone = 'work') THEN p1.phone_work
+                WHEN (p1.primary_phone = 'fax') THEN p1.phone_work_fax
+                WHEN (p1.primary_phone = 'mobile') THEN p1.phone_mobile
+                WHEN (p1.primary_phone = 'direct') THEN p1.phone_direct
+                WHEN (p1.primary_phone = 'other') THEN p1.phone_other
+            END) AS phone1,
+            (CASE
+                WHEN (p1.primary_email = 'work') THEN p1.email_work
+                WHEN (p1.primary_email = 'personal') THEN p1.email_personal
+                WHEN (p1.primary_email = 'other') THEN p1.email_other
+            END) AS email1,
+            TRIM(CONCAT(p2.first_name, ' ', p2.last_name)) AS contact_name2,
+            (CASE
+                WHEN (p2.primary_phone = 'work') THEN p2.phone_work
+                WHEN (p2.primary_phone = 'fax') THEN p2.phone_work_fax
+                WHEN (p2.primary_phone = 'mobile') THEN p2.phone_mobile
+                WHEN (p2.primary_phone = 'direct') THEN p2.phone_direct
+                WHEN (p2.primary_phone = 'other') THEN p2.phone_other
+            END) AS phone2,
+            (CASE
+                WHEN (p2.primary_email = 'work') THEN p2.email_work
+                WHEN (p2.primary_email = 'personal') THEN p2.email_personal
+                WHEN (p2.primary_email = 'other') THEN p2.email_other
+            END) AS email2
+        FROM customers as cu
+        LEFT JOIN contacts AS p1 ON cu.id = p1.customer_id AND p1.is_primary = 1
+        LEFT JOIN contact_customer AS cc ON cu.id = cc.customer_id AND cc.is_primary = 1
+        LEFT JOIN contacts AS p2 ON cc.contact_id = p2.id
+        ORDER BY cu.name";
+
+        $customers = DB::select($sql);
+
+        return response()->json(['result' => 'OK', 'customers' => $customers]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function customerSearch(Request $request): JsonResponse
     {
         $code = strtolower($request->search[0]['data'] ?? '');
@@ -211,7 +264,7 @@ class CustomersController extends Controller
          * SETTING UP THE THE QUERY STRING
          */
         $sql = /** @lang text */
-            "SELECT
+            "SELECT 
                 o.id,
                 o.order_number,
                 (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,

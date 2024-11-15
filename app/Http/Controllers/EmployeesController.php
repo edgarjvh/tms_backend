@@ -28,6 +28,17 @@ class EmployeesController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getEmployeeById(Request $request) : JsonResponse{
+        $id = $request->id ?? null;
+        $employee = Employee::where('id', $id)->with(['company'])->first();
+
+        return response()->json(['result' => 'OK', 'employee' => $employee]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function saveEmployee(Request $request): JsonResponse
     {
         $EMPLOYEE = new Employee();
@@ -225,7 +236,7 @@ class EmployeesController extends Controller
     {
         $EMPLOYEE = new Employee();
 
-        $employee_id = $request->employee_id ?? ($request->id ?? 0);
+        $employee_id = $request->id ?? null;
 
         $employee = $EMPLOYEE->where('id', $employee_id)->first();
 

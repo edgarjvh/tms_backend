@@ -131,10 +131,11 @@ class DivisionDocumentsController extends Controller
             'date_time' => date('Y-m-d H:i:s')
         ]);
 
+        $documentNote = $DIVISION_DOCUMENT_NOTE->where('id', $documentNote->id)->with(['user_code'])->first();
         $documentNotes = $DIVISION_DOCUMENT_NOTE->where('division_document_id', $doc_id)->with(['user_code'])->get();
-        $documents = $DIVISION_DOCUMENT->where('division_id', $division_id)->with(['notes'])->get();
+        $documents = $DIVISION_DOCUMENT->where('division_id', $division_id)->with(['notes', 'user_code'])->get();
 
-        return response()->json(['result' => 'OK', 'note' => $documentNote, 'notes' => $documentNotes, 'documents' => $documents]);
+        return response()->json(['result' => 'OK', 'documentNote' => $documentNote, 'data' => $documentNotes, 'documents' => $documents]);
     }
 
     /**

@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Agent;
 use App\Models\AgentContact;
+use Illuminate\Support\Facades\DB;
 
 class AgentsController extends Controller
 {
@@ -93,6 +94,45 @@ class AgentsController extends Controller
                 ->get();
         }
 
+
+        return response()->json(['result' => 'OK', 'agents' => $agents]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAgentReport(): JsonResponse
+    {
+        $sql = /** @lang text */
+        "SELECT
+            ca.company_id,
+            ca.id,
+            ca.code,
+            ca.name,
+            ca.address1,
+            ca.address2,
+            ca.city,
+            ca.state,
+            ca.zip,
+            TRIM(CONCAT(p1.first_name, ' ', p1.last_name)) AS contact_name,
+            (CASE
+                WHEN (p1.primary_phone = 'work') THEN p1.phone_work
+                WHEN (p1.primary_phone = 'fax') THEN p1.phone_work_fax
+                WHEN (p1.primary_phone = 'mobile') THEN p1.phone_mobile
+                WHEN (p1.primary_phone = 'direct') THEN p1.phone_direct
+                WHEN (p1.primary_phone = 'other') THEN p1.phone_other
+            END) AS phone,
+            (CASE
+                WHEN (p1.primary_email = 'work') THEN p1.email_work
+                WHEN (p1.primary_email = 'personal') THEN p1.email_personal
+                WHEN (p1.primary_email = 'other') THEN p1.email_other
+            END) AS email
+        FROM company_agents as ca
+        LEFT JOIN contacts AS p1 ON ca.id = p1.agent_id AND p1.is_primary = 1
+        ORDER BY ca.name";
+
+        $agents = DB::select($sql);
 
         return response()->json(['result' => 'OK', 'agents' => $agents]);
     }

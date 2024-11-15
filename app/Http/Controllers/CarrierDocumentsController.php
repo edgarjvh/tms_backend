@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Carrier;
 use App\Models\CarrierDocument;
 use App\Models\CarrierDocumentNote;
 use Exception;
@@ -40,6 +41,7 @@ class CarrierDocumentsController extends Controller
         $tags = $request->tags ?? '';
         $user_code_id = $request->user_code_id ?? 0;
         $fileData = $_FILES['files'];
+        $link = $request->link ?? '';
 
         for ($i = 0; $i < count($fileData['name']); $i++){
             $doc_name = $fileData['name'][$i];
@@ -63,6 +65,17 @@ class CarrierDocumentsController extends Controller
             $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
 
             move_uploaded_file($fileData['tmp_name'][$i], public_path('carrier-documents/' . $doc_id));
+
+            if (strtolower($link) === 'insurance'){
+                $CARRIER = new Carrier();
+                $carrier = $CARRIER->where('id', $carrier_id)->first();
+
+                if ($carrier->insurance_flag === 0) {
+                    $CARRIER->where('id', $carrier_id)->update(['insurance_flag' => 1]);
+                }else{
+                    $CARRIER->where('id', $carrier_id)->update(['insurance_flag' => 0]);
+                }
+            }
         }
 
         return response()->json(['result' => 'OK', 'document' => $document, 'documents' => $documents]);
@@ -132,6 +145,7 @@ class CarrierDocumentsController extends Controller
             'date_time' => date('Y-m-d H:i:s')
         ]);
 
+        $documentNote = $CARRIER_DOCUMENT_NOTE->where('id', $documentNote->id)->with(['user_code'])->first();
         $documentNotes = $CARRIER_DOCUMENT_NOTE->where('carrier_document_id', $doc_id)->with(['user_code'])->get();
         $documents = $CARRIER_DOCUMENT->where('carrier_id', $carrier_id)->with(['notes', 'user_code'])->get();
 

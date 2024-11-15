@@ -2,30 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Carrier;
 use App\Models\Insurance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class InsurancesController extends Controller
 {
-    public function getInsurances(){
+    public function getInsurances()
+    {
         $insurances = Insurance::orderBy('company')->with('insurance_type')->get();
         return response()->json(['result' => 'OK', 'insurances' => $insurances]);
     }
 
-    public function saveInsurance(Request $request){
-        $carrier_id = isset($request->carrier_id) ? $request->carrier_id : 0;
-        $insurance_id = isset($request->id) ? $request->id : 0;
-        $insurance_type_id = isset($request->insurance_type_id) ? $request->insurance_type_id : 0;
-        $company = isset($request->company) ? $request->company : '';
-        $expiration_date = isset($request->expiration_date) ? $request->expiration_date : '';
-        $amount = isset($request->amount) ? $request->amount : '';
-        $deductible = isset($request->deductible) ? $request->deductible : '';
-        $notes = isset($request->notes) ? $request->notes : '';
+    public function saveInsurance(Request $request)
+    {
+        $id = $request->id ?? null;
+        $carrier_id = $request->carrier_id ?? null;
+        $insurance_type_id = $request->insurance_type_id ?? null;
+        $company = $request->company ?? '';
+        $expiration_date = $request->expiration_date ?? '';
+        $amount = $request->amount ?? '';
+        $deductible = $request->deductible ?? '';
+        $notes = $request->notes ?? '';
 
-        if ($carrier_id > 0){
-            $insurance = Insurance::updateOrCreate([
-                'id' => $insurance_id
+        $INSURANCE = new Insurance();
+        $CARRIER = new Carrier();
+
+        $current_insurance = $INSURANCE->where('id', $id)->first();
+        $current_carrier = $CARRIER->where('id', $carrier_id)->first();
+
+        if ($current_insurance) {
+            if ($current_insurance->expiration_date !== $expiration_date) {
+                if ($current_carrier->insurance_flag === 0) {
+                    $CARRIER->where('id', $carrier_id)->update(['insurance_flag' => 1]);
+                } else if ($current_carrier->insurance_flag === 1) {
+                    $CARRIER->where('id', $carrier_id)->update(['insurance_flag' => 0]);
+                }
+            }
+        }
+
+        if ($carrier_id > 0) {
+            $insurance = $INSURANCE->updateOrCreate([
+                'id' => $id
             ], [
                 'carrier_id' => $carrier_id,
                 'insurance_type_id' => $insurance_type_id,
@@ -36,16 +55,18 @@ class InsurancesController extends Controller
                 'notes' => $notes,
             ]);
 
-            $insurances = Insurance::where('carrier_id', $carrier_id)->with('insurance_type')->get();
-            $companies = Insurance::orderBy('company')->get(['id', 'company']);
+            $insurance = $INSURANCE->where('id', $insurance->id)->with('insurance_type')->first();
+            $insurances = $INSURANCE->where('carrier_id', $carrier_id)->with('insurance_type')->get();
+            $companies = $INSURANCE->orderBy('company')->get(['id', 'company']);
 
             return response()->json(['result' => 'OK', 'insurance' => $insurance, 'insurances' => $insurances, 'companies' => $companies]);
-        }else{
+        } else {
             return response()->json(['result' => 'NO CARRIER']);
         }
     }
 
-    public function deleteInsurance(Request $request){
+    public function deleteInsurance(Request $request)
+    {
         $id = $request->id;
 
         $insurance = Insurance::where('id', $id)->delete();
@@ -53,7 +74,8 @@ class InsurancesController extends Controller
         return response()->json(['result' => 'OK', 'insurance' => $insurance]);
     }
 
-    public function getInsuranceCompanies(Request $request){
+    public function getInsuranceCompanies(Request $request)
+    {
         $company = isset($request->company) ? $request->company : '';
 
         $companies = DB::table('carrier_insurances')

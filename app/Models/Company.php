@@ -10,8 +10,14 @@ class Company extends Model
     protected $guarded = [];
     protected $table = 'companies';
 
-    public function mailing_address() {
-        return $this->hasOne(CompanyMailingAddress::class, 'company_id', 'id');
+    public function mailing_same()
+    {
+        return $this->belongsTo(Company::class, 'id', 'id')->where('mailing_address_is_the_same', 1);
+    }
+
+    public function mailing_address()
+    {
+        return $this->belongsTo(CompanyMailingAddress::class, 'mailing_address_id', 'id');
     }
 
     public function employees() {

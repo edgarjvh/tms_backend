@@ -170,6 +170,7 @@ class CarrierMailingAddressesController extends Controller
 
         $carriers = $CARRIER->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'")
             ->selectRaw('id,code,code_number,name,address1,address2,city,state,zip,contact_name,contact_phone,ext,email,concat("carrier") as type')
+            ->with(['contacts'])
             ->orderBy('code')
             ->orderBy('code_number')
             ->get();

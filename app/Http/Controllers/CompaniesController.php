@@ -23,7 +23,9 @@ class CompaniesController extends Controller
                 'employees',
                 'agents',
                 'drivers',
-                'operators'
+                'operators',
+                'mailing_same',
+                'mailing_address'
             ])
             ->first();
 
@@ -45,7 +47,9 @@ class CompaniesController extends Controller
                 'employees',
                 'agents',
                 'drivers',
-                'operators'
+                'operators',
+                'mailing_same',
+                'mailing_address'
             ])
             ->get();
 
@@ -76,6 +80,8 @@ class CompaniesController extends Controller
         $jitsi_name = $request->jitsi_name ?? '';
         $mc_number = $request->mc_number ?? '';
         $dot_number = $request->dot_number ?? '';
+        $mailing_address_id = $request->mailing_address_id ?? null;
+        $mailing_address_is_the_same = $request->mailing_address_is_the_same ?? 0;
 
         $company = $COMPANY->updateOrCreate([
             'id' => $id
@@ -95,7 +101,9 @@ class CompaniesController extends Controller
             'zulip_name' => $zulip_name,
             'jitsi_name' => $jitsi_name,
             'mc_number' => $mc_number,
-            'dot_number' => $dot_number
+            'dot_number' => $dot_number,
+            'mailing_address_id' => $mailing_address_id,
+            'mailing_address_is_the_same' => $mailing_address_is_the_same
         ]);
 
         $company = $COMPANY->where('id', $company->id)
@@ -103,7 +111,9 @@ class CompaniesController extends Controller
                 'employees',
                 'agents',
                 'drivers',
-                'operators'
+                'operators',
+                'mailing_same',
+                'mailing_address'
             ])->first();
 
         return response()->json(['result' => 'OK', 'company' => $company]);
@@ -143,7 +153,9 @@ class CompaniesController extends Controller
                 'employees',
                 'agents',
                 'drivers',
-                'operators'
+                'operators',
+                'mailing_same',
+                'mailing_address'
             ]) ->first();
 
         move_uploaded_file($fileData['tmp_name'], public_path('company-logo/' . $new_company_logo));

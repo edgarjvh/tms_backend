@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use DateTime;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -14,6 +15,34 @@ use Illuminate\Database\Eloquent\Builder;
 class Carrier extends Model
 {
     protected $guarded = [];
+    protected $appends = ['insurance_status'];
+
+    public function getInsuranceStatusAttribute()
+    {
+        $currentDate = DateTime::createFromFormat('m/d/Y', date('m/d/Y'));
+        $nextMonthDate = (clone $currentDate)->modify('+1 month');
+
+        $insurances = $this->insurances;
+        $status = '';
+        if ($insurances->count() > 0) {            
+            foreach ($insurances as $insurance) {
+                $expirationDate = DateTime::createFromFormat('m/d/Y', $insurance->expiration_date);
+                if ($expirationDate < $currentDate) {
+                    $status = 'expired';
+                } else if ($expirationDate >= $currentDate && $expirationDate <= $nextMonthDate) {
+                    if ($status !== 'expired') {
+                        $status = 'warning';
+                    }
+                } else{
+                    if ($status !== 'expired' && $status !== 'warning') {
+                        $status = 'active';
+                    }
+                }
+            }
+        }
+
+        return $status;
+    }
 
     public function mailing_same()
     {
@@ -27,7 +56,7 @@ class Carrier extends Model
 
     public function mailing_carrier()
     {
-        return $this->belongsTo(Carrier::class, 'mailing_carrier_id', 'id');
+        return $this->belongsTo(Carrier::class, 'mailing_carrier_id', 'id')->with(['contacts']);
     }
 
     public function contacts(){

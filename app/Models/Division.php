@@ -29,7 +29,12 @@ class Division extends Model
     }
 
     public function mailing_address(){
-        return $this->hasOne(DivisionMailingAddress::class)->with(['mailing_contact']);
+        return $this->belongsTo(DivisionMailingAddress::class, 'mailing_address_id', 'id');
+    }
+
+    public function mailing_same()
+    {
+        return $this->belongsTo(Division::class, 'id', 'id')->where('remit_to_address_is_the_same', 1);
     }
 
     public function hours(){

@@ -142,6 +142,48 @@ class CarriersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getCarrierReport(): JsonResponse
+    {
+        $sql = /** @lang text */
+        "SELECT
+            ca.id,
+            CONCAT(ca.code, CASE WHEN ca.code_number = 0 THEN '' ELSE ca.code_number END) AS code,
+            ca.name,
+            e.name AS equipment_name,
+            ca.address1,
+            ca.address2,
+            ca.city,
+            ca.state,
+            ca.zip,
+            TRIM(CONCAT(p1.first_name, ' ', p1.last_name)) AS contact_name,
+            (CASE
+                WHEN (p1.primary_phone = 'work') THEN p1.phone_work
+                WHEN (p1.primary_phone = 'fax') THEN p1.phone_work_fax
+                WHEN (p1.primary_phone = 'mobile') THEN p1.phone_mobile
+                WHEN (p1.primary_phone = 'direct') THEN p1.phone_direct
+                WHEN (p1.primary_phone = 'other') THEN p1.phone_other
+            END) AS phone,
+            (CASE
+                WHEN (p1.primary_email = 'work') THEN p1.email_work
+                WHEN (p1.primary_email = 'personal') THEN p1.email_personal
+                WHEN (p1.primary_email = 'other') THEN p1.email_other
+            END) AS email,
+            e.id as equipment_id
+        FROM carriers as ca
+        LEFT JOIN contacts AS p1 ON ca.id = p1.carrier_id AND p1.is_primary = 1
+        LEFT JOIN carrier_equipments as ce ON ca.id = ce.carrier_id
+        LEFT JOIN equipments as e ON ce.equipment_id = e.id
+        ORDER BY ca.name";
+
+        $carriers = DB::select($sql);
+
+        return response()->json(['result' => 'OK', 'carriers' => $carriers]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function carrierSearch(Request $request): JsonResponse
     {
         $CARRIER = new Carrier();
@@ -255,6 +297,16 @@ class CarriersController extends Controller
         $fid = $request->fid ?? '';
         $do_not_use = $request->do_not_use ?? 0;
         $rating = $request->rating ?? 0;
+        $ach_banking_info = $request->ach_banking_info ?? '';
+        $ach_account_info = $request->ach_account_info ?? '';
+        $ach_aba_routing = $request->ach_aba_routing ?? '';
+        $ach_remittence_email = $request->ach_remittence_email ?? '';
+        $ach_type = $request->ach_type ?? 'checking';
+        $wiring_banking_info = $request->wiring_banking_info ?? '';
+        $wiring_account_info = $request->wiring_account_info ?? '';
+        $wiring_aba_routing = $request->wiring_aba_routing ?? '';
+        $wiring_remittence_email = $request->wiring_remittence_email ?? '';
+        $wiring_type = $request->wiring_type ?? 'checking';
 
         $mailing_address_id = $request->mailing_address_id ?? null;
         $remit_to_address_is_the_same = $request->remit_to_address_is_the_same ?? 0;
@@ -332,7 +384,17 @@ class CarriersController extends Controller
                 'mailing_carrier_id' => $mailing_carrier_id,
                 'mailing_carrier_contact_id' => $mailing_carrier_contact_id,
                 'mailing_carrier_contact_primary_phone' => $mailing_carrier_contact_primary_phone,
-                'mailing_carrier_contact_primary_email' => $mailing_carrier_contact_primary_email
+                'mailing_carrier_contact_primary_email' => $mailing_carrier_contact_primary_email,
+                'ach_banking_info' => $ach_banking_info,
+                'ach_account_info' => $ach_account_info,
+                'ach_aba_routing' => $ach_aba_routing,
+                'ach_remittence_email' => $ach_remittence_email,
+                'ach_type' => $ach_type,
+                'wiring_banking_info' => $wiring_banking_info,
+                'wiring_account_info' => $wiring_account_info,
+                'wiring_aba_routing' => $wiring_aba_routing,
+                'wiring_remittence_email' => $wiring_remittence_email,
+                'wiring_type' => $wiring_type
             ]
         );
 
