@@ -66,6 +66,7 @@ use App\Http\Controllers\OperatorDocumentsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\AgentDriversController;
+use App\Http\Controllers\OrderLtlUnitsController;
 use App\Http\Controllers\WidgetsController;
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
@@ -298,6 +299,19 @@ Route::post('/saveInvoiceCarrierCheckNumber', [OrdersController::class, 'saveInv
 Route::post('/getOrderCarrierByCode', [OrdersController::class, 'getOrderCarrierByCode']);
 Route::post('/getRoutingBol', [OrdersController::class, 'getRoutingBol']);
 
+Route::post('/getLtlUnitById', [OrderLtlUnitsController::class, 'getLtlUnitById']);
+Route::post('/getLtlUnitsByOrderId', [OrderLtlUnitsController::class, 'getLtlUnitsByOrderId']);
+Route::post('/saveLtlUnit', [OrderLtlUnitsController::class, 'saveLtlUnit']);
+Route::post('/deleteLtlUnit', [OrderLtlUnitsController::class, 'deleteLtlUnit']);
+Route::post('/getHandlingUnits', [OrderLtlUnitsController::class, 'getHandlingUnits']);
+Route::post('/getUnitClasses', [OrderLtlUnitsController::class, 'getUnitClasses']);
+Route::post('/getHazmatPackagings', [OrderLtlUnitsController::class, 'getHazmatPackagings']);
+Route::post('/getHazmatClasses', [OrderLtlUnitsController::class, 'getHazmatClasses']);
+Route::post('/getAccessorials', [OrderLtlUnitsController::class, 'getAccessorials']);
+Route::post('/getLtlUnitsAccessorialsByOrderId', [OrderLtlUnitsController::class, 'getLtlUnitsAccessorialsByOrderId']);
+Route::post('/saveOrderAccessorials', [OrderLtlUnitsController::class, 'saveOrderAccessorials']);
+Route::post('/deleteOrderAccessorial', [OrderLtlUnitsController::class, 'deleteOrderAccessorial']);
+Route::post('/getEmergencyContacts', [OrderLtlUnitsController::class, 'getEmergencyContacts']);
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
 Route::post('/getDivisionsDropdown', [DivisionsController::class, 'getDivisionsDropdown']);

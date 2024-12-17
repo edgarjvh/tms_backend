@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 class Carrier extends Model
 {
     protected $guarded = [];
-    protected $appends = ['insurance_status'];
+    protected $appends = ['insurance_status', 'insurance_remaining_days'];
 
     public function getInsuranceStatusAttribute()
     {
@@ -42,6 +42,28 @@ class Carrier extends Model
         }
 
         return $status;
+    }
+
+    public function getInsuranceRemainingDaysAttribute()
+    {        
+        $currentDate = DateTime::createFromFormat('m/d/Y', date('m/d/Y'));
+        $nextExpiringInsurance = null;
+
+        foreach ($this->insurances as $insurance) {
+            $expirationDate = DateTime::createFromFormat('m/d/Y', $insurance->expiration_date);
+            if ($expirationDate > $currentDate && 
+                ($nextExpiringInsurance === null || $expirationDate < DateTime::createFromFormat('m/d/Y', $nextExpiringInsurance->expiration_date))) {
+                $nextExpiringInsurance = $insurance;
+            }
+        }
+
+        if ($nextExpiringInsurance) {
+            $expirationDate = DateTime::createFromFormat('m/d/Y', $nextExpiringInsurance->expiration_date);
+            $interval = $currentDate->diff($expirationDate);
+            return $interval->days;
+        }
+
+        return null;
     }
 
     public function mailing_same()

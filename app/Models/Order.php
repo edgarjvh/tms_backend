@@ -175,6 +175,16 @@ class Order extends Model
         return $this->belongsTo(Term::class);
     }
 
+    public function order_ltl_units()
+    {
+        return $this->hasMany(OrderLtlUnit::class);
+    }
+
+    public function accessorials()
+    {
+        return $this->belongsToMany(Accessorial::class);
+    }
+
     public function user_code()
     {
         $agent_contact_id = $this->agent_contact_id ?? 0;

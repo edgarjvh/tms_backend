@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class HazmatClass extends Model
+class HandlingUnit extends Model
 {
-    protected $table = 'hazmat_classes';
+    protected $table = 'handling_units';
     protected $guarded = [];
 
     public function order_ltl_unit()
     {
-        return $this->belongsTo(OrderLtlUnit::class, 'hazmat_class_id', 'id');
+        return $this->belongsTo(OrderLtlUnit::class, 'handling_unit_id', 'id');
     }
 }

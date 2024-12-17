@@ -23,6 +23,7 @@ use App\Models\Order;
 use App\Models\OrderCarrierRating;
 use App\Models\OrderCustomerRating;
 use App\Models\OrderEvent;
+use App\Models\OrderLtlUnit;
 use App\Models\Pickup;
 use App\Models\TemplateInternalNote;
 use App\Models\TemplateNoteForCarrier;
@@ -155,7 +156,8 @@ class OrdersController extends Controller
                 'deliveries',
                 'routing',
                 'equipment',
-                'driver'
+                'driver',
+                'accessorials'
             ])->first();
 
         return response()->json(['result' => 'OK', 'order' => $order]);
@@ -1457,7 +1459,7 @@ class OrdersController extends Controller
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
 
-     /**
+    /**
      * @param Request $request
      * @return JsonResponse
      */
@@ -1731,7 +1733,9 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'user_code'
+                'order_ltl_units',
+                'user_code',
+                'accessorials'
             ]);
         }
 
@@ -1799,7 +1803,9 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'user_code'
+                'order_ltl_units',
+                'user_code',
+                'accessorials'
             ]);
 
         $order = $ORDER->first();
@@ -1848,7 +1854,9 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
-                'user_code'
+                'order_ltl_units',
+                'user_code',
+                'accessorials'
             ]);
 
         $order = $ORDER->first();
@@ -2062,6 +2070,7 @@ class OrdersController extends Controller
                     'billing_documents',
                     'billing_notes',
                     'term',
+                    'order_ltl_units',
                     'user_code'
                 ])->first();
 
@@ -2697,6 +2706,7 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
+                'order_ltl_units',
                 'user_code'
             ])->first();
 
@@ -2842,6 +2852,7 @@ class OrdersController extends Controller
                     'billing_documents',
                     'billing_notes',
                     'term',
+                    'order_ltl_units',
                     'user_code'
                 ])->first();
 
@@ -3338,6 +3349,7 @@ class OrdersController extends Controller
                     'billing_documents',
                     'billing_notes',
                     'term',
+                    'order_ltl_units',
                     'user_code'
                 ])->first();
 
@@ -3383,6 +3395,7 @@ class OrdersController extends Controller
             'billing_documents',
             'billing_notes',
             'term',
+            'order_ltl_units',
             'user_code'
         ])->first();
 
@@ -3422,6 +3435,7 @@ class OrdersController extends Controller
             'billing_documents',
             'billing_notes',
             'term',
+            'order_ltl_units',
             'user_code'
         ])->first();
 
@@ -3477,6 +3491,7 @@ class OrdersController extends Controller
                 'billing_documents',
                 'billing_notes',
                 'term',
+                'order_ltl_units',
                 'user_code'
             ])->first();
 
@@ -4140,7 +4155,7 @@ class OrdersController extends Controller
         ]);
 
         return response()->json(['result' => 'OK']);
-    }
+    }    
 }
 
 
