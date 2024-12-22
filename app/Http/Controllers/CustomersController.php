@@ -12,6 +12,7 @@ use App\Models\Note;
 use App\Models\Order;
 use App\Models\PlainCustomer;
 use Exception;
+use Throwable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

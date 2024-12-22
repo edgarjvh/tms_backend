@@ -66,6 +66,7 @@ use App\Http\Controllers\OperatorDocumentsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\AgentDriversController;
+use App\Http\Controllers\HazmatsController;
 use App\Http\Controllers\OrderLtlUnitsController;
 use App\Http\Controllers\WidgetsController;
 
@@ -312,6 +313,8 @@ Route::post('/getLtlUnitsAccessorialsByOrderId', [OrderLtlUnitsController::class
 Route::post('/saveOrderAccessorials', [OrderLtlUnitsController::class, 'saveOrderAccessorials']);
 Route::post('/deleteOrderAccessorial', [OrderLtlUnitsController::class, 'deleteOrderAccessorial']);
 Route::post('/getEmergencyContacts', [OrderLtlUnitsController::class, 'getEmergencyContacts']);
+
+Route::post('/getHazmats', [HazmatsController::class, 'getHazmats']);
 
 Route::post('/getDivisions', [DivisionsController::class, 'getDivisions']);
 Route::post('/getDivisionsDropdown', [DivisionsController::class, 'getDivisionsDropdown']);

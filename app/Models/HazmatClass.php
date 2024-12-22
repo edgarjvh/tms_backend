@@ -13,4 +13,9 @@ class HazmatClass extends Model
     {
         return $this->belongsTo(OrderLtlUnit::class, 'hazmat_class_id', 'id');
     }
+
+    public function hazmat()
+    {
+        return $this->belongsTo(Hazmat::class, 'hazmat_class_id', 'id');
+    }
 }
