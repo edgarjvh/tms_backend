@@ -68,10 +68,12 @@ class InsurancesController extends Controller
     public function deleteInsurance(Request $request)
     {
         $id = $request->id;
+        $carrier_id = $request->carrier_id;
 
         $insurance = Insurance::where('id', $id)->delete();
+        $insurances = Insurance::where('carrier_id', $carrier_id)->with('insurance_type')->get();
 
-        return response()->json(['result' => 'OK', 'insurance' => $insurance]);
+        return response()->json(['result' => 'OK', 'insurances' => $insurances]);
     }
 
     public function getInsuranceCompanies(Request $request)

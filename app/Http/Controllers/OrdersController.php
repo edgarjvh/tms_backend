@@ -172,6 +172,7 @@ class OrdersController extends Controller
         $user_code = $request->user_code ?? '';
         $order_id = $request->order_id;
 
+        $params_available = [];
         $sql_available =
             /** @lang text */
             "SELECT
@@ -187,10 +188,22 @@ class OrdersController extends Controller
                 (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state,
                 (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
                 (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
-            FROM orders AS o
-            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NULL
-            ORDER BY o.order_number ASC;";
+            FROM orders AS o ";
 
+        if ($user_code !== ''){
+            $sql_available =
+                /** @lang text */
+                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NULL
+                ORDER BY o.order_number ASC;";
+            $params_available[] = $user_code;
+        }else{
+            $sql_available =
+            /** @lang text */
+            "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NULL
+            ORDER BY o.order_number ASC;";
+        }
+
+        $params_booked = [];
         $sql_booked =
             /** @lang text */
             "SELECT
@@ -209,11 +222,24 @@ class OrdersController extends Controller
                 (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
                 (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
             FROM orders AS o
-            INNER JOIN carriers AS c ON o.carrier_id = c.id
-            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
-            AND NOT EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
-            ORDER BY o.order_number ASC;";
+            INNER JOIN carriers AS c ON o.carrier_id = c.id ";
 
+        if ($user_code !== ''){
+            $sql_booked =
+                /** @lang text */
+                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                AND NOT EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+                ORDER BY o.order_number ASC;";
+            $params_booked[] = $user_code;
+        }else{
+            $sql_booked =
+                /** @lang text */
+                "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                AND NOT EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+                ORDER BY o.order_number ASC;";
+        }
+
+        $params_in_transit = [];
         $sql_in_transit =
             /** @lang text */
             "SELECT
@@ -232,12 +258,26 @@ class OrdersController extends Controller
                 (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
                 (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
             FROM orders AS o
-            INNER JOIN carriers AS c ON o.carrier_id = c.id
-            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
-            AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
-            AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) > (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
-            ORDER BY o.order_number ASC;";
+            INNER JOIN carriers AS c ON o.carrier_id = c.id ";
 
+        if ($user_code !== ''){
+            $sql_in_transit =
+                /** @lang text */
+                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+                AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) > (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
+                ORDER BY o.order_number ASC;";
+            $params_in_transit[] = $user_code;
+        }else{
+            $sql_in_transit =
+                /** @lang text */
+                "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+                AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) > (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
+                ORDER BY o.order_number ASC;";
+        }
+
+        $params_not_invoiced = [];
         $sql_not_invoiced =
             /** @lang text */
             "SELECT
@@ -256,16 +296,29 @@ class OrdersController extends Controller
                 (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
                 (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating
             FROM orders AS o
-            INNER JOIN carriers AS c ON o.carrier_id = c.id
-            WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
-            AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
-            AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) = (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
-            ORDER BY o.order_number ASC;";
+            INNER JOIN carriers AS c ON o.carrier_id = c.id ";
 
-        $available_orders = DB::select($sql_available);
-        $booked_orders = DB::select($sql_booked);
-        $in_transit_orders = DB::select($sql_in_transit);
-        $not_invoiced_orders = DB::select($sql_not_invoiced);
+        if ($user_code !== ''){
+            $sql_not_invoiced =
+                /** @lang text */
+                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+                AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) = (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
+                ORDER BY o.order_number ASC;";
+            $params_not_invoiced[] = $user_code;
+        }else{
+            $sql_not_invoiced =
+                /** @lang text */
+                "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
+                AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) = (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
+                ORDER BY o.order_number ASC;";
+        }
+
+        $available_orders = DB::select($sql_available, $params_available);
+        $booked_orders = DB::select($sql_booked, $params_booked);
+        $in_transit_orders = DB::select($sql_in_transit, $params_in_transit);
+        $not_invoiced_orders = DB::select($sql_not_invoiced, $params_not_invoiced);
 
         $selected_order = null;
 
@@ -2723,14 +2776,15 @@ class OrdersController extends Controller
     public function saveOrderEvent(Request $request): JsonResponse
     {
         $ORDER_EVENT = new OrderEvent();
+        $id = $request->id ?? 0;
         $order_id = $request->order_id ?? 0;
         $event_type_id = $request->event_type_id ?? null;
-        $shipper_id = isset($request->shipper_id) ? $request->shipper_id > 0 ? $request->shipper_id : null : null;
-        $consignee_id = isset($request->consignee_id) ? $request->consignee_id > 0 ? $request->consignee_id : null : null;
-        $arrived_customer_id = isset($request->arrived_customer_id) ? $request->arrived_customer_id > 0 ? $request->arrived_customer_id : null : null;
-        $departed_customer_id = isset($request->departed_customer_id) ? $request->departed_customer_id > 0 ? $request->departed_customer_id : null : null;
-        $old_carrier_id = isset($request->old_carrier_id) ? $request->old_carrier_id > 0 ? $request->old_carrier_id : null : null;
-        $new_carrier_id = isset($request->new_carrier_id) ? $request->new_carrier_id > 0 ? $request->new_carrier_id : null : null;
+        $shipper_id = $request->shipper_id ?? null;
+        $consignee_id = $request->consignee_id ?? null;
+        $arrived_customer_id = $request->arrived_customer_id ?? null;
+        $departed_customer_id = $request->departed_customer_id ?? null;
+        $old_carrier_id = $request->old_carrier_id ?? null;
+        $new_carrier_id = $request->new_carrier_id ?? null;
         $time = $request->time ?? '';
         $event_time = $request->event_time ?? '';
         $date = $request->date ?? '';
@@ -2744,14 +2798,7 @@ class OrdersController extends Controller
         }
 
         $order_event = $ORDER_EVENT->updateOrCreate([
-            'order_id' => $order_id,
-            'event_type_id' => $event_type_id,
-            'shipper_id' => $shipper_id,
-            'consignee_id' => $consignee_id,
-            'arrived_customer_id' => $arrived_customer_id,
-            'departed_customer_id' => $departed_customer_id,
-            'old_carrier_id' => $old_carrier_id,
-            'new_carrier_id' => $new_carrier_id,
+            'id' => $id
         ], [
             'order_id' => $order_id,
             'event_type_id' => $event_type_id,
@@ -4155,7 +4202,39 @@ class OrdersController extends Controller
         ]);
 
         return response()->json(['result' => 'OK']);
-    }    
+    }
+
+    public function saveInvoiceAgentDatePaid(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $agent_date_paid = $request->agent_date_paid ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ], [
+            'agent_date_paid' => $agent_date_paid
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    public function saveInvoiceAgentCheckNumber(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $agent_check_number = $request->agent_check_number ?? null;
+
+        $ORDER = new Order();
+
+        $order = $ORDER->updateOrCreate([
+            'id' => $id
+        ], [
+            'agent_check_number' => $agent_check_number
+        ]);
+
+        return response()->json(['result' => 'OK']);
+    }
 }
 
 

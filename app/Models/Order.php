@@ -39,7 +39,7 @@ class Order extends Model
     public function bill_to_company()
     {
         return $this->belongsTo(Customer::class, 'bill_to_customer_id', 'id')
-            ->with(['term', 'automatic_emails', 'mailing_address']);
+            ->with(['term', 'automatic_emails', 'mailing_address', 'agent']);
     }
 
     public function bill_to_customer()

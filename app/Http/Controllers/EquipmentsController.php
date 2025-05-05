@@ -18,10 +18,15 @@ class EquipmentsController extends Controller
         $EQUIPMENT = new Equipment();
 
         $name = $request->name ?? '';
+        $withAll = $request->withAll ?? 0;
 
         $equipments = $EQUIPMENT->whereRaw("1 = 1")
             ->whereRaw("LOWER(name) like '$name%'")
             ->orderBy('name')->get();
+
+        if ($withAll === 1) {
+            $equipments->prepend(['id' => -1, 'name' => 'All']);
+        }
 
         return response()->json(['result' => 'OK', 'equipments' => $equipments]);
     }

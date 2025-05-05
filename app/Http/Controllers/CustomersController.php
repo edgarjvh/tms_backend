@@ -101,16 +101,13 @@ class CustomersController extends Controller
             ->whereRaw("contact_phone like '%$contact_phone%'")
             ->whereRaw("LOWER(email) like '%$email%'");
 
-        if ($user_code !== '') {
-            $CUSTOMER->where('agent_code', $user_code);
-        }
-
-        $CUSTOMER->orderBy('code');
-        $CUSTOMER->orderBy('code_number');
-
         $customers = [];
 
-        if ($with_relations === 1) {
+        if ($user_code !== '') { // if user_code is not empty, filter by agent_code
+            $CUSTOMER->where('agent_code', $user_code);
+            $CUSTOMER->orderBy('code');
+            $CUSTOMER->orderBy('code_number');
+
             $CUSTOMER->with([
                 'documents',
                 'directions',
@@ -127,8 +124,31 @@ class CustomersController extends Controller
             ]);
 
             $customers = $CUSTOMER->get();
-        } else {
-            $customers = DB::table('customers')->select()->get();
+        } else { // if user_code is empty, filter by employee_code
+            $CUSTOMER->orderBy('code');
+            $CUSTOMER->orderBy('code_number');
+
+
+            if ($with_relations === 1) {
+                $CUSTOMER->with([
+                    'documents',
+                    'directions',
+                    'hours',
+                    'automatic_emails',
+                    'notes',
+                    'zip_data',
+                    'mailing_same',
+                    'mailing_address',
+                    'mailing_customer',
+                    'term',
+                    'division',
+                    'salesman'
+                ]);
+
+                $customers = $CUSTOMER->get();
+            } else {
+                $customers = DB::table('customers')->select()->get();
+            }
         }
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
@@ -140,8 +160,9 @@ class CustomersController extends Controller
      */
     public function getCustomerReport(): JsonResponse
     {
-        $sql = /** @lang text */
-        "SELECT
+        $sql =
+            /** @lang text */
+            "SELECT
             cu.id,
             CONCAT(cu.code, CASE WHEN cu.code_number = 0 THEN '' ELSE cu.code_number END) AS code,
             cu.name,
@@ -185,6 +206,206 @@ class CustomersController extends Controller
         $customers = DB::select($sql);
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCustomerOpenInvoicesReport(): JsonResponse
+    {
+        $customer_code = trim($request->customer_code ?? '');
+        $date_start = trim($request->date_start ?? '');
+        $date_end = trim($request->date_end ?? '');
+        $city_origin = trim(strtolower($request->city_origin ?? ''));
+        $city_destination = trim(strtolower($request->city_destination ?? ''));
+        $state_origin = trim(strtolower($request->state_origin ?? ''));
+        $state_destination = trim(strtolower($request->state_destination ?? ''));
+        $zip_origin = trim(strtolower($request->zip_origin ?? ''));
+        $zip_destination = trim(strtolower($request->zip_destination ?? ''));
+
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.bill_to_customer_id,
+                    c.code,
+                    c.code_number,
+                    c.name,
+                    o.order_date_time,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating,
+                    o.is_cancelled,
+                    o.order_invoiced
+                FROM orders AS o
+                INNER JOIN customers AS c ON o.bill_to_customer_id = c.id
+                WHERE o.is_template = 0
+                    AND o.is_imported = 0
+                    AND o.bill_to_customer_id IS NOT NULL
+                    AND o.order_invoiced = 1
+                    AND (o.customer_date_received IS NULL OR o.customer_date_received = '') ";
+
+        /**
+         * CHECKING THE CARRIER CODE
+         */
+        if ($customer_code !== '') {
+
+            $sql .=
+                /** @lang text */
+                "AND LOWER(CONCAT(c.code, c.code_number)) LIKE '" . strtolower($customer_code) . "%' ";
+        }
+
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
+        if ($date_start !== '' && $date_end !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
+        } else {
+            if ($date_start !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
+            }
+        }
+
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
+        if ($city_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
+        }
+
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
+        if ($city_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
+        }
+
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
+        if ($state_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
+        }
+
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
+        if ($state_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
+        }
+
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
+        if ($zip_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
+        }
+
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
+        if ($zip_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
+        }
+
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            ") AS result ORDER BY result.code ASC, result.code_number ASC, result.order_number ASC;";
+
+        $orders = DB::select($sql, $params);
+
+        return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
 
     /**
@@ -264,8 +485,9 @@ class CustomersController extends Controller
         /**
          * SETTING UP THE THE QUERY STRING
          */
-        $sql = /** @lang text */
-            "SELECT 
+        $sql =
+            /** @lang text */
+            "SELECT
                 o.id,
                 o.order_number,
                 (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
@@ -277,10 +499,12 @@ class CustomersController extends Controller
                 (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
                 (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state
             FROM orders AS o
-            WHERE o.is_imported = 0
-                AND o.bill_to_customer_id = ?
+            WHERE o.is_cancelled = 0
+                AND o.is_template = 0
+                AND o.is_imported = 0
+                AND (o.bill_to_customer_id = ?
                 OR (EXISTS (SELECT * FROM order_routing AS r WHERE o.id = r.order_id AND (EXISTS (SELECT * FROM order_pickups AS p WHERE r.pickup_id = p.id AND p.customer_id = ?) OR EXISTS (SELECT * FROM order_deliveries AS d WHERE r.delivery_id = d.id AND d.customer_id = ?)) ORDER BY r.id ASC limit 1))
-                OR (EXISTS (SELECT * FROM order_routing AS r WHERE o.id = r.order_id AND (EXISTS (SELECT * FROM order_pickups AS p WHERE r.pickup_id = p.id AND p.customer_id = ?) OR EXISTS (SELECT * FROM order_deliveries AS d WHERE r.delivery_id = d.id AND d.customer_id = ?)) ORDER BY r.id DESC limit 1))
+                OR (EXISTS (SELECT * FROM order_routing AS r WHERE o.id = r.order_id AND (EXISTS (SELECT * FROM order_pickups AS p WHERE r.pickup_id = p.id AND p.customer_id = ?) OR EXISTS (SELECT * FROM order_deliveries AS d WHERE r.delivery_id = d.id AND d.customer_id = ?)) ORDER BY r.id DESC limit 1)))
             ORDER BY o.order_number DESC";
 
         $params = [$id, $id, $id, $id, $id];
@@ -370,9 +594,10 @@ class CustomersController extends Controller
             $with_contact = false;
         }
 
-        $customer = $CUSTOMER->updateOrCreate([
-            'id' => $id
-        ],
+        $customer = $CUSTOMER->updateOrCreate(
+            [
+                'id' => $id
+            ],
             [
                 'code' => strtoupper($code),
                 'code_number' => $code_number,
@@ -399,7 +624,8 @@ class CustomersController extends Controller
                 'mailing_customer_contact_id' => $mailing_customer_contact_id,
                 'mailing_customer_contact_primary_phone' => $mailing_customer_contact_primary_phone,
                 'mailing_customer_contact_primary_email' => $mailing_customer_contact_primary_email
-            ]);
+            ]
+        );
 
         if ($user_code !== '') {
             $CUSTOMER_MAILING_ADDRESS = new CustomerMailingAddress();
@@ -525,9 +751,10 @@ class CustomersController extends Controller
             $with_contact = false;
         }
 
-        $customer = $CUSTOMER->updateOrCreate([
-            'id' => $id
-        ],
+        $customer = $CUSTOMER->updateOrCreate(
+            [
+                'id' => $id
+            ],
             [
                 'code' => strtoupper($code),
                 'code_number' => $code_number,
@@ -541,16 +768,19 @@ class CustomersController extends Controller
                 'contact_phone' => $contact_phone,
                 'ext' => $contact_phone_ext,
                 'email' => strtolower($email)
-            ]);
+            ]
+        );
 
         if (!empty($bill_to_code)) {
-            CustomerMailingAddress::updateOrCreate([
-                'customer_id' => $customer->id
-            ],
+            CustomerMailingAddress::updateOrCreate(
+                [
+                    'customer_id' => $customer->id
+                ],
                 [
                     'bill_to_code' => $bill_to_code,
                     'bill_to_code_number' => $bill_to_code_number
-                ]);
+                ]
+            );
         }
 
         if ($with_contact) {
@@ -610,13 +840,15 @@ class CustomersController extends Controller
         $CUSTOMER_HOUR = new CustomerHour();
 
         if ($hours_open !== '' || $hours_close !== '') {
-            $customer_hours = $CUSTOMER_HOUR->updateorCreate([
-                'customer_id' => $customer->id
-            ],
+            $customer_hours = $CUSTOMER_HOUR->updateorCreate(
+                [
+                    'customer_id' => $customer->id
+                ],
                 [
                     'hours_open' => $hours_open,
                     'hours_close' => $hours_close
-                ]);
+                ]
+            );
         }
 
         $newCustomer = $CUSTOMER->where('id', $customer->id)->first();
@@ -680,9 +912,10 @@ class CustomersController extends Controller
                 }
 
                 try {
-                    $saved_customer = Customer::updateOrCreate([
-                        'id' => 0
-                    ],
+                    $saved_customer = Customer::updateOrCreate(
+                        [
+                            'id' => 0
+                        ],
                         [
                             'code' => strtoupper($code),
                             'code_number' => $code_number,
@@ -696,26 +929,28 @@ class CustomersController extends Controller
                             'contact_phone' => $contact_phone,
                             'ext' => $ext,
                             'email' => strtolower($email)
-                        ]);
+                        ]
+                    );
 
                     $customer_id = $saved_customer->id;
-                } catch (Throwable|Exception $e) {
+                } catch (Throwable | Exception $e) {
                     $customer_id = 0;
                 }
 
                 if ($customer_id > 0) {
                     try {
                         if (!empty($bill_to_code)) {
-                            CustomerMailingAddress::updateOrCreate([
-                                'customer_id' => $customer_id
-                            ],
+                            CustomerMailingAddress::updateOrCreate(
+                                [
+                                    'customer_id' => $customer_id
+                                ],
                                 [
                                     'bill_to_code' => $bill_to_code,
                                     'bill_to_code_number' => $bill_to_code_number
-                                ]);
+                                ]
+                            );
                         }
-                    } catch (Throwable|Exception $e) {
-
+                    } catch (Throwable | Exception $e) {
                     }
 
                     try {
@@ -739,25 +974,24 @@ class CustomersController extends Controller
                         Customer::where('id', $customer_id)->update([
                             'primary_contact_id' => $saved_contact->id
                         ]);
-                    } catch (Throwable|Exception $e) {
-
+                    } catch (Throwable | Exception $e) {
                     }
 
                     try {
                         if ($hours_open !== '' || $hours_close !== '') {
-                            CustomerHour::updateorCreate([
-                                'customer_id' => $customer_id
-                            ],
+                            CustomerHour::updateorCreate(
+                                [
+                                    'customer_id' => $customer_id
+                                ],
                                 [
                                     'hours_open' => $hours_open,
                                     'hours_close' => $hours_close
-                                ]);
+                                ]
+                            );
                         }
-                    } catch (Throwable|Exception $e) {
-
+                    } catch (Throwable | Exception $e) {
                     }
                 }
-
             }
 
             return response()->json(['result' => 'OK']);

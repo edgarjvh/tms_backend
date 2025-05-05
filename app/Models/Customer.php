@@ -208,4 +208,9 @@ class Customer extends Model
             })
             ->withPivot(['id', 'is_primary']);
     }
+
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class, 'agent_code', 'code');
+    }
 }

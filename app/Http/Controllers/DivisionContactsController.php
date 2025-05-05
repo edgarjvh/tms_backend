@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Division;
 use App\Models\DivisionContact;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class DivisionContactsController extends Controller
 {
@@ -189,20 +192,39 @@ class DivisionContactsController extends Controller
     }
 
     /**
+     * @param $division_id
+     * @return array
+     */
+    public function getDivisionContacts1($division_id): array
+    {
+        $sql =
+            /** @lang text */
+            "SELECT
+                c.*,
+                d.name AS owner_name
+            FROM contacts AS c
+            LEFT JOIN divisions AS d ON c.division_id = d.id
+            WHERE division_id = ?
+            ORDER BY first_name";
+
+        $params = [$division_id];
+
+        $contacts = DB::select($sql, $params);
+
+        return $contacts;
+    }
+
+    /**
      * @param Request $request
      * @return JsonResponse
      */
     public function getContactsByDivisionId(Request $request): JsonResponse
     {
-        $DIVISION_CONTACT = new DivisionContact();
+        $division_id = $request->owner_id ?? null;
 
-        $division_id = $request->division_id;
-        $contacts = $DIVISION_CONTACT->where('division_id', $division_id)
-            ->with('division')
-            ->has('division')
-            ->orderBy('first_name')
-            ->get();
-        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'contact' => null]);
+        $contacts = $this->getDivisionContacts1($division_id);
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 
     /**
@@ -211,50 +233,47 @@ class DivisionContactsController extends Controller
      */
     public function saveDivisionContact(Request $request): JsonResponse
     {
+        $id = $request->id ?? null;
+        $division_id = $request->owner_id ?? null;
+        $prefix = $request->prefix ?? '';
+        $first_name = ucwords($request->first_name ?? '');
+        $middle_name = ucwords($request->middle_name ?? '');
+        $last_name = ucwords($request->last_name ?? '');
+        $suffix = $request->suffix ?? '';
+        $title = ucwords($request->title ?? '');
+        $company = ucwords($request->company ?? '');
+        $department = ucwords($request->department ?? '');
+        $email_work = strtolower($request->email_work ?? '');
+        $email_personal = strtolower($request->email_personal ?? '');
+        $email_other = strtolower($request->email_other ?? '');
+        $primary_email = $request->primary_email ?? 'work';
+        $phone_work = $request->phone_work ?? '';
+        $phone_work_fax = $request->phone_work_fax ?? '';
+        $phone_mobile = $request->phone_mobile ?? '';
+        $phone_direct = $request->phone_direct ?? '';
+        $phone_other = $request->phone_other ?? '';
+        $primary_phone = $request->primary_phone ?? 'work';
+        $phone_ext = $request->phone_ext ?? '';
+        $country = ucwords($request->country ?? '');
+        $address1 = ucwords($request->address1 ?? '');
+        $address2 = ucwords($request->address2 ?? '');
+        $city = ucwords($request->city ?? '');
+        $state = strtoupper($request->state ?? '');
+        $zip_code = $request->zip_code ?? '';
+        $birthday = $request->birthday ?? '';
+        $website = strtolower($request->website ?? '');
+        $notes = $request->notes ?? '';
+        $is_primary = $request->is_primary ?? 0;
+        $is_online = $request->is_online ?? 0;
+        $is_primary = (int)$is_primary;
+
         $DIVISION_CONTACT = new DivisionContact();
         $DIVISION = new Division();
 
-        $id = $request->id ?? 0;
-        $division_id = $request->division_id ?? 0;
-
-        $curContact = $DIVISION_CONTACT->where('id', $id)->first();
-        $division = $DIVISION->where('id', $division_id)->first();
-
-        $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
-        $first_name = $request->first_name ?? ($curContact ? $curContact->first_name : '');
-        $middle_name = $request->middle_name ?? ($curContact ? $curContact->middle_name : '');
-        $last_name = $request->last_name ?? ($curContact ? $curContact->last_name : '');
-        $suffix = $request->suffix ?? ($curContact ? $curContact->suffix : '');
-        $title = $request->title ?? ($curContact ? $curContact->title : '');
-        $department = $request->department ?? ($curContact ? $curContact->department : '');
-        $email_work = $request->email_work ?? ($curContact ? $curContact->email_work : '');
-        $email_personal = $request->email_personal ?? ($curContact ? $curContact->email_personal : '');
-        $email_other = $request->email_other ?? ($curContact ? $curContact->email_other : '');
-        $primary_email = $request->primary_email ?? ($curContact ? $curContact->primary_email : 'work');
-        $phone_work = $request->phone_work ?? ($curContact ? $curContact->phone_work : '');
-        $phone_work_fax = $request->phone_work_fax ?? ($curContact ? $curContact->phone_work_fax : '');
-        $phone_mobile = $request->phone_mobile ?? ($curContact ? $curContact->phone_mobile : '');
-        $phone_direct = $request->phone_direct ?? ($curContact ? $curContact->phone_direct : '');
-        $phone_other = $request->phone_other ?? ($curContact ? $curContact->phone_other : '');
-        $primary_phone = $request->primary_phone ?? ($curContact ? $curContact->primary_phone : 'work');
-        $phone_ext = $request->phone_ext ?? ($curContact ? $curContact->phone_ext : '');
-        $country = $request->country ?? ($curContact ? $curContact->country : '');
-        $address1 = $request->address1 ?? ($curContact ? $curContact->address1 : $division->address1);
-        $address2 = $request->address2 ?? ($curContact ? $curContact->address2 : $division->address2);
-        $city = $request->city ?? ($curContact ? $curContact->city : $division->city);
-        $state = $request->state ?? ($curContact ? $curContact->state : $division->state);
-        $zip_code = $request->zip_code ?? ($curContact ? $curContact->zip_code : $division->zip);
-        $birthday = $request->birthday ?? ($curContact ? $curContact->birthday : '');
-        $website = $request->website ?? ($curContact ? $curContact->website : '');
-        $notes = $request->notes ?? ($curContact ? $curContact->notes : '');
-        $is_primary = $request->is_primary ?? ($curContact ? $curContact->is_primary : 0);
-        $is_online = $request->is_online ?? ($curContact ? $curContact->is_online : 0);
-
-        $is_primary = (int)$is_primary;
-
-        $contact = $DIVISION_CONTACT->updateOrCreate([
-            'id' => $id
-        ],
+        $contact = $DIVISION_CONTACT->updateOrCreate(
+            [
+                'id' => $id
+            ],
             [
                 'division_id' => $division_id,
                 'prefix' => $prefix,
@@ -263,6 +282,7 @@ class DivisionContactsController extends Controller
                 'last_name' => ucwords(trim($last_name)),
                 'suffix' => $suffix,
                 'title' => $title,
+                'company' => $company,
                 'department' => $department,
                 'email_work' => strtolower($email_work),
                 'email_personal' => strtolower($email_personal),
@@ -286,7 +306,8 @@ class DivisionContactsController extends Controller
                 'notes' => $notes,
                 'is_primary' => $is_primary,
                 'is_online' => $is_online
-            ]);
+            ]
+        );
 
         if ($is_primary === 1) {
             $DIVISION->where('id', $division_id)->update([
@@ -298,18 +319,11 @@ class DivisionContactsController extends Controller
             ]);
         }
 
-        $newContact = $DIVISION_CONTACT->where('id', $contact->id)
-            ->with('division')
-            ->has('division')
-            ->first();
+        $newContact = $DIVISION_CONTACT->where('id', $contact->id)->first();
 
-        $contacts = $DIVISION_CONTACT->where('division_id', $division_id)
-            ->with('division')
-            ->has('division')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getDivisionContacts1($division_id);
 
-        return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts, 'work' => $request->phone_work]);
+        return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
     }
 
     /**
@@ -321,7 +335,7 @@ class DivisionContactsController extends Controller
         $DIVISION_CONTACT = new DivisionContact();
 
         $id = $_POST['id'];
-        $division_id = $request->division_id;
+        $division_id = $_POST['owner_id'];
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
@@ -330,8 +344,8 @@ class DivisionContactsController extends Controller
         $cur_avatar = $contact->avatar;
         $new_avatar = uniqid() . '.' . $extension;
 
-        if ($cur_avatar) {
-            if (file_exists(public_path('avatars/' . $cur_avatar))){
+        if ($cur_avatar) { // delete old avatar
+            if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
                 } catch (Throwable | Exception $e) {
@@ -339,22 +353,15 @@ class DivisionContactsController extends Controller
             }
         }
 
-        $DIVISION_CONTACT->where('id', $id)->update([
+        $DIVISION_CONTACT->where('id', $id)->update([ // update new avatar
             'avatar' => $new_avatar
         ]);
 
-        $contact = $DIVISION_CONTACT->where('id', $id)
-            ->with('division')
-            ->has('division')
-            ->first();
+        $contact = $DIVISION_CONTACT->where('id', $id)->first();
 
-        $contacts = $DIVISION_CONTACT->where('division_id', $division_id)
-            ->with('division')
-            ->has('division')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getDivisionContacts1($division_id);
 
-        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar)); // move new avatar
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -367,32 +374,25 @@ class DivisionContactsController extends Controller
     {
         $DIVISION_CONTACT = new DivisionContact();
 
-        $id = $request->$request->id ?? 0;
-        $division_id = $request->division_id;
+        $id = $request->id ?? null;
+        $division_id = $request->onwer_id ?? null;
 
         $contact = $DIVISION_CONTACT->where('id', $id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))){
+        if (file_exists(public_path('avatars/' . $contact->avatar))) { // delete old avatar
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
             } catch (Throwable | Exception $e) {
             }
         }
 
-        $DIVISION_CONTACT->where('id', $id)->update([
-            'avatar' => ''
+        $DIVISION_CONTACT->where('id', $id)->update([ // update new avatar
+            'avatar' => null
         ]);
 
-        $contact = $DIVISION_CONTACT->where('id', $id)
-            ->with('division')
-            ->has('division')
-            ->first();
+        $contact = $DIVISION_CONTACT->where('id', $id)->first();
 
-        $contacts = $DIVISION_CONTACT->where('division_id', $division_id)
-            ->with('division')
-            ->has('division')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getDivisionContacts1($division_id);
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -405,15 +405,20 @@ class DivisionContactsController extends Controller
     {
         $DIVISION_CONTACT = new DivisionContact();
 
-        $id = $request->id ?? 0;
-        $division_id = $request->division_id ?? 0;
+        $id = $request->id ?? null;
+        $division_id = $request->owner_id ?? null;
 
-        $DIVISION_CONTACT->where('id', $id)->delete();
-        $contacts = $DIVISION_CONTACT->where('division_id', $division_id)
-            ->with('division')
-            ->has('division')
-            ->orderBy('first_name')
-            ->get();
+        $isUserContact = DivisionContact::where('id', $id)->whereNotNull('user_code_id')->first(); // check if contact is a user contact
+
+        if ($isUserContact) {
+            $DIVISION_CONTACT->where('id', $id)->update([
+                'division_id' => null
+            ]);
+        }else{
+            $DIVISION_CONTACT->where('id', $id)->delete();
+        }
+
+        $contacts = $this->getDivisionContacts1($division_id);
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }

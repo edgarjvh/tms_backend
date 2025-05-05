@@ -9,12 +9,17 @@ use Illuminate\Http\Request;
 class LoadTypesController extends Controller
 {
     public function getLoadTypes(Request $request){
-        $name = isset($request->name) ? trim($request->name) : '';
+        $name = $request->name ?? '';
+        $withAll = $request->withAll ?? 0;
 
         $load_types = LoadType::whereRaw("1 = 1")
             ->whereRaw("name like '%$name%'")
             ->orderBy('name')
             ->get();
+
+        if ($withAll === 1) {
+            $load_types->prepend(['id' => -1, 'name' => 'All']);
+        }
 
         return response()->json(['result' => 'OK', 'load_types' => $load_types]);
     }

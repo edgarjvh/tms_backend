@@ -75,6 +75,7 @@ Route::post('/getCustomerByCode', [CustomersController::class, 'getCustomerByCod
 Route::post('/getCustomerById', [CustomersController::class, 'getCustomerById']);
 Route::post('/customerSearch', [CustomersController::class, 'customerSearch']);
 Route::post('/getCustomerReport', [CustomersController::class, 'getCustomerReport']);
+Route::post('/getCustomerOpenInvoicesReport', [CustomersController::class, 'getCustomerOpenInvoicesReport']);
 Route::post('/getFullCustomers', [CustomersController::class, 'getFullCustomers'])->name('customers');
 Route::post('/saveCustomer', [CustomersController::class, 'saveCustomer']);
 Route::post('/submitCustomerImport', [CustomersController::class, 'submitCustomerImport']);
@@ -91,6 +92,7 @@ Route::post('/getCarrierById', [CarriersController::class, 'getCarrierById']);
 Route::post('/carriers', [CarriersController::class, 'carriers'])->name('carriers');
 Route::post('/getCarrierByCode', [CarriersController::class, 'getCarrierByCode']);
 Route::post('/getCarrierReport', [CarriersController::class, 'getCarrierReport']);
+Route::post('/getCarrierOpenInvoicesReport', [CarriersController::class, 'getCarrierOpenInvoicesReport']);
 Route::post('/carrierSearch', [CarriersController::class, 'carrierSearch']);
 Route::post('/getFullCarriers', [CarriersController::class, 'getFullCarriers']);
 Route::post('/getCarrierOrders', [CarriersController::class, 'getCarrierOrders']);
@@ -139,9 +141,18 @@ Route::post('/deleteFactoringCompanyContact', [ContactsController::class, 'delet
 Route::post('/uploadFactoringCompanyAvatar', [ContactsController::class, 'uploadFactoringCompanyAvatar']);
 Route::post('/removeFactoringCompanyAvatar', [ContactsController::class, 'removeFactoringCompanyAvatar']);
 Route::post('/factoringCompanyContactsSearch', [ContactsController::class, 'factoringCompanyContactsSearch']);
+Route::post('/getContactsByFactoringCompanyId', [ContactsController::class, 'getContactsByFactoringCompanyId']);
 
 Route::post('/getContactList', [ContactsController::class, 'getContactList']);
 Route::post('/saveExtCustomerContact', [ContactsController::class, 'saveExtCustomerContact']);
+
+Route::post('/getUserContacts', [ContactsController::class, 'getUserContacts']);
+Route::post('/saveUserContact', [ContactsController::class, 'saveUserContact']);
+Route::post('/deleteUserContact', [ContactsController::class, 'deleteUserContact']);
+Route::post('/uploadUserContactAvatar', [ContactsController::class, 'uploadUserContactAvatar']);
+Route::post('/removeUserContactAvatar', [ContactsController::class, 'removeUserContactAvatar']);
+Route::post('/addToUserContact', [ContactsController::class, 'addToUserContact']);
+Route::post('/removeFromUserContact', [ContactsController::class, 'removeFromUserContact']);
 
 Route::post('/notes', [NotesController::class, 'notes'])->name('notes');
 Route::post('/saveNote', [NotesController::class, 'saveNote']);
@@ -297,6 +308,8 @@ Route::post('/saveInvoiceNumber', [OrdersController::class, 'saveInvoiceNumber']
 Route::post('/saveInvoiceTerm', [OrdersController::class, 'saveInvoiceTerm']);
 Route::post('/saveInvoiceDatePaid', [OrdersController::class, 'saveInvoiceDatePaid']);
 Route::post('/saveInvoiceCarrierCheckNumber', [OrdersController::class, 'saveInvoiceCarrierCheckNumber']);
+Route::post('/saveInvoiceAgentDatePaid', [OrdersController::class, 'saveInvoiceAgentDatePaid']);
+Route::post('/saveInvoiceAgentCheckNumber', [OrdersController::class, 'saveInvoiceAgentCheckNumber']);
 Route::post('/getOrderCarrierByCode', [OrdersController::class, 'getOrderCarrierByCode']);
 Route::post('/getRoutingBol', [OrdersController::class, 'getRoutingBol']);
 
@@ -324,6 +337,7 @@ Route::post('/getDivisionByCode', [DivisionsController::class, 'getDivisionByCod
 Route::post('/divisionSearch', [DivisionsController::class, 'divisionSearch']);
 Route::post('/getDivisionOrders', [DivisionsController::class, 'getDivisionOrders']);
 Route::post('/saveDivision', [DivisionsController::class, 'saveDivision']);
+Route::post('/getDivisionsList', [DivisionsController::class, 'getDivisionsList']);
 
 Route::post('/getDivisionContacts', [DivisionContactsController::class, 'getDivisionContacts']);
 Route::post('/divisionContactsSearch', [DivisionContactsController::class, 'divisionContactsSearch']);
@@ -411,6 +425,8 @@ Route::post('/getAgentReport', [AgentsController::class, 'getAgentReport']);
 Route::post('/agentSearch', [AgentsController::class, 'agentSearch']);
 Route::post('/getAgentOrders', [AgentsController::class, 'getAgentOrders']);
 Route::post('/saveAgent', [AgentsController::class, 'saveAgent']);
+Route::post('/getAgentRevenue', [AgentsController::class, 'getAgentRevenue']);
+Route::post('/saveAgentAchWiringInfo', [AgentsController::class, 'saveAgentAchWiringInfo']);
 
 Route::post('/saveAgentMailingAddress', [AgentMailingAddressesController::class, 'saveAgentMailingAddress']);
 Route::post('/deleteAgentMailingAddress', [AgentMailingAddressesController::class, 'deleteAgentMailingAddress']);
@@ -469,6 +485,7 @@ Route::post('/getDriverTrailer', [DriversController::class, 'getDriverTrailer'])
 Route::post('/saveDriverTrailer', [DriversController::class, 'saveDriverTrailer']);
 Route::post('/deleteDriverTrailer', [DriversController::class, 'deleteDriverTrailer']);
 Route::post('/getDriversByCarrierId', [DriversController::class, 'getDriversByCarrierId']);
+Route::post('/getContactsByDriverId', [DriversController::class, 'getContactsByDriverId']);
 
 
 Route::post('/getDocumentsByDriverLicense', [DriverLicenseDocumentsController::class, 'getDocumentsByDriverLicense']);

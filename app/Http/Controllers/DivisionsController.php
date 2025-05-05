@@ -177,6 +177,30 @@ class DivisionsController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getDivisionsList() : JsonResponse
+    {
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT
+                d.id,
+                d.code,
+                d.code_number,
+                d.name
+            FROM divisions AS d
+            ORDER BY d.code, d.code_number";
+
+        $divisions = DB::select($sql);
+
+        return response()->json(['result' => 'OK', 'divisions' => $divisions]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getDivisionOrders(Request $request)
     {
         $id = $request->id ?? 0;

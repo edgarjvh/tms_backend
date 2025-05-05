@@ -16,6 +16,7 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class CarriersController extends Controller
 {
@@ -52,7 +53,7 @@ class CarriersController extends Controller
         $code = $request->code ?? '';
 
         $carrier = $CARRIER->whereRaw("1 = 1")
-            ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")            
+            ->whereRaw("CONCAT(`code`,`code_number`) like '$code%'")
             ->orderBy('code')
             ->orderBy('code_number')
             ->with([
@@ -144,8 +145,9 @@ class CarriersController extends Controller
      */
     public function getCarrierReport(): JsonResponse
     {
-        $sql = /** @lang text */
-        "SELECT
+        $sql =
+            /** @lang text */
+            "SELECT
             ca.id,
             CONCAT(ca.code, CASE WHEN ca.code_number = 0 THEN '' ELSE ca.code_number END) AS code,
             ca.name,
@@ -178,6 +180,222 @@ class CarriersController extends Controller
         $carriers = DB::select($sql);
 
         return response()->json(['result' => 'OK', 'carriers' => $carriers]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getCarrierOpenInvoicesReport(Request $request): JsonResponse
+    {
+        $carrier_code = trim($request->carrier_code ?? '');
+        $equipment_id = $request->equipment_id ?? -1;
+        $date_start = trim($request->date_start ?? '');
+        $date_end = trim($request->date_end ?? '');
+        $city_origin = trim(strtolower($request->city_origin ?? ''));
+        $city_destination = trim(strtolower($request->city_destination ?? ''));
+        $state_origin = trim(strtolower($request->state_origin ?? ''));
+        $state_destination = trim(strtolower($request->state_destination ?? ''));
+        $zip_origin = trim(strtolower($request->zip_origin ?? ''));
+        $zip_destination = trim(strtolower($request->zip_destination ?? ''));
+
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.carrier_id,
+                    c.code,
+                    c.code_number,
+                    c.name,
+                    o.order_date_time,
+                    o.equipment_id,
+                    e.name AS equipment_name,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating,
+                    o.is_cancelled,
+                    o.invoice_received_date
+                FROM orders AS o
+                INNER JOIN carriers AS c ON o.carrier_id = c.id
+                INNER JOIN equipments AS e ON o.equipment_id = e.id
+                WHERE o.is_template = 0
+                    AND o.is_imported = 0
+                    AND o.carrier_id IS NOT NULL
+                    AND (o.invoice_date_paid IS NULL OR TRIM(o.invoice_date_paid) = '')
+                    AND (o.invoice_received_date IS NOT NULL OR TRIM(o.invoice_received_date <> ''))
+                    AND o.order_invoiced = 1 ";
+
+        /**
+         * CHECKING THE CARRIER CODE
+         */
+        if ($carrier_code !== '') {
+
+            $sql .=
+                /** @lang text */
+                "AND LOWER(CONCAT(c.code, c.code_number)) LIKE '" . strtolower($carrier_code) . "%' ";
+        }
+
+        /**
+         * CHECKING THE EQUIPMENT ID
+         */
+        if ($equipment_id > -1) {
+            $sql .=
+                /** @lang text */
+                "AND o.equipment_id = ? ";
+
+            $params[] = $equipment_id;
+        }
+
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
+        if ($date_start !== '' && $date_end !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
+        } else {
+            if ($date_start !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
+            }
+        }
+
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
+        if ($city_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
+        }
+
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
+        if ($city_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
+        }
+
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
+        if ($state_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
+        }
+
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
+        if ($state_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
+        }
+
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
+        if ($zip_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
+        }
+
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
+        if ($zip_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
+        }
+
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            ") AS result ORDER BY result.code ASC, result.code_number ASC, result.order_number ASC;";
+
+        $orders = DB::select($sql, $params);
+
+        return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
 
     /**

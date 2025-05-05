@@ -12,6 +12,7 @@ use App\Models\FactoringCompanyContact;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class ContactsController extends Controller
@@ -247,21 +248,62 @@ class ContactsController extends Controller
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
 
+    // CUSTOMER CONTACTS ===================================================
     /**
      * @param Request $request
      * @return JsonResponse
      */
     public function getContactsByCustomerId(Request $request): JsonResponse
     {
-        $CUSTOMER_CONTACT = new Contact();
+        $customer_id = $request->owner_id;
 
-        $customer_id = $request->customer_id;
-        $contacts = $CUSTOMER_CONTACT->where('customer_id', $customer_id)
-            ->with('customer')
-            ->has('customer')
-            ->orderBy('first_name')
-            ->get();
-        return response()->json(['result' => 'OK', 'contacts' => $contacts, 'contact' => null]);
+        $contacts = $this->getCustomerContacts($customer_id);
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param $customer_id
+     * @return array
+     */
+    public function getCustomerContacts($customer_id): array
+    {
+        $sql1 =
+            /** @lang text */
+            "SELECT
+                c.*,
+                CONCAT(0) AS is_pivot,
+                CONCAT(0) AS pivot_is_primary,
+                cu.name AS owner_name
+            FROM contacts AS c
+            LEFT JOIN customers AS cu ON c.customer_id = cu.id
+            WHERE customer_id = ?
+            ORDER BY first_name";
+
+        $params1 = [$customer_id];
+
+        $contacts1 = DB::select($sql1, $params1);
+
+        $sql2 =
+            /** @lang text */
+            "SELECT
+                c.*,
+                CONCAT(1) AS is_pivot,
+                cc.is_primary AS pivot_is_primary,
+                cu.name AS owner_name
+            FROM contacts AS c
+            LEFT JOIN contact_customer AS cc ON c.id = cc.contact_id
+            LEFT JOIN customers AS cu ON c.customer_id = cu.id
+            WHERE cc.customer_id = ?
+            ORDER BY c.first_name";
+
+        $params2 = [$customer_id];
+
+        $contacts2 = DB::select($sql2, $params2);
+
+        $contacts = array_merge($contacts1, $contacts2);
+
+        return $contacts;
     }
 
     /**
@@ -270,132 +312,112 @@ class ContactsController extends Controller
      */
     public function saveContact(Request $request): JsonResponse
     {
-        $CUSTOMER_CONTACT = new Contact();
-        $CUSTOMER = new Customer();
-        $EXT_CONTACT = new ContactCustomer();
-
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $customer_id = $request->customer_id ?? 0;
-        $main_customer_id = $request->main_customer_id ?? 0;
+        $id = $request->id ?? null;
+        $customer_id = $request->owner_id ?? null;
+        $prefix = $request->prefix ?? '';
+        $first_name = ucwords($request->first_name ?? '');
+        $middle_name = ucwords($request->middle_name ?? '');
+        $last_name = ucwords($request->last_name ?? '');
+        $suffix = $request->suffix ?? '';
+        $title = ucwords($request->title ?? '');
+        $company = ucwords($request->company ?? '');
+        $department = ucwords($request->department ?? '');
+        $email_work = strtolower($request->email_work ?? '');
+        $email_personal = strtolower($request->email_personal ?? '');
+        $email_other = strtolower($request->email_other ?? '');
+        $primary_email = $request->primary_email ?? 'work';
+        $phone_work = $request->phone_work ?? '';
+        $phone_work_fax = $request->phone_work_fax ?? '';
+        $phone_mobile = $request->phone_mobile ?? '';
+        $phone_direct = $request->phone_direct ?? '';
+        $phone_other = $request->phone_other ?? '';
+        $primary_phone = $request->primary_phone ?? 'work';
+        $phone_ext = $request->phone_ext ?? '';
+        $country = ucwords($request->country ?? '');
+        $address1 = ucwords($request->address1 ?? '');
+        $address2 = ucwords($request->address2 ?? '');
+        $city = ucwords($request->city ?? '');
+        $state = strtoupper($request->state ?? '');
+        $zip_code = $request->zip_code ?? '';
+        $birthday = $request->birthday ?? '';
+        $website = strtolower($request->website ?? '');
+        $notes = $request->notes ?? '';
+        $is_primary = $request->is_primary ?? 0;
+        $is_online = $request->is_online ?? 0;
+        $type = $request->type ?? 'internal';
         $pivot = $request->pivot ?? null;
+        $is_primary = (int)$is_primary;
 
-        if ($customer_id > 0) {
-            $curContact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
+        $CONTACT = new Contact();
+        $CUSTOMER = new Customer();
 
-            $customer = $CUSTOMER->where('id', $customer_id)->first();
-
-            $carrier_id = $curContact ? $curContact->carrier_id : null;
-            $factoring_company_id = $curContact ? $curContact->factoring_company_id : null;
-            $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
-            $first_name = ucwords($request->first_name ?? ($curContact ? $curContact->first_name : ''));
-            $middle_name = ucwords($request->middle_name ?? ($curContact ? $curContact->middle_name : ''));
-            $last_name = ucwords($request->last_name ?? ($curContact ? $curContact->last_name : ''));
-            $suffix = $request->suffix ?? ($curContact ? $curContact->suffix : '');
-            $title = $request->title ?? ($curContact ? $curContact->title : '');
-            $company = $request->company ?? ($curContact ? $curContact->company : '');
-            $department = $request->department ?? ($curContact ? $curContact->department : '');
-            $email_work = strtolower($request->email_work ?? ($curContact ? $curContact->email_work : ''));
-            $email_personal = strtolower($request->email_personal ?? ($curContact ? $curContact->email_personal : ''));
-            $email_other = strtolower($request->email_other ?? ($curContact ? $curContact->email_other : ''));
-            $primary_email = $request->primary_email ?? ($curContact ? $curContact->primary_email : 'work');
-            $phone_work = $request->phone_work ?? ($curContact ? $curContact->phone_work : '');
-            $phone_work_fax = $request->phone_work_fax ?? ($curContact ? $curContact->phone_work_fax : '');
-            $phone_mobile = $request->phone_mobile ?? ($curContact ? $curContact->phone_mobile : '');
-            $phone_direct = $request->phone_direct ?? ($curContact ? $curContact->phone_direct : '');
-            $phone_other = $request->phone_other ?? ($curContact ? $curContact->phone_other : '');
-            $primary_phone = $request->primary_phone ?? ($curContact ? $curContact->primary_phone : 'work');
-            $phone_ext = $request->phone_ext ?? ($curContact ? $curContact->phone_ext : '');
-            $country = ucwords($request->country ?? ($curContact ? $curContact->country : ''));
-            $address1 = $request->address1 ?? ($curContact ? $curContact->address1 : $customer->address1);
-            $address2 = $request->address2 ?? ($curContact ? $curContact->address2 : $customer->address2);
-            $city = ucwords($request->city ?? ($curContact ? $curContact->city : $customer->city));
-            $state = strtoupper($request->state ?? ($curContact ? $curContact->state : $customer->state));
-            $zip_code = $request->zip_code ?? ($curContact ? $curContact->zip_code : $customer->zip);
-            $birthday = $request->birthday ?? ($curContact ? $curContact->birthday : '');
-            $website = strtolower($request->website ?? ($curContact ? $curContact->website : ''));
-            $notes = $request->notes ?? ($curContact ? $curContact->notes : '');
-            $is_primary = $request->is_primary ?? ($curContact ? $curContact->is_primary : 0);
-            $is_online = $request->is_online ?? ($curContact ? $curContact->is_online : 0);
-            $type = $request->type ?? ($curContact ? $curContact->type : 'internal');
-            $is_primary = (int)$is_primary;
-
-            $contact = $CUSTOMER_CONTACT->updateOrCreate([
-                'id' => $contact_id
+        $contact = $CONTACT->updateOrCreate(
+            [
+                'id' => $id
             ],
-                [
-                    'carrier_id' => $carrier_id,
-                    'customer_id' => $customer_id,
-                    'factoring_company_id' => $factoring_company_id,
-                    'prefix' => $prefix,
-                    'first_name' => ucwords(trim($first_name)),
-                    'middle_name' => ucwords(trim($middle_name)),
-                    'last_name' => ucwords(trim($last_name)),
-                    'suffix' => $suffix,
-                    'title' => $title,
-                    'company' => $company,
-                    'department' => $department,
-                    'email_work' => strtolower($email_work),
-                    'email_personal' => strtolower($email_personal),
-                    'email_other' => strtolower($email_other),
-                    'primary_email' => $primary_email,
-                    'phone_work' => $phone_work,
-                    'phone_work_fax' => $phone_work_fax,
-                    'phone_mobile' => $phone_mobile,
-                    'phone_direct' => $phone_direct,
-                    'phone_other' => $phone_other,
-                    'primary_phone' => $primary_phone,
-                    'phone_ext' => $phone_ext,
-                    'country' => ucwords($country),
-                    'address1' => $address1,
-                    'address2' => $address2,
-                    'city' => ucwords($city),
-                    'state' => strtoupper($state),
-                    'zip_code' => $zip_code,
-                    'birthday' => $birthday,
-                    'website' => strtolower($website),
-                    'notes' => $notes,
-                    'is_primary' => $is_primary,
-                    'is_online' => $is_online,
-                    'type' => $type
+            [
+                'customer_id' => $customer_id,
+                'prefix' => $prefix,
+                'first_name' => ucwords(trim($first_name)),
+                'middle_name' => ucwords(trim($middle_name)),
+                'last_name' => ucwords(trim($last_name)),
+                'suffix' => $suffix,
+                'title' => $title,
+                'company' => $company,
+                'department' => $department,
+                'email_work' => strtolower($email_work),
+                'email_personal' => strtolower($email_personal),
+                'email_other' => strtolower($email_other),
+                'primary_email' => $primary_email,
+                'phone_work' => $phone_work,
+                'phone_work_fax' => $phone_work_fax,
+                'phone_mobile' => $phone_mobile,
+                'phone_direct' => $phone_direct,
+                'phone_other' => $phone_other,
+                'primary_phone' => $primary_phone,
+                'phone_ext' => $phone_ext,
+                'country' => ucwords($country),
+                'address1' => $address1,
+                'address2' => $address2,
+                'city' => ucwords($city),
+                'state' => strtoupper($state),
+                'zip_code' => $zip_code,
+                'birthday' => $birthday,
+                'website' => strtolower($website),
+                'notes' => $notes,
+                'is_primary' => $is_primary,
+                'is_online' => $is_online,
+                'type' => $type
+            ]
+        );
+
+        if ($pivot) {
+            if (($pivot['is_primary'] ?? 0) === 1) {
+                $CUSTOMER->where('id', $customer_id)->update([
+                    'primary_contact_id' => $contact->id
                 ]);
-
-            if ($pivot) {
-                if (($pivot['is_primary'] ?? 0) === 1) {
-                    $CUSTOMER->where('id', $customer_id)->update([
-                        'primary_contact_id' => $contact->id
-                    ]);
-                } else {
-                    $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
-                        'primary_contact_id' => null
-                    ]);
-                }
             } else {
-                if ($is_primary === 1) {
-                    $CUSTOMER->where('id', $customer_id)->update([
-                        'primary_contact_id' => $contact->id
-                    ]);
-                } else {
-                    $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
-                        'primary_contact_id' => null
-                    ]);
-                }
+                $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
+                    'primary_contact_id' => null
+                ]);
             }
-
-            $newContact = $CUSTOMER_CONTACT->where('id', $contact->id)
-                ->with('customer')
-                ->has('customer')
-                ->first();
-
-            $newCustomer = $CUSTOMER->where('id', $customer_id)->first();
-
-            return response()->json([
-                'result' => 'OK',
-                'contact' => $newContact,
-                'contacts' => $newCustomer->contacts
-            ]);
         } else {
-            return response()->json(['result' => 'NO CUSTOMER']);
+            if ($is_primary === 1) {
+                $CUSTOMER->where('id', $customer_id)->update([
+                    'primary_contact_id' => $contact->id
+                ]);
+            } else {
+                $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
+                    'primary_contact_id' => null
+                ]);
+            }
         }
+
+        $newContact = $CONTACT->where('id', $contact->id)->first();
+
+        $contacts = $this->getCustomerContacts($customer_id);
+
+        return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
     }
 
     /**
@@ -404,43 +426,36 @@ class ContactsController extends Controller
      */
     public function uploadAvatar(Request $request): JsonResponse
     {
-        $CUSTOMER_CONTACT = new Contact();
+        $CONTACT = new Contact();
 
-        $contact_id = $_POST['contact_id'];
-        $customer_id = $request->customer_id;
+        $id = $_POST['id'];
+        $customer_id = $_POST['owner_id'];
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-        $contact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
+        $contact = $CONTACT->where('id', $id)->first();
         $cur_avatar = $contact->avatar;
         $new_avatar = uniqid() . '.' . $extension;
 
-        if ($cur_avatar) {
+        if ($cur_avatar) { // delete old avatar
             if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable|Exception $e) {
+                } catch (Throwable | Exception $e) {
                 }
             }
         }
 
-        $CUSTOMER_CONTACT->where('id', $contact_id)->update([
+        $CONTACT->where('id', $id)->update([ // update avatar
             'avatar' => $new_avatar
         ]);
 
-        $contact = $CUSTOMER_CONTACT->where('id', $contact_id)
-            ->with('customer')
-            ->has('customer')
-            ->first();
+        $contact = $CONTACT->where('id', $id)->first();
 
-        $contacts = $CUSTOMER_CONTACT->where('customer_id', $customer_id)
-            ->with('customer')
-            ->has('customer')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getCustomerContacts($customer_id); // get all contacts for the customer
 
-        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar)); // move new avatar to public folder
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -451,34 +466,27 @@ class ContactsController extends Controller
      */
     public function removeAvatar(Request $request): JsonResponse
     {
-        $CUSTOMER_CONTACT = new Contact();
+        $CONTACT = new Contact();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $customer_id = $request->customer_id;
+        $id = $request->id ?? null;
+        $customer_id = $request->owner_id ?? null;
 
-        $contact = $CUSTOMER_CONTACT->where('id', $contact_id)->first();
+        $contact = $CONTACT->where('id', $id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))) { // delete old avatar
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
-            } catch (Throwable|Exception $e) {
+            } catch (Throwable | Exception $e) {
             }
         }
 
-        $CUSTOMER_CONTACT->where('id', $contact_id)->update([
-            'avatar' => ''
+        $CONTACT->where('id', $id)->update([ // update avatar
+            'avatar' => null
         ]);
 
-        $contact = $CUSTOMER_CONTACT->where('id', $contact_id)
-            ->with('customer')
-            ->has('customer')
-            ->first();
+        $contact = $CONTACT->where('id', $id)->first();
 
-        $contacts = $CUSTOMER_CONTACT->where('customer_id', $customer_id)
-            ->with('customer')
-            ->has('customer')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getCustomerContacts($customer_id); // get all contacts for the customer
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -489,31 +497,37 @@ class ContactsController extends Controller
      */
     public function deleteContact(Request $request): JsonResponse
     {
+        $id = $request->id ?? null;
+        $customer_id = $request->owner_id ?? null;
+        $is_pivot = $request->is_pivot ?? 0;
+
         $CONTACT = new Contact();
-        $CUSTOMER = new Customer();
         $CONTACT_CUSTOMER = new ContactCustomer();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $main_customer_id = $request->main_customer_id ?? 0;
-        $customer_id = $request->customer_id ?? 0;
 
-        if ($main_customer_id > 0 && ($main_customer_id !== $customer_id)) {
+        if ($is_pivot > 0) { // delete contact from pivot table
             $CONTACT_CUSTOMER->where([
-                'contact_id' => $contact_id,
-                'customer_id' => $main_customer_id
+                'contact_id' => $id,
+                'customer_id' => $customer_id
             ])->delete();
         } else {
-            $CONTACT->where('id', $contact_id)->delete();
+            $isUserContact = Contact::where('id', $id)->whereNotNull('user_code_id')->first(); // check if contact is a user contact
+
+            if ($isUserContact) {
+                $CONTACT->where('id', $id)->update([
+                    'customer_id' => null // set customer_id to null
+                ]);
+            } else {
+                $CONTACT->where('id', $id)->delete(); // delete contact
+            }
         }
 
-        $customer = $CUSTOMER->where('id', $main_customer_id)
-            ->select('id', 'code', 'code_number', 'name')
-            ->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes'])
-            ->first();
+        $contacts = $this->getCustomerContacts($customer_id); // get all contacts for the customer
 
-        return response()->json(['result' => 'OK', 'contacts' => $customer->contacts]);
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
 
+    // CARRIER CONTACTS ===================================================
     /**
      * @param Request $request
      * @return JsonResponse
@@ -595,15 +609,34 @@ class ContactsController extends Controller
      */
     public function getContactsByCarrierId(Request $request): JsonResponse
     {
-        $CARRIER_CONTACT = new CarrierContact();
+        $carrier_id = $request->owner_id;
 
-        $carrier_id = $request->carrier_id ?? 0;
-
-        $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier_id)            
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getCarrierContacts1($carrier_id);
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param $carrier_id
+     * @return array
+     */
+    public function getCarrierContacts1($carrier_id): array
+    {
+        $sql =
+            /** @lang text */
+            "SELECT
+                c.*,
+                ca.name AS owner_name
+            FROM contacts AS c
+            LEFT JOIN carriers AS ca ON c.carrier_id = ca.id
+            WHERE carrier_id = ?
+            ORDER BY first_name";
+
+        $params = [$carrier_id];
+
+        $contacts = DB::select($sql, $params);
+
+        return $contacts;
     }
 
     /**
@@ -612,111 +645,99 @@ class ContactsController extends Controller
      */
     public function saveCarrierContact(Request $request): JsonResponse
     {
+        $id = $request->id ?? null;
+        $carrier_id = $request->owner_id ?? null;
+        $prefix = $request->prefix ?? '';
+        $first_name = ucwords($request->first_name ?? '');
+        $middle_name = ucwords($request->middle_name ?? '');
+        $last_name = ucwords($request->last_name ?? '');
+        $suffix = $request->suffix ?? '';
+        $title = ucwords($request->title ?? '');
+        $company = ucwords($request->company ?? '');
+        $department = ucwords($request->department ?? '');
+        $email_work = strtolower($request->email_work ?? '');
+        $email_personal = strtolower($request->email_personal ?? '');
+        $email_other = strtolower($request->email_other ?? '');
+        $primary_email = $request->primary_email ?? 'work';
+        $phone_work = $request->phone_work ?? '';
+        $phone_work_fax = $request->phone_work_fax ?? '';
+        $phone_mobile = $request->phone_mobile ?? '';
+        $phone_direct = $request->phone_direct ?? '';
+        $phone_other = $request->phone_other ?? '';
+        $primary_phone = $request->primary_phone ?? 'work';
+        $phone_ext = $request->phone_ext ?? '';
+        $country = ucwords($request->country ?? '');
+        $address1 = ucwords($request->address1 ?? '');
+        $address2 = ucwords($request->address2 ?? '');
+        $city = ucwords($request->city ?? '');
+        $state = strtoupper($request->state ?? '');
+        $zip_code = $request->zip_code ?? '';
+        $birthday = $request->birthday ?? '';
+        $website = strtolower($request->website ?? '');
+        $notes = $request->notes ?? '';
+        $is_primary = $request->is_primary ?? 0;
+        $is_online = $request->is_online ?? 0;
+        $type = $request->type ?? 'internal';
+        $is_primary = (int)$is_primary;
+
         $CARRIER = new Carrier();
         $CARRIER_CONTACT = new CarrierContact();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $carrier_id = $request->carrier_id ?? 0;
-
-        if ($carrier_id > 0) {
-            $curContact = $CARRIER_CONTACT->where('id', $contact_id)->first();
-
-            $customer_id = $curContact ? $curContact->customer_id : null;
-            $factoring_company_id = $curContact ? $curContact->factoring_company_id : null;
-            $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
-            $first_name = $request->first_name ?? ($curContact ? $curContact->first_name : '');
-            $middle_name = $request->middle_name ?? ($curContact ? $curContact->middle_name : '');
-            $last_name = $request->last_name ?? ($curContact ? $curContact->last_name : '');
-            $suffix = $request->suffix ?? ($curContact ? $curContact->suffix : '');
-            $title = $request->title ?? ($curContact ? $curContact->title : '');
-            $company = $request->company ?? ($curContact ? $curContact->company : '');
-            $department = $request->department ?? ($curContact ? $curContact->department : '');
-            $email_work = $request->email_work ?? ($curContact ? $curContact->email_work : '');
-            $email_personal = $request->email_personal ?? ($curContact ? $curContact->email_personal : '');
-            $email_other = $request->email_other ?? ($curContact ? $curContact->email_other : '');
-            $primary_email = $request->primary_email ?? ($curContact ? $curContact->primary_email : 'work');
-            $phone_work = $request->phone_work ?? ($curContact ? $curContact->phone_work : '');
-            $phone_work_fax = $request->phone_work_fax ?? ($curContact ? $curContact->phone_work_fax : '');
-            $phone_mobile = $request->phone_mobile ?? ($curContact ? $curContact->phone_mobile : '');
-            $phone_direct = $request->phone_direct ?? ($curContact ? $curContact->phone_direct : '');
-            $phone_other = $request->phone_other ?? ($curContact ? $curContact->phone_other : '');
-            $primary_phone = $request->primary_phone ?? ($curContact ? $curContact->primary_phone : 'work');
-            $phone_ext = $request->phone_ext ?? ($curContact ? $curContact->phone_ext : '');
-            $country = $request->country ?? ($curContact ? $curContact->country : '');
-            $address1 = $request->address1 ?? ($curContact ? $curContact->address1 : '');
-            $address2 = $request->address2 ?? ($curContact ? $curContact->address2 : '');
-            $city = $request->city ?? ($curContact ? $curContact->city : '');
-            $state = $request->state ?? ($curContact ? $curContact->state : '');
-            $zip_code = $request->zip_code ?? ($curContact ? $curContact->zip_code : '');
-            $birthday = $request->birthday ?? ($curContact ? $curContact->birthday : '');
-            $website = $request->website ?? ($curContact ? $curContact->website : '');
-            $notes = $request->notes ?? ($curContact ? $curContact->notes : '');
-            $is_primary = $request->is_primary ?? ($curContact ? $curContact->is_primary : 0);
-            $is_online = $request->is_online ?? ($curContact ? $curContact->is_online : 0);
-            $type = $request->type ?? ($curContact ? $curContact->type : 'internal');
-            $is_primary = (int)$is_primary;
-
-            $contact = $CARRIER_CONTACT->updateOrCreate([
-                'id' => $contact_id
+        $contact = $CARRIER_CONTACT->updateOrCreate(
+            [
+                'id' => $id
             ],
-                [
-                    'carrier_id' => $carrier_id,
-                    'customer_id' => $customer_id,
-                    'factoring_company_id' => $factoring_company_id,
-                    'prefix' => $prefix,
-                    'first_name' => ucwords(trim($first_name)),
-                    'middle_name' => ucwords(trim($middle_name)),
-                    'last_name' => ucwords(trim($last_name)),
-                    'suffix' => $suffix,
-                    'title' => $title,
-                    'company' => $company,
-                    'department' => $department,
-                    'email_work' => strtolower($email_work),
-                    'email_personal' => strtolower($email_personal),
-                    'email_other' => strtolower($email_other),
-                    'primary_email' => $primary_email,
-                    'phone_work' => $phone_work,
-                    'phone_work_fax' => $phone_work_fax,
-                    'phone_mobile' => $phone_mobile,
-                    'phone_direct' => $phone_direct,
-                    'phone_other' => $phone_other,
-                    'primary_phone' => $primary_phone,
-                    'phone_ext' => $phone_ext,
-                    'country' => ucwords($country),
-                    'address1' => $address1,
-                    'address2' => $address2,
-                    'city' => ucwords($city),
-                    'state' => strtoupper($state),
-                    'zip_code' => $zip_code,
-                    'birthday' => $birthday,
-                    'website' => strtolower($website),
-                    'notes' => $notes,
-                    'is_primary' => $is_primary,
-                    'is_online' => $is_online,
-                    'type' => $type
-                ]);
+            [
+                'carrier_id' => $carrier_id,
+                'prefix' => $prefix,
+                'first_name' => ucwords(trim($first_name)),
+                'middle_name' => ucwords(trim($middle_name)),
+                'last_name' => ucwords(trim($last_name)),
+                'suffix' => $suffix,
+                'title' => $title,
+                'company' => $company,
+                'department' => $department,
+                'email_work' => strtolower($email_work),
+                'email_personal' => strtolower($email_personal),
+                'email_other' => strtolower($email_other),
+                'primary_email' => $primary_email,
+                'phone_work' => $phone_work,
+                'phone_work_fax' => $phone_work_fax,
+                'phone_mobile' => $phone_mobile,
+                'phone_direct' => $phone_direct,
+                'phone_other' => $phone_other,
+                'primary_phone' => $primary_phone,
+                'phone_ext' => $phone_ext,
+                'country' => ucwords($country),
+                'address1' => $address1,
+                'address2' => $address2,
+                'city' => ucwords($city),
+                'state' => strtoupper($state),
+                'zip_code' => $zip_code,
+                'birthday' => $birthday,
+                'website' => strtolower($website),
+                'notes' => $notes,
+                'is_primary' => $is_primary,
+                'is_online' => $is_online,
+                'type' => $type
+            ]
+        );
 
-            if ($is_primary === 1) {
-                $CARRIER->where('id', $carrier_id)->update([
-                    'primary_contact_id' => $contact->id
-                ]);
-            }
-
-            $newContact = $CARRIER_CONTACT->where('id', $contact->id)
-                ->with('carrier')
-                ->has('carrier')
-                ->first();
-
-            $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier_id)
-                ->with('carrier')
-                ->has('carrier')
-                ->orderBy('first_name')
-                ->get();
-
-            return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
-        } else {
-            return response()->json(['result' => 'NO CARRIER']);
+        if ($is_primary === 1) {
+            $CARRIER->where('id', $carrier_id)->update([
+                'primary_contact_id' => $contact->id
+            ]);
+        }else{
+            $CARRIER->where(['id' => $carrier_id, 'primary_contact_id' => $contact->id])->update([
+                'primary_contact_id' => null
+            ]);
         }
+
+        $newContact = $CARRIER_CONTACT->where('id', $contact->id)->first();
+
+        $contacts = $this->getCarrierContacts1($carrier_id); // get all contacts for the carrier
+
+        return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
     }
 
     /**
@@ -727,41 +748,34 @@ class ContactsController extends Controller
     {
         $CARRIER_CONTACT = new CarrierContact();
 
-        $contact_id = $_POST['contact_id'];
-        $carrier_id = $request->carrier_id;
+        $id = $_POST['id'];
+        $carrier_id = $_POST['owner_id'];
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-        $contact = $CARRIER_CONTACT->where('id', $contact_id)->first();
+        $contact = $CARRIER_CONTACT->where('id', $id)->first();
         $cur_avatar = $contact->avatar;
         $new_avatar = uniqid() . '.' . $extension;
 
-        if ($cur_avatar) {
+        if ($cur_avatar) { // delete old avatar
             if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable|Exception $e) {
+                } catch (Throwable | Exception $e) {
                 }
             }
         }
 
-        $CARRIER_CONTACT->where('id', $contact_id)->update([
+        $CARRIER_CONTACT->where('id', $id)->update([ // update avatar
             'avatar' => $new_avatar
         ]);
 
-        $contact = $CARRIER_CONTACT->where('id', $contact_id)
-            ->with('carrier')
-            ->has('carrier')
-            ->first();
+        $contact = $CARRIER_CONTACT->where('id', $id)->first(); // get updated contact
 
-        $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier_id)
-            ->with('carrier')
-            ->has('carrier')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getCarrierContacts1($carrier_id); // get all contacts for the carrier
 
-        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar)); // move new avatar to public folder
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -774,32 +788,25 @@ class ContactsController extends Controller
     {
         $CARRIER_CONTACT = new CarrierContact();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $carrier_id = $request->carrier_id;
+        $id = $request->id ?? null;
+        $carrier_id = $request->owner_id ?? null;
 
-        $contact = $CARRIER_CONTACT->where('id', $contact_id)->first();
+        $contact = $CARRIER_CONTACT->where('id', $id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))) { // delete old avatar
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
-            } catch (Throwable|Exception $e) {
+            } catch (Throwable | Exception $e) {
             }
         }
 
-        $CARRIER_CONTACT->where('id', $contact_id)->update([
-            'avatar' => ''
+        $CARRIER_CONTACT->where('id', $id)->update([
+            'avatar' => null
         ]);
 
-        $contact = $CARRIER_CONTACT->where('id', $contact_id)
-            ->with('carrier')
-            ->has('carrier')
-            ->first();
+        $contact = $CARRIER_CONTACT->where('id', $id)->first(); // get updated contact
 
-        $contacts = $CARRIER_CONTACT->where('carrier_id', $carrier_id)
-            ->with('carrier')
-            ->has('carrier')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getCarrierContacts1($carrier_id); // get all contacts for the carrier
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -812,19 +819,54 @@ class ContactsController extends Controller
     {
         $CARRIER_CONTACT = new CarrierContact();
 
-        $contact_id = $request->id;
+        $id = $request->id;
+        $carrier_id = $request->owner_id;
 
-        $contact = $CARRIER_CONTACT->where('id', $contact_id)->first();
+        $isUserContact = CarrierContact::where('id', $id)->whereNotNull('user_code_id')->first(); // check if contact is a user contact
+        if ($isUserContact) {
+            $CARRIER_CONTACT->where('id', $id)->update([
+                'carrier_id' => null // set carrier_id to null
+            ]);
+        } else {
+            $CARRIER_CONTACT->where('id', $id)->delete(); // delete contact
+        }
 
-        $CARRIER_CONTACT->where('id', $contact_id)->delete();
-
-        $contacts = $CARRIER_CONTACT->where('carrier_id', $contact->carrier_id)
-            ->with('carrier')
-            ->has('carrier')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getCarrierContacts1($carrier_id); // get all contacts for the carrier
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    // FACTORING COMPANY CONTACTS ===================================================
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getContactsByFactoringCompanyId(Request $request): JsonResponse
+    {
+        $factoring_company_id = $request->owner_id;
+
+        $contacts = $this->getFactoringCompanyContacts($factoring_company_id);
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    public function getFactoringCompanyContacts($factoring_company_id): array // get all contacts for the factoring company
+    {
+        $sql =
+            /** @lang text */
+            "SELECT
+                c.*,
+                fc.name AS owner_name
+            FROM contacts AS c
+            LEFT JOIN factoring_companies AS fc ON c.factoring_company_id = fc.id
+            WHERE factoring_company_id = ?
+            ORDER BY first_name";
+
+        $params = [$factoring_company_id];
+
+        $contacts = DB::select($sql, $params);
+
+        return $contacts;
     }
 
     /**
@@ -833,108 +875,97 @@ class ContactsController extends Controller
      */
     public function saveFactoringCompanyContact(Request $request): JsonResponse
     {
+        $id = $request->id ?? null;
+        $factoring_company_id = $request->owner_id ?? null;
+        $prefix = $request->prefix ?? '';
+        $first_name = ucwords($request->first_name ?? '');
+        $middle_name = ucwords($request->middle_name ?? '');
+        $last_name = ucwords($request->last_name ?? '');
+        $suffix = $request->suffix ?? '';
+        $title = ucwords($request->title ?? '');
+        $company = ucwords($request->company ?? '');
+        $department = ucwords($request->department ?? '');
+        $email_work = strtolower($request->email_work ?? '');
+        $email_personal = strtolower($request->email_personal ?? '');
+        $email_other = strtolower($request->email_other ?? '');
+        $primary_email = $request->primary_email ?? 'work';
+        $phone_work = $request->phone_work ?? '';
+        $phone_work_fax = $request->phone_work_fax ?? '';
+        $phone_mobile = $request->phone_mobile ?? '';
+        $phone_direct = $request->phone_direct ?? '';
+        $phone_other = $request->phone_other ?? '';
+        $primary_phone = $request->primary_phone ?? 'work';
+        $phone_ext = $request->phone_ext ?? '';
+        $country = ucwords($request->country ?? '');
+        $address1 = ucwords($request->address1 ?? '');
+        $address2 = ucwords($request->address2 ?? '');
+        $city = ucwords($request->city ?? '');
+        $state = strtoupper($request->state ?? '');
+        $zip_code = $request->zip_code ?? '';
+        $birthday = $request->birthday ?? '';
+        $website = strtolower($request->website ?? '');
+        $notes = $request->notes ?? '';
+        $is_primary = $request->is_primary ?? 0;
+        $is_online = $request->is_online ?? 0;
+        $is_primary = (int)$is_primary;
+
         $FACTORING_COMPANY = new FactoringCompany();
         $FACTORING_COMPANY_CONTACT = new FactoringCompanyContact();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $factoring_company_id = $request->factoring_company_id;
-
-        if ($factoring_company_id > 0) {
-            $curContact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
-
-            $carrier_id = $curContact ? $curContact->carrier_id : null;
-            $customer_id = $curContact ? $curContact->customer_id : null;
-            $prefix = $request->prefix ?? ($curContact ? $curContact->prefix : '');
-            $first_name = $request->first_name ?? ($curContact ? $curContact->first_name : '');
-            $middle_name = $request->middle_name ?? ($curContact ? $curContact->middle_name : '');
-            $last_name = $request->last_name ?? ($curContact ? $curContact->last_name : '');
-            $suffix = $request->suffix ?? ($curContact ? $curContact->suffix : '');
-            $title = $request->title ?? ($curContact ? $curContact->title : '');
-            $department = $request->department ?? ($curContact ? $curContact->department : '');
-            $email_work = $request->email_work ?? ($curContact ? $curContact->email_work : '');
-            $email_personal = $request->email_personal ?? ($curContact ? $curContact->email_personal : '');
-            $email_other = $request->email_other ?? ($curContact ? $curContact->email_other : '');
-            $primary_email = $request->primary_email ?? ($curContact ? $curContact->primary_email : 'work');
-            $phone_work = $request->phone_work ?? ($curContact ? $curContact->phone_work : '');
-            $phone_work_fax = $request->phone_work_fax ?? ($curContact ? $curContact->phone_work_fax : '');
-            $phone_mobile = $request->phone_mobile ?? ($curContact ? $curContact->phone_mobile : '');
-            $phone_direct = $request->phone_direct ?? ($curContact ? $curContact->phone_direct : '');
-            $phone_other = $request->phone_other ?? ($curContact ? $curContact->phone_other : '');
-            $primary_phone = $request->primary_phone ?? ($curContact ? $curContact->primary_phone : 'work');
-            $phone_ext = $request->phone_ext ?? ($curContact ? $curContact->phone_ext : '');
-            $country = $request->country ?? ($curContact ? $curContact->country : '');
-            $address1 = $request->address1 ?? ($curContact ? $curContact->address1 : '');
-            $address2 = $request->address2 ?? ($curContact ? $curContact->address2 : '');
-            $city = $request->city ?? ($curContact ? $curContact->city : '');
-            $state = $request->state ?? ($curContact ? $curContact->state : '');
-            $zip_code = $request->zip_code ?? ($curContact ? $curContact->zip_code : '');
-            $birthday = $request->birthday ?? ($curContact ? $curContact->birthday : '');
-            $website = $request->website ?? ($curContact ? $curContact->website : '');
-            $notes = $request->notes ?? ($curContact ? $curContact->notes : '');
-            $is_primary = $request->is_primary ?? ($curContact ? $curContact->is_primary : 0);
-            $is_online = $request->is_online ?? ($curContact ? $curContact->is_online : 0);
-
-            $is_primary = (int)$is_primary;
-
-            $contact = $FACTORING_COMPANY_CONTACT->updateOrCreate([
-                'id' => $contact_id
+        $contact = $FACTORING_COMPANY_CONTACT->updateOrCreate(
+            [
+                'id' => $id
             ],
-                [
-                    'carrier_id' => $carrier_id,
-                    'customer_id' => $customer_id,
-                    'factoring_company_id' => $factoring_company_id,
-                    'prefix' => $prefix,
-                    'first_name' => ucwords(trim($first_name)),
-                    'middle_name' => ucwords(trim($middle_name)),
-                    'last_name' => ucwords(trim($last_name)),
-                    'suffix' => $suffix,
-                    'title' => $title,
-                    'department' => $department,
-                    'email_work' => strtolower($email_work),
-                    'email_personal' => strtolower($email_personal),
-                    'email_other' => strtolower($email_other),
-                    'primary_email' => $primary_email,
-                    'phone_work' => $phone_work,
-                    'phone_work_fax' => $phone_work_fax,
-                    'phone_mobile' => $phone_mobile,
-                    'phone_direct' => $phone_direct,
-                    'phone_other' => $phone_other,
-                    'primary_phone' => $primary_phone,
-                    'phone_ext' => $phone_ext,
-                    'country' => ucwords($country),
-                    'address1' => $address1,
-                    'address2' => $address2,
-                    'city' => ucwords($city),
-                    'state' => strtoupper($state),
-                    'zip_code' => $zip_code,
-                    'birthday' => $birthday,
-                    'website' => strtolower($website),
-                    'notes' => $notes,
-                    'is_primary' => $is_primary,
-                    'is_online' => $is_online,
-                ]);
+            [
+                'factoring_company_id' => $factoring_company_id,
+                'prefix' => $prefix,
+                'first_name' => ucwords(trim($first_name)),
+                'middle_name' => ucwords(trim($middle_name)),
+                'last_name' => ucwords(trim($last_name)),
+                'suffix' => $suffix,
+                'title' => $title,
+                'company' => $company,
+                'department' => $department,
+                'email_work' => strtolower($email_work),
+                'email_personal' => strtolower($email_personal),
+                'email_other' => strtolower($email_other),
+                'primary_email' => $primary_email,
+                'phone_work' => $phone_work,
+                'phone_work_fax' => $phone_work_fax,
+                'phone_mobile' => $phone_mobile,
+                'phone_direct' => $phone_direct,
+                'phone_other' => $phone_other,
+                'primary_phone' => $primary_phone,
+                'phone_ext' => $phone_ext,
+                'country' => ucwords($country),
+                'address1' => $address1,
+                'address2' => $address2,
+                'city' => ucwords($city),
+                'state' => strtoupper($state),
+                'zip_code' => $zip_code,
+                'birthday' => $birthday,
+                'website' => strtolower($website),
+                'notes' => $notes,
+                'is_primary' => $is_primary,
+                'is_online' => $is_online,
+            ]
+        );
 
-            if ($is_primary === 1) {
-                $FACTORING_COMPANY->where('id', $factoring_company_id)->update([
-                    'primary_contact_id' => $contact->id
-                ]);
-            }
-
-            $newContact = $FACTORING_COMPANY_CONTACT->where('id', $contact->id)
-                ->with('factoring_company')
-                ->has('factoring_company')
-                ->first();
-
-            $contacts = $FACTORING_COMPANY_CONTACT->where('factoring_company_id', $factoring_company_id)
-                ->with('factoring_company')
-                ->has('factoring_company')
-                ->orderBy('first_name')
-                ->get();
-
-            return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
-        } else {
-            return response()->json(['result' => 'NO FACTORING COMPANY']);
+        if ($is_primary === 1) {
+            $FACTORING_COMPANY->where('id', $factoring_company_id)->update([
+                'primary_contact_id' => $contact->id
+            ]);
+        }else{
+            $FACTORING_COMPANY->where(['id' => $factoring_company_id, 'primary_contact_id' => $contact->id])->update([
+                'primary_contact_id' => null
+            ]);
         }
+
+        $newContact = $FACTORING_COMPANY_CONTACT->where('id', $contact->id)->first();
+
+        $contacts = $this->getFactoringCompanyContacts($factoring_company_id); // get all contacts for the factoring company
+
+        return response()->json(['result' => 'OK', 'contact' => $newContact, 'contacts' => $contacts]);
     }
 
     /**
@@ -945,41 +976,34 @@ class ContactsController extends Controller
     {
         $FACTORING_COMPANY_CONTACT = new FactoringCompanyContact();
 
-        $contact_id = $_POST['contact_id'];
-        $factoring_company_id = $request->factoring_company_id ?? 0;
+        $id = $_POST['id'];
+        $factoring_company_id = $_POST['owner_id'];
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-        $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
+        $contact = $FACTORING_COMPANY_CONTACT->where('id', $id)->first();
         $cur_avatar = $contact->avatar;
         $new_avatar = uniqid() . '.' . $extension;
 
-        if ($cur_avatar) {
+        if ($cur_avatar) { // delete old avatar
             if (file_exists(public_path('avatars/' . $cur_avatar))) {
                 try {
                     unlink(public_path('avatars/' . $cur_avatar));
-                } catch (Throwable|Exception $e) {
+                } catch (Throwable | Exception $e) {
                 }
             }
         }
 
-        $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->update([
+        $FACTORING_COMPANY_CONTACT->where('id', $id)->update([ // update avatar
             'avatar' => $new_avatar
         ]);
 
-        $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)
-            ->with('factoring_company')
-            ->has('factoring_company')
-            ->first();
+        $contact = $FACTORING_COMPANY_CONTACT->where('id', $id)->first();
 
-        $contacts = $FACTORING_COMPANY_CONTACT->where('factoring_company_id', $factoring_company_id)
-            ->with('factoring_company')
-            ->has('factoring_company')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getFactoringCompanyContacts($factoring_company_id); // get all contacts for the factoring company
 
-        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar)); // move new avatar to public folder
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -992,32 +1016,25 @@ class ContactsController extends Controller
     {
         $FACTORING_COMPANY_CONTACT = new FactoringCompanyContact();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $factoring_company_id = $request->factoring_company_id ?? 0;
+        $id = $request->id ?? null;
+        $factoring_company_id = $request->owner_id ?? null;
 
-        $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
+        $contact = $FACTORING_COMPANY_CONTACT->where('id', $id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))) { // delete old avatar
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
-            } catch (Throwable|Exception $e) {
+            } catch (Throwable | Exception $e) {
             }
         }
 
-        $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->update([
-            'avatar' => ''
+        $FACTORING_COMPANY_CONTACT->where('id', $id)->update([ // update avatar
+            'avatar' => null
         ]);
 
-        $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)
-            ->with('factoring_company')
-            ->has('factoring_company')
-            ->first();
+        $contact = $FACTORING_COMPANY_CONTACT->where('id', $id)->first();
 
-        $contacts = $FACTORING_COMPANY_CONTACT->where('factoring_company_id', $factoring_company_id)
-            ->with('factoring_company')
-            ->has('factoring_company')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getFactoringCompanyContacts($factoring_company_id); // get all contacts for the factoring company
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -1030,17 +1047,20 @@ class ContactsController extends Controller
     {
         $FACTORING_COMPANY_CONTACT = new FactoringCompanyContact();
 
-        $contact_id = $request->id ?? 0;
+        $id = $request->id ?? 0;
+        $factoring_company_id = $request->owner_id ?? null;
 
-        $contact = $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->first();
+        $isUserContact = FactoringCompanyContact::where('id', $id)->whereNotNull('user_code_id')->first(); // check if contact is a user contact
 
-        $FACTORING_COMPANY_CONTACT->where('id', $contact_id)->delete();
+        if ($isUserContact) {
+            $FACTORING_COMPANY_CONTACT->where('id', $id)->update([
+                'factoring_company_id' => null // set factoring_company_id to null
+            ]);
+        } else {
+            $FACTORING_COMPANY_CONTACT->where('id', $id)->delete(); // delete contact
+        }
 
-        $contacts = $FACTORING_COMPANY_CONTACT->where('factoring_company_id', $contact->factoring_company_id)
-            ->with('factoring_company')
-            ->has('factoring_company')
-            ->orderBy('first_name')
-            ->get();
+        $contacts = $this->getFactoringCompanyContacts($factoring_company_id); // get all contacts for the factoring company
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }
@@ -1157,11 +1177,11 @@ class ContactsController extends Controller
             'customers.code_number as code_number',
             'customers.name as name'
         ])
-        ->join('customers', 'contacts.customer_id', '=', 'customers.id');
+            ->join('customers', 'contacts.customer_id', '=', 'customers.id');
 
-//        $CONTACT->with(['customer' => function ($query) {
-//            $query->select('id', 'code', 'code_number', 'name')->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
-//        }]);
+        //        $CONTACT->with(['customer' => function ($query) {
+        //            $query->select('id', 'code', 'code_number', 'name')->without(['documents', 'directions', 'hours', 'automatic_emails', 'notes']);
+        //        }]);
 
         $CONTACT->orderBy('first_name');
         $CONTACT->orderBy('last_name');
@@ -1212,6 +1232,245 @@ class ContactsController extends Controller
         $CONTACT->orWhereRaw("TRIM(email_other) <> ''");
         $contacts = $CONTACT->orderBy('first_name')->get();
 
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+    public function getUserContacts(Request $request): JsonResponse
+    {
+        $user_code_id = $request->user_code_id ?? null;
+
+        $CONTACT = Contact::query();
+
+        $contacts = $CONTACT->where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+    public function saveUserContact(Request $request): JsonResponse
+    {
+        $user_code_id = $request->user_code_id ?? null;
+        $id = $request->id ?? null;
+        $prefix = $request->prefix ?? '';
+        $first_name = $request->first_name ?? '';
+        $middle_name = $request->middle_name ?? '';
+        $last_name = $request->last_name ?? '';
+        $suffix = $request->suffix ?? '';
+        $title = $request->title ?? '';
+        $company = $request->company ?? '';
+        $department = $request->department ?? '';
+        $email_work = $request->email_work ?? '';
+        $email_personal = $request->email_personal ?? '';
+        $email_other = $request->email_other ?? '';
+        $primary_email = $request->primary_email ?? 'work';
+        $phone_work = $request->phone_work ?? '';
+        $phone_work_fax = $request->phone_work_fax ?? '';
+        $phone_mobile = $request->phone_mobile ?? '';
+        $phone_direct = $request->phone_direct ?? '';
+        $phone_other = $request->phone_other ?? '';
+        $primary_phone = $request->primary_phone ?? 'work';
+        $phone_ext = $request->phone_ext ?? '';
+        $country = $request->country ?? '';
+        $address1 = $request->address1 ?? '';
+        $address2 = $request->address2 ?? '';
+        $city = $request->city ?? '';
+        $state = $request->state ?? '';
+        $zip_code = $request->zip_code ?? '';
+        $birthday = $request->birthday ?? '';
+        $website = $request->website ?? '';
+        $notes = $request->notes ?? '';
+
+        $CONTACT = Contact::query();
+
+        $contact = $CONTACT->updateOrCreate([
+            'id' => $id
+        ], [
+            'user_code_id' => $user_code_id,
+            'prefix' => $prefix,
+            'first_name' => ucwords(trim($first_name)),
+            'middle_name' => ucwords(trim($middle_name)),
+            'last_name' => ucwords(trim($last_name)),
+            'suffix' => $suffix,
+            'title' => $title,
+            'company' => $company,
+            'department' => $department,
+            'email_work' => strtolower($email_work),
+            'email_personal' => strtolower($email_personal),
+            'email_other' => strtolower($email_other),
+            'primary_email' => $primary_email,
+            'phone_work' => $phone_work,
+            'phone_work_fax' => $phone_work_fax,
+            'phone_mobile' => $phone_mobile,
+            'phone_direct' => $phone_direct,
+            'phone_other' => $phone_other,
+            'primary_phone' => $primary_phone,
+            'phone_ext' => $phone_ext,
+            'country' => ucwords($country),
+            'address1' => $address1,
+            'address2' => $address2,
+            'city' => ucwords($city),
+            'state' => strtoupper($state),
+            'zip_code' => $zip_code,
+            'birthday' => $birthday,
+            'website' => strtolower($website),
+            'notes' => $notes
+        ]);
+
+        $contacts = Contact::where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
+        $contact = Contact::where('id', $contact->id)->first();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function deleteUserContact(Request $request): JsonResponse
+    {
+        $user_code_id = $request->user_code_id ?? null;
+        $id = $request->id ?? null;
+
+        $CONTACT = Contact::query();
+
+        $contact = $CONTACT->where('id', $id)->first();
+
+        if (
+            $contact->customer_id || // check if contact is associated with a customer
+            $contact->carrier_id || // check if contact is associated with a carrier
+            $contact->factoring_company_id || // check if contact is associated with a factoring company
+            $contact->division_id || // check if contact is associated with a division
+            $contact->employee_id || // check if contact is associated with an employee
+            $contact->agent_id || // check if contact is associated with an agent
+            $contact->operator_id || // check if contact is associated with an operator
+            $contact->driver_id // check if contact is associated with a driver
+        ) {
+            $CONTACT->where('id', $id)->update([
+                'user_code_id' => null // set user_code_id to null
+            ]);
+        } else {
+            $CONTACT->where('id', $id)->delete(); // delete contact
+        }
+
+        $contacts = Contact::where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function uploadUserContactAvatar(Request $request): JsonResponse
+    {
+        $CONTACT = Contact::query();
+
+        $id = $_POST['id'];
+        $user_code_id = $request->user_code_id ?? null;
+        $fileData = $_FILES['avatar'];
+        $path = $fileData['name'];
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        $contact = $CONTACT->where('id', $id)->first();
+        $cur_avatar = $contact->avatar;
+        $new_avatar = uniqid() . '.' . $extension;
+
+        if ($cur_avatar) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))) {
+                try {
+                    unlink(public_path('avatars/' . $cur_avatar));
+                } catch (Throwable | Exception $e) {
+                }
+            }
+        }
+
+        $CONTACT->where('id', $id)->update([
+            'avatar' => $new_avatar
+        ]);
+
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+
+        $contacts = Contact::where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
+        $contact = Contact::where('id', $id)->first();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeUserContactAvatar(Request $request): JsonResponse
+    {
+        $CONTACT = Contact::query();
+
+        $id = $request->id ?? null;
+        $user_code_id = $request->user_code_id ?? null;
+
+        $contact = $CONTACT->where('id', $id)->first();
+
+        if (file_exists(public_path('avatars/' . $contact->avatar))) {
+            try {
+                unlink(public_path('avatars/' . $contact->avatar));
+            } catch (Throwable | Exception $e) {
+            }
+        }
+
+        $CONTACT->where('id', $id)->update([
+            'avatar' => null
+        ]);
+
+        $contacts = Contact::where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
+        $contact = Contact::where('id', $id)->first();
+
+        return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function addToUserContact(Request $request): JsonResponse
+    {
+        $user_code_id = $request->user_code_id ?? null;
+        $id = $request->id ?? null;
+
+        $CONTACT = Contact::query();
+
+        $CONTACT->where('id', $id)->update([
+            'user_code_id' => $user_code_id
+        ]);
+
+        $contacts = Contact::where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function removeFromUserContact(Request $request): JsonResponse
+    {
+        $user_code_id = $request->user_code_id ?? null;
+        $id = $request->id ?? null;
+
+        $CONTACT = Contact::query();
+
+        $CONTACT->where('id', $id)->update([
+            'user_code_id' => null
+        ]);
+
+        $contacts = Contact::where('user_code_id', $user_code_id)->orderBy('first_name')->orderBy('last_name')->get();
 
         return response()->json(['result' => 'OK', 'contacts' => $contacts]);
     }

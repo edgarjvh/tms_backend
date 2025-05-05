@@ -442,48 +442,82 @@ class DriversController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function getContactsByDriverId(Request $request): JsonResponse
+    {
+        $driver_id = $request->driver_id ?? null;
+
+        $contacts = $this->getDriverContacts($driver_id);
+
+        return response()->json(['result' => 'OK', 'contacts' => $contacts]);
+    }
+
+    /**
+     * @param $driver_id
+     * @return array
+     */
+    public function getDriverContacts($driver_id): array
+    {
+        $sql =
+            /** @lang text */
+            "SELECT
+                c.*,
+                d.name AS owner_name
+            FROM contacts AS c
+            LEFT JOIN drivers AS d ON c.driver_id = d.id
+            WHERE driver_id = ?
+            ORDER BY priority";
+
+        $params = [$driver_id];
+
+        $contacts = DB::select($sql, $params);
+
+        return $contacts;
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function saveDriverEmergencyContact(Request $request): JsonResponse
     {
         $EMERGENCY_CONTACT = DriverEmergencyContact::query();
         $id = $request->id ?? null;
-        $driver_id = $request->driver_id ?? null;
+        $driver_id = $request->owner_id ?? null;
 
-        $curContact = $EMERGENCY_CONTACT->where('id', $id)->first();
-
-        $prefix = $request->prefix ?? ($curContact->prefix ?? '');
-        $first_name = $request->first_name ?? ($curContact->first_name ?? '');
-        $middle_name = $request->middle_name ?? ($curContact->middle_name ?? '');
-        $last_name = $request->last_name ?? ($curContact->last_name ?? '');
-        $suffix = $request->suffix ?? ($curContact->suffix ?? '');
-        $title = $request->title ?? ($curContact->title ?? '');
-        $company = $request->company ?? ($curContact->company ?? '');
-        $department = $request->department ?? ($curContact->department ?? '');
-        $email_work = $request->email_work ?? ($curContact->email_work ?? '');
-        $email_personal = $request->email_personal ?? ($curContact->email_personal ?? '');
-        $email_other = $request->email_other ?? ($curContact->email_other ?? '');
-        $primary_email = $request->primary_email ?? ($curContact->primary_email ?? 'work');
-        $phone_work = $request->phone_work ?? ($curContact->phone_work ?? '');
-        $phone_work_fax = $request->phone_work_fax ?? ($curContact->phone_work_fax ?? '');
-        $phone_mobile = $request->phone_mobile ?? ($curContact->phone_mobile ?? '');
-        $phone_direct = $request->phone_direct ?? ($curContact->phone_direct ?? '');
-        $phone_other = $request->phone_other ?? ($curContact->phone_other ?? '');
-        $primary_phone = $request->primary_phone ?? ($curContact->primary_phone ?? 'work');
-        $phone_ext = $request->phone_ext ?? ($curContact->phone_ext ?? '');
-        $country = $request->country ?? ($curContact->country ?? '');
-        $address1 = $request->address1 ?? ($curContact->address1 ?? '');
-        $address2 = $request->address2 ?? ($curContact->address2 ?? '');
-        $city = $request->city ?? ($curContact->city ?? '');
-        $state = $request->state ?? ($curContact->state ?? '');
-        $zip_code = $request->zip_code ?? ($curContact->zip_code ?? '');
-        $birthday = $request->birthday ?? ($curContact->birthday ?? '');
-        $website = $request->website ?? ($curContact->website ?? '');
-        $notes = $request->notes ?? ($curContact->notes ?? '');
-        $is_primary = $request->is_primary ?? ($curContact->is_primary ?? 0);
-        $is_online = $request->is_online ?? ($curContact->is_online ?? 0);
-        $type = $request->type ?? ($curContact->type ?? 'internal');
-        $relationship_id = $request->relationship_id ?? ($curContact->relationship_id ?? null);
-        $priority = $request->priority ?? ($curContact->priority ?? 0);
-
+        $prefix = $request->prefix ?? '';
+        $first_name = ucwords($request->first_name ?? '');
+        $middle_name = ucwords($request->middle_name ?? '');
+        $last_name = ucwords($request->last_name ?? '');
+        $suffix = $request->suffix ?? '';
+        $title = ucwords($request->title ?? '');
+        $company = ucwords($request->company ?? '');
+        $department = ucwords($request->department ?? '');
+        $email_work = strtolower($request->email_work ?? '');
+        $email_personal = strtolower($request->email_personal ?? '');
+        $email_other = strtolower($request->email_other ?? '');
+        $primary_email = $request->primary_email ?? 'work';
+        $phone_work = $request->phone_work ?? '';
+        $phone_work_fax = $request->phone_work_fax ?? '';
+        $phone_mobile = $request->phone_mobile ?? '';
+        $phone_direct = $request->phone_direct ?? '';
+        $phone_other = $request->phone_other ?? '';
+        $primary_phone = $request->primary_phone ?? 'work';
+        $phone_ext = $request->phone_ext ?? '';
+        $country = ucwords($request->country ?? '');
+        $address1 = ucwords($request->address1 ?? '');
+        $address2 = ucwords($request->address2 ?? '');
+        $city = ucwords($request->city ?? '');
+        $state = strtoupper($request->state ?? '');
+        $zip_code = $request->zip_code ?? '';
+        $birthday = $request->birthday ?? '';
+        $website = strtolower($request->website ?? '');
+        $notes = $request->notes ?? '';
+        $is_primary = $request->is_primary ?? 0;
+        $is_online = $request->is_online ?? 0;
+        $type = $request->type ?? 'internal';
+        $is_primary = (int)$is_primary;
+        $relationship_id = $request->relationship_id ?? null;
+        $priority = $request->priority ?? 0;
         $is_primary = (int)$is_primary;
         $priority = (int)$priority;
         $is_online = (int)$is_online;
@@ -555,10 +589,7 @@ class DriversController extends Controller
                 'is_primary' => 0
             ]);
 
-        $newContact = DriverEmergencyContact::where('id', $contact->id)
-            ->with(['driver', 'relationship'])
-            ->has('driver')
-            ->first();
+        $newContact = DriverEmergencyContact::where('id', $contact->id)->first();
 
         $contacts = DriverEmergencyContact::where('driver_id', $driver_id)
             ->with(['driver', 'relationship'])
@@ -599,12 +630,19 @@ class DriversController extends Controller
     {
         $EMERGENCY_CONTACT = DriverEmergencyContact::query();
         $id = $request->id ?? null;
+        $driver_id = $request->owner_id ?? null;
 
-        $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
+        $isUserContact = $EMERGENCY_CONTACT->where('id', $id)->whereNotNull('user_code_id')->first();
 
-        $EMERGENCY_CONTACT->where('id', $id)->delete();
+        if ($isUserContact) {
+            $EMERGENCY_CONTACT->where('id', $id)->update([
+                'driver_id' => null
+            ]);
+        } else {
+            $EMERGENCY_CONTACT->where('id', $id)->delete();
+        }
 
-        $contacts = $EMERGENCY_CONTACT->where('driver_id', $contact->driver_id)
+        $contacts = $EMERGENCY_CONTACT->where('driver_id', $driver_id)
             ->with(['driver', 'relationship'])
             ->has('driver')
             ->orderBy('priority')
@@ -622,30 +660,30 @@ class DriversController extends Controller
     {
         $EMERGENCY_CONTACT = DriverEmergencyContact::query();
 
-        $contact_id = $_POST['contact_id'];
-        $driver_id = $request->driver_id;
+        $id = $_POST['id'];
+        $driver_id = $_POST['owner_id'];
         $fileData = $_FILES['avatar'];
         $path = $fileData['name'];
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
-        $contact = $EMERGENCY_CONTACT->where('id', $contact_id)->first();
+        $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
         $cur_avatar = $contact->avatar;
         $new_avatar = uniqid() . '.' . $extension;
 
         if ($cur_avatar) {
-            if (file_exists(public_path('avatars/' . $cur_avatar))) {
+            if (file_exists(public_path('avatars/' . $cur_avatar))) { // check if file exists
                 try {
-                    unlink(public_path('avatars/' . $cur_avatar));
+                    unlink(public_path('avatars/' . $cur_avatar)); // delete the file
                 } catch (Throwable|Exception $e) {
                 }
             }
         }
 
-        DriverEmergencyContact::where('id', $contact_id)->update([
+        DriverEmergencyContact::where('id', $id)->update([ // update the record
             'avatar' => $new_avatar
         ]);
 
-        $contact = DriverEmergencyContact::where('id', $contact_id)
+        $contact = DriverEmergencyContact::where('id', $id)
             ->with(['driver', 'relationship'])
             ->has('driver')
             ->first();
@@ -656,7 +694,7 @@ class DriversController extends Controller
             ->orderBy('priority')
             ->get();
 
-        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar));
+        move_uploaded_file($fileData['tmp_name'], public_path('avatars/' . $new_avatar)); // move the uploaded file
 
         return response()->json(['result' => 'OK', 'contact' => $contact, 'contacts' => $contacts]);
     }
@@ -669,23 +707,23 @@ class DriversController extends Controller
     {
         $EMERGENCY_CONTACT = DriverEmergencyContact::query();
 
-        $contact_id = $request->contact_id ?? ($request->id ?? 0);
-        $driver_id = $request->driver_id;
+        $id = $request->id ?? null;
+        $driver_id = $request->owner_id ?? null;
 
-        $contact = $EMERGENCY_CONTACT->where('id', $contact_id)->first();
+        $contact = $EMERGENCY_CONTACT->where('id', $id)->first();
 
-        if (file_exists(public_path('avatars/' . $contact->avatar))) {
+        if (file_exists(public_path('avatars/' . $contact->avatar))) { // check if file exists
             try {
                 unlink(public_path('avatars/' . $contact->avatar));
             } catch (Throwable|Exception $e) {
             }
         }
 
-        DriverEmergencyContact::where('id', $contact_id)->update([
-            'avatar' => ''
+        DriverEmergencyContact::where('id', $id)->update([ // update the record
+            'avatar' => null
         ]);
 
-        $contact = DriverEmergencyContact::where('id', $contact_id)
+        $contact = DriverEmergencyContact::where('id', $id)
             ->with(['driver', 'relationship'])
             ->has('driver')
             ->first();

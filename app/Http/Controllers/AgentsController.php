@@ -104,8 +104,9 @@ class AgentsController extends Controller
      */
     public function getAgentReport(): JsonResponse
     {
-        $sql = /** @lang text */
-        "SELECT
+        $sql =
+            /** @lang text */
+            "SELECT
             ca.company_id,
             ca.id,
             ca.code,
@@ -179,29 +180,36 @@ class AgentsController extends Controller
     {
         $id = $request->id ?? 0;
 
-        $ORDER = Order::query();
+        $agent = Agent::find($id);
 
-        $ORDER->whereRaw("1 = 1");
-        $ORDER->whereHas('user_code', function ($query1) use ($id) {
-            $query1->where('agent_id', $id);
-        });
+        $code = $agent->code;
 
-        $ORDER->select([
-            'id',
-            'order_number'
-        ]);
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT
+                o.id,
+                o.order_number,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id ASC LIMIT 1))) AS from_delivery_state,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_city,
+                (SELECT c.city FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_city,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_pickups WHERE id = (SELECT pickup_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_pickup_state,
+                (SELECT c.state FROM customers AS c WHERE c.id = (SELECT customer_id FROM order_deliveries WHERE id = (SELECT delivery_id FROM order_routing WHERE order_id = o.id ORDER BY id DESC LIMIT 1))) AS to_delivery_state
+            FROM orders AS o
+            WHERE o.is_imported = 0
+				AND o.is_cancelled = 0
+                AND (EXISTS (SELECT * FROM user_codes AS uc WHERE o.user_code_id = uc.id AND o.agent_id = ?)
+                    OR EXISTS (SELECT * FROM customers AS cu WHERE o.bill_to_customer_id = cu.id AND cu.agent_code = ?))
+            ORDER BY o.order_number DESC";
 
-        $ORDER->with([
-            'bill_to_company',
-            'pickups',
-            'deliveries',
-            'routing'
-        ]);
+        $params = [$id, $code];
 
-
-        $ORDER->orderBy('id', 'desc')->limit(20);
-
-        $orders = $ORDER->get();
+        $orders = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'orders' => $orders]);
     }
@@ -246,9 +254,10 @@ class AgentsController extends Controller
             $with_contact = false;
         }
 
-        $agent = $AGENT->updateOrCreate([
-            'id' => $id
-        ],
+        $agent = $AGENT->updateOrCreate(
+            [
+                'id' => $id
+            ],
             [
                 'company_id' => $company_id,
                 'name' => ucwords($name),
@@ -273,7 +282,8 @@ class AgentsController extends Controller
                 'agent_pay_company_trucks' => $agent_pay_company_trucks,
                 'agent_own_units' => $agent_own_units,
                 'agent_pay_own_trucks' => $agent_pay_own_trucks
-            ]);
+            ]
+        );
 
         if ($with_contact) {
             $contacts = $AGENT_CONTACT->where('agent_id', $agent->id)->get();
@@ -340,5 +350,279 @@ class AgentsController extends Controller
             ])->get();
 
         return response()->json(['result' => 'OK', 'agent' => $newAgent, 'agents' => $agents]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAgentRevenue(Request $request): JsonResponse
+    {
+        $agent_code = trim($request->agent_code ?? '');
+        $load_type_id = trim($request->load_type_id ?? -1);
+        $date_start = trim($request->date_start ?? '');
+        $date_end = trim($request->date_end ?? '');
+        $city_origin = trim(strtolower($request->city_origin ?? ''));
+        $city_destination = trim(strtolower($request->city_destination ?? ''));
+        $state_origin = trim(strtolower($request->state_origin ?? ''));
+        $state_destination = trim(strtolower($request->state_destination ?? ''));
+        $zip_origin = trim(strtolower($request->zip_origin ?? ''));
+        $zip_destination = trim(strtolower($request->zip_destination ?? ''));
+
+        $params = [];
+
+        /**
+         * SETTING UP THE THE QUERY STRING
+         */
+        $sql =
+            /** @lang text */
+            "SELECT * FROM (
+                SELECT
+                    o.id,
+                    o.order_number,
+                    o.bill_to_customer_id,
+                    c.code,
+                    c.code_number,
+                    c.name,
+                    c.city,
+                    c.state,
+                    o.order_date_time,
+                    o.customer_check_number,
+                    o.agent_date_paid,
+                    (SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) AS total_customer_rating,
+                    (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id) AS total_carrier_rating,
+                    o.is_cancelled,
+                    ca.id AS agent_id,
+                    ca.code AS agent_code,
+                    ca.name AS agent_name,
+                    lt.name AS load_type,
+                    ((((SELECT sum(cur.total_charges) FROM order_customer_ratings AS cur WHERE cur.order_id = o.id) - (SELECT sum(car.total_charges) FROM order_carrier_ratings AS car WHERE car.order_id = o.id)) * o.agent_commission) / 100) AS agent_commission
+                FROM orders AS o
+                INNER JOIN company_agents as ca ON o.agent_code = ca.code
+                INNER JOIN customers AS c ON o.bill_to_customer_id = c.id
+                INNER JOIN load_types AS lt ON o.load_type_id = lt.id
+                WHERE o.is_template = 0 ";
+
+        /**
+         * CHECKING THE AGENT CODE
+         */
+        if ($agent_code !== '') {
+            $sql .=
+                /** @lang text */
+                "AND o.agent_code = ? ";
+
+            $params[] = $agent_code;
+        }
+        // else {
+        //     $sql .=
+        //             /** @lang text */
+        //             "AND o.agent_code <> '' ";
+        // }
+
+        /**
+         * CHECKING THE LOAD TYPE ID
+         */
+        if ($load_type_id > -1) {
+            $sql .=
+                /** @lang text */
+                "AND o.load_type_id = ? ";
+
+            $params[] = $load_type_id;
+        }
+
+        /**
+         * CHECKING THE DATE PARAMETERS
+         */
+        if ($date_start !== '' && $date_end !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (o.order_date_time BETWEEN STR_TO_DATE(?, '%m/%d/%Y') AND STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+            $params[] = $date_start;
+            $params[] = $date_end;
+        } else {
+            if ($date_start !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time >= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_start;
+            } elseif ($date_end !== '') {
+                $sql .=
+                    /** @lang text */
+                    "AND (o.order_date_time <= STR_TO_DATE(?, '%m/%d/%Y')) ";
+
+                $params[] = $date_end;
+            }
+        }
+
+        /**
+         * CHECKING THE CITY ORIGIN
+         */
+        if ($city_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $city_origin;
+            $params[] = $city_origin;
+        }
+
+        /**
+         * CHECKING THE CITY DESTINATION
+         */
+        if ($city_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(city) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(city) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $city_destination;
+            $params[] = $city_destination;
+        }
+
+        /**
+         * CHECKING THE STATE ORIGIN
+         */
+        if ($state_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $state_origin;
+            $params[] = $state_origin;
+        }
+
+        /**
+         * CHECKING THE STATE DESTINATION
+         */
+        if ($state_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(state) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(state) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $state_destination;
+            $params[] = $state_destination;
+        }
+
+        /**
+         * CHECKING THE ZIP ORIGIN
+         */
+        if ($zip_origin !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id ASC limit 1)) ";
+
+            $params[] = $zip_origin;
+            $params[] = $zip_origin;
+        }
+
+        /**
+         * CHECKING THE ZIP DESTINATION
+         */
+        if ($zip_destination !== '') {
+            $sql .=
+                /** @lang text */
+                "AND (EXISTS (SELECT * FROM order_routing WHERE o.id = order_routing.order_id
+                AND (EXISTS (SELECT * FROM order_pickups WHERE order_routing.pickup_id = order_pickups.id
+                AND EXISTS (SELECT * FROM customers WHERE order_pickups.customer_id = customers.id
+                AND LOWER(zip) = ?))
+                OR EXISTS (SELECT * FROM order_deliveries WHERE order_routing.delivery_id = order_deliveries.id
+                AND EXISTS (SELECT * FROM customers WHERE order_deliveries.customer_id = customers.id
+                AND LOWER(zip) = ?))) ORDER BY id DESC limit 1)) ";
+
+            $params[] = $zip_destination;
+            $params[] = $zip_destination;
+        }
+
+        /**
+         * THE END OF THE QUERY GROUPING BY THE order_number AND THEN ORDERING BY order_date_time DESC
+         */
+        $sql .=
+            /** @lang text */
+            ") AS result ORDER BY result.agent_code;";
+
+        $orders = DB::select($sql, $params);
+        // $orders = DB::toSql($sql, $params);
+
+        return response()->json(['result' => 'OK', 'orders' => $orders]);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function saveAgentAchWiringInfo(Request $request): JsonResponse
+    {
+        $agent_id = $request->agent_id ?? 0;
+        $ach_banking_info = $request->ach_banking_info ?? '';
+        $ach_account_info = $request->ach_account_info ?? '';
+        $ach_aba_routing = $request->ach_aba_routing ?? '';
+        $ach_remittence_email = $request->ach_remittence_email ?? '';
+        $ach_type = $request->ach_type ?? 'checking';
+        $wiring_banking_info = $request->wiring_banking_info ?? '';
+        $wiring_account_info = $request->wiring_account_info ?? '';
+        $wiring_aba_routing = $request->wiring_aba_routing ?? '';
+        $wiring_remittence_email = $request->wiring_remittence_email ?? '';
+        $wiring_type = $request->wiring_type ?? 'checking';
+
+        $AGENT = new Agent();
+
+        $AGENT->updateOrCreate([
+            'id' => $agent_id
+        ], [
+            'ach_banking_info' => $ach_banking_info,
+            'ach_account_info' => $ach_account_info,
+            'ach_aba_routing' => $ach_aba_routing,
+            'ach_remittence_email' => strtolower($ach_remittence_email),
+            'ach_type' => strtolower($ach_type),
+            'wiring_banking_info' => $wiring_banking_info,
+            'wiring_account_info' => $wiring_account_info,
+            'wiring_aba_routing' => $wiring_aba_routing,
+            'wiring_remittence_email' => strtolower($wiring_remittence_email),
+            'wiring_type' => strtolower($wiring_type),
+        ]);
+
+        $agent = $AGENT->where('id', $agent_id)
+            ->with([
+                'contacts',
+                'documents',
+                'hours',
+                'notes',
+                'mailing_address',
+                'division',
+                'drivers'
+            ])->first();
+
+        return response()->json(['result' => 'OK', 'agent' => $agent]);
     }
 }

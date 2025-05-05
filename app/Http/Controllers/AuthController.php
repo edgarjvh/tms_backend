@@ -31,9 +31,9 @@ class AuthController extends Controller
             if (!Auth::guard('agent')->attempt([
                 'email_work' => $request->email,
                 'password' => $request->password,
-                'agent_id' => function($query){
-                    $query->where('agent_id', 4);
-                }
+                // 'agent_id' => function($query){
+                //     $query->where('agent_id', 4);
+                // }
             ])){
                 return response(['message' => 'Invalid Credentials', 'type' => $user_type], Response::HTTP_UNAUTHORIZED);
             }
