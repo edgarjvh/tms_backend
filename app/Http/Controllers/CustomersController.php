@@ -42,7 +42,8 @@ class CustomersController extends Controller
                 'mailing_customer',
                 'term',
                 'division',
-                'salesman'
+                'salesman',
+                'agent'
             ])
             ->first();
 
@@ -80,7 +81,7 @@ class CustomersController extends Controller
     {
         $CUSTOMER = Customer::query();
 
-        $code = $request->code ?? '';
+        $code = strtolower($request->code ?? '');
         $name = $request->name ?? '';
         $city = $request->city ?? '';
         $state = $request->state ?? '';
@@ -92,7 +93,7 @@ class CustomersController extends Controller
         $user_code = $request->user_code ?? '';
 
         $CUSTOMER->whereRaw("1 = 1")
-            ->whereRaw("CONCAT(`code`,`code_number`) like '%$code%'")
+            ->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '%$code%'")
             ->whereRaw("LOWER(name) like '%$name%'")
             ->whereRaw("LOWER(city) like '%$city%'")
             ->whereRaw("LOWER(state) like '%$state%'")
@@ -120,7 +121,8 @@ class CustomersController extends Controller
                 'mailing_customer',
                 'term',
                 'division',
-                'salesman'
+                'salesman',
+                'agent'
             ]);
 
             $customers = $CUSTOMER->get();
@@ -142,7 +144,8 @@ class CustomersController extends Controller
                     'mailing_customer',
                     'term',
                     'division',
-                    'salesman'
+                    'salesman',
+                    'agent'
                 ]);
 
                 $customers = $CUSTOMER->get();
@@ -158,8 +161,12 @@ class CustomersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getCustomerReport(): JsonResponse
+    public function getCustomerReport(Request $request): JsonResponse
     {
+        $user_code = strtolower($request->user_code ?? '');
+
+        $params = [];
+
         $sql =
             /** @lang text */
             "SELECT
@@ -200,10 +207,20 @@ class CustomersController extends Controller
         FROM customers as cu
         LEFT JOIN contacts AS p1 ON cu.id = p1.customer_id AND p1.is_primary = 1
         LEFT JOIN contact_customer AS cc ON cu.id = cc.customer_id AND cc.is_primary = 1
-        LEFT JOIN contacts AS p2 ON cc.contact_id = p2.id
-        ORDER BY cu.name";
+        LEFT JOIN contacts AS p2 ON cc.contact_id = p2.id ";
 
-        $customers = DB::select($sql);
+        if ($user_code !== '') {
+            $sql .=
+                /** @lang text */
+                "WHERE LOWER(cu.agent_code) = ? ";
+            $params[] = $user_code;
+        }
+
+        $sql .=
+            /** lang text */
+            "ORDER BY cu.name";
+
+        $customers = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }
@@ -425,51 +442,52 @@ class CustomersController extends Controller
         $user_code = strtolower($request->search[8]['data'] ?? '');
         $origin = strtolower($request->search[9]['data'] ?? '');
 
-        $customers = Customer::query();
+        $sql = "SELECT * FROM customers WHERE 1=1";
+        $params = [];
 
         if (trim($code) !== '') {
-            $customers->whereRaw("LOWER(CONCAT(`code`,`code_number`)) like '$code%'");
+            $sql .= " AND LOWER(CONCAT(code,code_number)) LIKE ?";
+            $params[] = $code . '%';
         }
-
         if (trim($name) !== '') {
-            $customers->whereRaw("LOWER(name) like '$name%'");
+            $sql .= " AND LOWER(name) LIKE ?";
+            $params[] = $name . '%';
         }
-
         if (trim($city) !== '') {
-            $customers->whereRaw("LOWER(city) like '$city%'");
+            $sql .= " AND LOWER(city) LIKE ?";
+            $params[] = $city . '%';
         }
-
         if (trim($state) !== '') {
-            $customers->whereRaw("LOWER(state) like '$state%'");
+            $sql .= " AND LOWER(state) LIKE ?";
+            $params[] = $state . '%';
         }
-
         if (trim($zip) !== '') {
-            $customers->whereRaw("zip like '$zip%'");
+            $sql .= " AND zip LIKE ?";
+            $params[] = $zip . '%';
         }
-
         if (trim($contact_name) !== '') {
-            $customers->whereRaw("LOWER(contact_name) like '$contact_name%'");
+            $sql .= " AND LOWER(contact_name) LIKE ?";
+            $params[] = $contact_name . '%';
         }
-
         if (trim($contact_phone) !== '') {
-            $customers->whereRaw("contact_phone like '$contact_phone%'");
+            $sql .= " AND contact_phone LIKE ?";
+            $params[] = $contact_phone . '%';
         }
-
         if (trim($email) !== '') {
-            $customers->whereRaw("LOWER(email) like '$email%'");
+            $sql .= " AND LOWER(email) LIKE ?";
+            $params[] = $email . '%';
         }
-
         if ($user_code !== '') {
-            $customers->where('agent_code', $user_code);
+            $sql .= " AND agent_code = ?";
+            $params[] = $user_code;
         }
-
         if ($origin === 'agent') {
-            $customers->whereRaw('agent_code <> ""');
+            $sql .= " AND agent_code <> ''";
         }
 
-        $customers->orderBy('code');
-        $customers->orderBy('code_number');
-        $customers = $customers->get();
+        $sql .= " ORDER BY code, code_number LIMIT 50";
+
+        $customers = DB::select($sql, $params);
 
         return response()->json(['result' => 'OK', 'customers' => $customers]);
     }

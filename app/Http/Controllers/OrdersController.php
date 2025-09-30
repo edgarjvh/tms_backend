@@ -191,15 +191,15 @@ class OrdersController extends Controller
             FROM orders AS o ";
 
         if ($user_code !== ''){
-            $sql_available =
+            $sql_available .=
                 /** @lang text */
-                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NULL
+                " WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND o.order_invoiced = 0 AND o.carrier_id IS NULL
                 ORDER BY o.order_number ASC;";
             $params_available[] = $user_code;
         }else{
-            $sql_available =
+            $sql_available .=
             /** @lang text */
-            "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NULL
+            " WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND o.order_invoiced = 0 AND o.carrier_id IS NULL
             ORDER BY o.order_number ASC;";
         }
 
@@ -225,14 +225,14 @@ class OrdersController extends Controller
             INNER JOIN carriers AS c ON o.carrier_id = c.id ";
 
         if ($user_code !== ''){
-            $sql_booked =
+            $sql_booked .=
                 /** @lang text */
                 "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
                 AND NOT EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
                 ORDER BY o.order_number ASC;";
             $params_booked[] = $user_code;
         }else{
-            $sql_booked =
+            $sql_booked .=
                 /** @lang text */
                 "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
                 AND NOT EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
@@ -261,17 +261,17 @@ class OrdersController extends Controller
             INNER JOIN carriers AS c ON o.carrier_id = c.id ";
 
         if ($user_code !== ''){
-            $sql_in_transit =
+            $sql_in_transit .=
                 /** @lang text */
-                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND o.order_invoiced = 0 AND o.carrier_id IS NOT NULL
                 AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
                 AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) > (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
                 ORDER BY o.order_number ASC;";
             $params_in_transit[] = $user_code;
         }else{
-            $sql_in_transit =
+            $sql_in_transit .=
                 /** @lang text */
-                "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
+                "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND o.order_invoiced = 0 AND o.carrier_id IS NOT NULL
                 AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
                 AND ((SELECT COUNT(*) FROM order_routing AS r WHERE r.order_id = o.id AND r.delivery_id IS NOT NULL) > (SELECT COUNT(*) FROM order_events AS oe WHERE oe.order_id = o.id AND oe.event_type_id = 6))
                 ORDER BY o.order_number ASC;";
@@ -299,7 +299,7 @@ class OrdersController extends Controller
             INNER JOIN carriers AS c ON o.carrier_id = c.id ";
 
         if ($user_code !== ''){
-            $sql_not_invoiced =
+            $sql_not_invoiced .=
                 /** @lang text */
                 "WHERE o.agent_code = ? AND o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
                 AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
@@ -307,7 +307,7 @@ class OrdersController extends Controller
                 ORDER BY o.order_number ASC;";
             $params_not_invoiced[] = $user_code;
         }else{
-            $sql_not_invoiced =
+            $sql_not_invoiced .=
                 /** @lang text */
                 "WHERE o.is_imported = 0 AND o.is_template = 0 AND o.is_cancelled = 0 AND order_invoiced = 0 AND o.carrier_id IS NOT NULL
                 AND EXISTS (SELECT * FROM order_events AS e WHERE e.order_id = o.id AND e.event_type_id = 9)
@@ -2483,6 +2483,38 @@ class OrdersController extends Controller
 
             return response()->json(['result' => 'OK']);
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updateTtInfo(Request $request): JsonResponse
+    {
+        $id = $request->id ?? null;
+        $tt_load_id = $request->tt_load_id ?? null;
+        $tt_map_link = $request->tt_map_link ?? null;
+        $tt_status_page_link = $request->tt_status_page_link ?? null;
+        $tt_details_link = $request->tt_details_link ?? null;
+        $tt_details_link_no_auth = $request->tt_details_link_no_auth ?? null;
+        $tt_carrier_link = $request->tt_carrier_link ?? null;
+        $tt_shipper_link = $request->tt_shipper_link ?? null;
+
+        if ($id) {
+            Order::query()->updateOrCreate([
+                'id' => $id
+            ], [
+                'tt_load_id' => $tt_load_id,
+                'tt_map_link' => $tt_map_link,
+                'tt_status_page_link' => $tt_status_page_link,
+                'tt_details_link' => $tt_details_link,
+                'tt_details_link_no_auth' => $tt_details_link_no_auth,
+                'tt_carrier_link' => $tt_carrier_link,
+                'tt_shipper_link' => $tt_shipper_link
+            ]);
+        }
+
+        return response()->json(['result' => 'OK']);
     }
 
     /**

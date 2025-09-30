@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agent;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
@@ -27,6 +29,20 @@ class AuthController extends Controller
             }
         }elseif($user_type === 'agent'){
             $hashed = Hash::make($request->password);
+
+            // the user attempting to login belongs to an agent
+            // first, pull the contact by email_work and agent_id not null,
+            $contact = Contact::where('email_work', $request->email)
+                ->whereNotNull('agent_id')
+                ->first();
+            // the agent must be found by de user's agent_id
+            // if the agent's termination_date is not null and older than today, the user cannot login, otherwise, the user can login
+
+            $agent = Agent::where('id', $contact->agent_id)->first();
+
+            if ($agent->termination_date !== null && $agent->termination_date < date('Y-m-d')){
+                return response(['message' => 'Agent is terminated, cannot login', 'type' => $user_type], Response::HTTP_UNAUTHORIZED);
+            }
 
             if (!Auth::guard('agent')->attempt([
                 'email_work' => $request->email,

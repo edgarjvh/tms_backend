@@ -195,4 +195,14 @@ class Order extends Model
             })
             ->with('employee');
     }
+
+    public function locations()
+    {
+        return $this->hasMany(OrderLocation::class, 'order_id', 'id');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(OrderComment::class, 'order_id', 'id');
+    }
 }

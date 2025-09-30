@@ -143,39 +143,94 @@ class CarriersController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
+    public function updateCarrierTtStatus(Request $request): JsonResponse
+    {
+        $CARRIER = new Carrier();
+
+        $id = $request->id ?? null;
+        $is_in_tt = $request->is_in_tt ?? 0;
+
+        if ($id > 0) {
+            $CARRIER->where('id', $id)->update([
+                'is_in_tt' => $is_in_tt
+            ]);
+        } else {
+            return response()->json(['result' => 'ERROR', 'message' => 'Carrier ID is required']);
+        }
+
+        // EJEMPLO DE CÓDIGO PARA DESCARGAR UNA IMAGEN
+        // $url = "https://assets.truckertools.com/images/tt-scan-docs/scanImageuploads/abc.jpg";
+        // $filename = basename($url); // abc.jpg
+        // $extension = pathinfo($filename, PATHINFO_EXTENSION); // jpg
+
+        // // Ejemplo de resultado:
+        // // $filename = "abc.jpg"
+        // // $extension = "jpg"
+
+        // $publicPath = public_path('uploads');
+        // if (!file_exists($publicPath)) {
+        //     mkdir($publicPath, 0777, true);
+        // }
+        // $destination = $publicPath . DIRECTORY_SEPARATOR . $filename;
+        // copy($url, $destination);
+
+
+        // SERVER TIME ZONE
+        // $dateString = $request->date_string ?? null;
+        // $estDateString = null;
+
+        // if ($dateString) {
+        //     try {
+        //         $dt = new \DateTime($dateString, new \DateTimeZone('UTC'));
+        //         $serverTz = new \DateTimeZone(date_default_timezone_get());
+        //         $dt->setTimezone($serverTz);
+        //         $estDateString = $dt->format('m/d/Y H:i:s T');
+        //     } catch (\Exception $e) {
+        //         $estDateString = null;
+        //     }
+        // }
+
+
+        return response()->json(['result' => 'OK']);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getCarrierReport(): JsonResponse
     {
         $sql =
-            /** @lang text */
-            "SELECT
-            ca.id,
-            CONCAT(ca.code, CASE WHEN ca.code_number = 0 THEN '' ELSE ca.code_number END) AS code,
-            ca.name,
-            e.name AS equipment_name,
-            ca.address1,
-            ca.address2,
-            ca.city,
-            ca.state,
-            ca.zip,
-            TRIM(CONCAT(p1.first_name, ' ', p1.last_name)) AS contact_name,
-            (CASE
-                WHEN (p1.primary_phone = 'work') THEN p1.phone_work
-                WHEN (p1.primary_phone = 'fax') THEN p1.phone_work_fax
-                WHEN (p1.primary_phone = 'mobile') THEN p1.phone_mobile
-                WHEN (p1.primary_phone = 'direct') THEN p1.phone_direct
-                WHEN (p1.primary_phone = 'other') THEN p1.phone_other
-            END) AS phone,
-            (CASE
-                WHEN (p1.primary_email = 'work') THEN p1.email_work
-                WHEN (p1.primary_email = 'personal') THEN p1.email_personal
-                WHEN (p1.primary_email = 'other') THEN p1.email_other
-            END) AS email,
-            e.id as equipment_id
-        FROM carriers as ca
-        LEFT JOIN contacts AS p1 ON ca.id = p1.carrier_id AND p1.is_primary = 1
-        LEFT JOIN carrier_equipments as ce ON ca.id = ce.carrier_id
-        LEFT JOIN equipments as e ON ce.equipment_id = e.id
-        ORDER BY ca.name";
+    "SELECT
+        ca.id,
+        CONCAT(ca.code, CASE WHEN ca.code_number = 0 THEN '' ELSE ca.code_number END) AS code,
+        ca.name,
+        GROUP_CONCAT(DISTINCT e.name ORDER BY e.name SEPARATOR ' | ') AS equipment_name,
+        ca.address1,
+        ca.address2,
+        ca.city,
+        ca.state,
+        ca.zip,
+        TRIM(CONCAT(p1.first_name, ' ', p1.last_name)) AS contact_name,
+        (CASE
+            WHEN (p1.primary_phone = 'work') THEN p1.phone_work
+            WHEN (p1.primary_phone = 'fax') THEN p1.phone_work_fax
+            WHEN (p1.primary_phone = 'mobile') THEN p1.phone_mobile
+            WHEN (p1.primary_phone = 'direct') THEN p1.phone_direct
+            WHEN (p1.primary_phone = 'other') THEN p1.phone_other
+        END) AS phone,
+        (CASE
+            WHEN (p1.primary_email = 'work') THEN p1.email_work
+            WHEN (p1.primary_email = 'personal') THEN p1.email_personal
+            WHEN (p1.primary_email = 'other') THEN p1.email_other
+        END) AS email,
+        GROUP_CONCAT(DISTINCT e.id ORDER BY e.name SEPARATOR ',') as equipment_id
+    FROM carriers as ca
+    LEFT JOIN contacts AS p1 ON ca.id = p1.carrier_id AND p1.is_primary = 1
+    LEFT JOIN carrier_equipments as ce ON ca.id = ce.carrier_id
+    LEFT JOIN equipments as e ON ce.equipment_id = e.id
+    GROUP BY ca.id
+    ORDER BY ca.name";
 
         $carriers = DB::select($sql);
 

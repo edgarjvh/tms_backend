@@ -20,7 +20,13 @@ class Customer extends Model
 
     protected $guarded = [];
     protected $table = 'customers';
-    protected $appends = ['total_customer_order', 'credit_ordered', 'credit_invoiced', 'credit_paid', 'contacts'];
+    protected $appends = [
+        'total_customer_order',
+        'credit_ordered',
+        'credit_invoiced',
+        'credit_paid',
+        'contacts'
+    ];
 
     public function mailing_same()
     {
@@ -54,7 +60,11 @@ class Customer extends Model
                 ->where('is_cancelled', 0)
                 ->whereNull('customer_check_number')
                 ->whereHas('bill_to_company', function ($query2) {
-                    return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->bill_to_code%'");
+                    if ($this->bill_to_code) {
+                        return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->bill_to_code%'");
+                    } else {
+                        return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->code%'");
+                    }
                 });
         });
 
@@ -77,7 +87,11 @@ class Customer extends Model
                 ->where('is_cancelled', 0)
                 ->whereNull('customer_check_number')
                 ->whereHas('bill_to_company', function ($query2) {
-                    return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->bill_to_code%'");
+                    if ($this->bill_to_code) {
+                        return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->bill_to_code%'");
+                    } else {
+                        return $query2->whereRaw("CONCAT(`code`,`code_number`) like '$this->code%'");
+                    }
                 });
         });
 

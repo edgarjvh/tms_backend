@@ -274,7 +274,8 @@ class ContactsController extends Controller
                 c.*,
                 CONCAT(0) AS is_pivot,
                 CONCAT(0) AS pivot_is_primary,
-                cu.name AS owner_name
+                cu.name AS owner_name,
+                CONCAT(null) AS pivot
             FROM contacts AS c
             LEFT JOIN customers AS cu ON c.customer_id = cu.id
             WHERE customer_id = ?
@@ -301,6 +302,24 @@ class ContactsController extends Controller
 
         $contacts2 = DB::select($sql2, $params2);
 
+        if (!empty($contacts2)) {
+            foreach ($contacts2 as $contact) {
+                $pivot = ContactCustomer::where('contact_id', $contact->id)
+                    ->where('customer_id', $customer_id)
+                    ->first();
+
+                if ($pivot) {
+                    $contact->pivot = [
+                        'id' => $pivot->id,
+                        'is_primary' => $pivot->is_primary,
+                        'customer_id' => $pivot->customer_id,
+                        'contact_id' => $pivot->contact_id
+                    ];
+                } else {
+                    $contact->pivot = null;
+                }
+            }
+        }
         $contacts = array_merge($contacts1, $contacts2);
 
         return $contacts;
@@ -313,7 +332,8 @@ class ContactsController extends Controller
     public function saveContact(Request $request): JsonResponse
     {
         $id = $request->id ?? null;
-        $customer_id = $request->owner_id ?? null;
+        $customer_id = $request->customer_id ?? null;
+        $owner_id = $request->owner_id ?? null;
         $prefix = $request->prefix ?? '';
         $first_name = ucwords($request->first_name ?? '');
         $middle_name = ucwords($request->middle_name ?? '');
@@ -356,7 +376,7 @@ class ContactsController extends Controller
                 'id' => $id
             ],
             [
-                'customer_id' => $customer_id,
+                'customer_id' => $owner_id,
                 'prefix' => $prefix,
                 'first_name' => ucwords(trim($first_name)),
                 'middle_name' => ucwords(trim($middle_name)),
@@ -391,14 +411,24 @@ class ContactsController extends Controller
             ]
         );
 
+        $CONTACT_CUSTOMER = new ContactCustomer();
+
         if ($pivot) {
             if (($pivot['is_primary'] ?? 0) === 1) {
                 $CUSTOMER->where('id', $customer_id)->update([
                     'primary_contact_id' => $contact->id
                 ]);
+
+                $CONTACT_CUSTOMER->where('id', $pivot['id'])->update([
+                    'is_primary' => 1
+                ]);
             } else {
                 $CUSTOMER->where(['id' => $customer_id, 'primary_contact_id' => $contact->id])->update([
                     'primary_contact_id' => null
+                ]);
+
+                $CONTACT_CUSTOMER->where('id', $pivot['id'])->update([
+                    'is_primary' => 0
                 ]);
             }
         } else {

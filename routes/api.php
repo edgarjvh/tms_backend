@@ -68,7 +68,15 @@ use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\AgentDriversController;
 use App\Http\Controllers\HazmatsController;
 use App\Http\Controllers\OrderLtlUnitsController;
+use App\Http\Controllers\TruckerToolsController;
 use App\Http\Controllers\WidgetsController;
+
+Route::post('/ttLocationUpdate', [TruckerToolsController::class, 'ttLocationUpdate']);
+Route::post('/ttCommentUpdate', [TruckerToolsController::class, 'ttCommentUpdate']);
+Route::post('/ttDocumentUpdate', [TruckerToolsController::class, 'ttDocumentUpdate']);
+Route::post('/ttStatusUpdate', [TruckerToolsController::class, 'ttStatusUpdate']);
+Route::post('/testUpdateStatus', [TruckerToolsController::class, 'testUpdateStatus']);
+Route::post('/createLoadOnTT', [TruckerToolsController::class, 'createLoadOnTT']);
 
 Route::post('/customers', [CustomersController::class, 'customers'])->name('customers');
 Route::post('/getCustomerByCode', [CustomersController::class, 'getCustomerByCode']);
@@ -90,6 +98,7 @@ Route::post('/removeAutomaticEmail', [AutomaticEmailsController::class, 'removeA
 
 Route::post('/getCarrierById', [CarriersController::class, 'getCarrierById']);
 Route::post('/carriers', [CarriersController::class, 'carriers'])->name('carriers');
+Route::post('/updateCarrierTtStatus', [CarriersController::class, 'updateCarrierTtStatus']);
 Route::post('/getCarrierByCode', [CarriersController::class, 'getCarrierByCode']);
 Route::post('/getCarrierReport', [CarriersController::class, 'getCarrierReport']);
 Route::post('/getCarrierOpenInvoicesReport', [CarriersController::class, 'getCarrierOpenInvoicesReport']);
@@ -276,6 +285,7 @@ Route::post('/getOrderByOrderNumber', [OrdersController::class, 'getOrderByOrder
 Route::post('/getOrderByTripNumber', [OrdersController::class, 'getOrderByTripNumber']);
 Route::post('/getLastOrderNumber', [OrdersController::class, 'getLastOrderNumber']);
 Route::post('/saveOrder', [OrdersController::class, 'saveOrder']);
+Route::post('/updateTtInfo', [OrdersController::class, 'updateTtInfo']);
 Route::post('/saveOrderEvent', [OrdersController::class, 'saveOrderEvent']);
 Route::post('/removeOrderPickup', [OrdersController::class, 'removeOrderPickup']);
 Route::post('/removeOrderDelivery', [OrdersController::class, 'removeOrderDelivery']);
@@ -623,7 +633,9 @@ Route::post('/sendCarrierUnloadedConsigneeEmail', [EmailsController::class, 'sen
 Route::post('/sendCarrierCheckCallsEmail', [EmailsController::class, 'sendCarrierCheckCallsEmail']);
 Route::post('/sendOrderEmail', [EmailsController::class, 'sendOrderEmail']);
 Route::post('/sendBolEmail', [EmailsController::class, 'sendBolEmail']);
-
+Route::post('/sendPasswordRecoveryEmail', [EmailsController::class, 'sendPasswordRecoveryEmail']);
+Route::post('/validateRecoveryData', [EmailsController::class, 'validateRecoveryData']);
+Route::post('/changePassword', [EmailsController::class, 'changePassword']);
 
 Route::post('/getAgentDriverByCode', [AgentDriversController::class, 'getAgentDriverByCode']);
 Route::post('/getDriversByAgentId', [AgentDriversController::class, 'getDriversByAgentId']);
@@ -635,9 +647,7 @@ Route::post('/saveSaimeConfig', [SaimeController::class, 'saveSaimeConfig']);
 
 
 Route::post('/testPdf', [EmailsController::class, 'testPdf']);
-Route::get('/testView', function (){
-    return view('mails.rate-conf.rate_conf_template');
-});
+Route::post('/testView', [EmailsController::class, 'testView']);
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/generatePass', [AuthController::class, 'generatePass']);
@@ -855,4 +865,9 @@ Route::get('/order-invoice-carrier-documents/{filename}', function($filename){
     $response->header("Content-Type", $type);
 
     return response()->file($path);
+});
+
+// Show PHP info
+Route::get('/phpinfo', function () {
+    phpinfo();
 });

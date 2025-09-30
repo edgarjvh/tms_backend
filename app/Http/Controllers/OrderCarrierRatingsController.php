@@ -42,6 +42,7 @@ class OrderCarrierRatingsController extends Controller
         $weight_unit = $request->weight_unit ?? '';
         $feet_required = $request->feet_required ?? 0.00;
         $feet_required_unit = $request->feet_required_unit ?? '';
+        $how_many = $request->how_many ?? 0.00;
         $rate = $request->rate ?? 0.00;
         $percentage = $request->percentage ?? 0.00;
         $days = $request->days ?? 0.00;
@@ -69,6 +70,7 @@ class OrderCarrierRatingsController extends Controller
             'weight_unit' => $weight_unit,
             'feet_required' => $feet_required,
             'feet_required_unit' => $feet_required_unit,
+            'how_many' => $how_many === '' ? 0 : $how_many,
             'rate' => $rate,
             'percentage' => $percentage,
             'days' => $days,

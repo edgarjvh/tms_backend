@@ -8,6 +8,7 @@ use App\Models\OrderBillingDocument;
 use App\Models\OrderInvoiceCarrierDocument;
 use App\Models\OrderBillingDocumentNote;
 use App\Models\OrderInvoiceCarrierDocumentNote;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;

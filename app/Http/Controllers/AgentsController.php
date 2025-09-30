@@ -102,8 +102,12 @@ class AgentsController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getAgentReport(): JsonResponse
+    public function getAgentReport(Request $request): JsonResponse
     {
+        $agent_id = $request->agent_id ?? 0;
+
+        $params = [];
+
         $sql =
             /** @lang text */
             "SELECT
@@ -130,8 +134,18 @@ class AgentsController extends Controller
                 WHEN (p1.primary_email = 'other') THEN p1.email_other
             END) AS email
         FROM company_agents as ca
-        LEFT JOIN contacts AS p1 ON ca.id = p1.agent_id AND p1.is_primary = 1
-        ORDER BY ca.name";
+        LEFT JOIN contacts AS p1 ON ca.id = p1.agent_id AND p1.is_primary = 1 ";
+
+        if ($agent_id > 0) {
+            $sql .=
+            /** @lang text */
+            "WHERE ca.id = ? ";
+            $params = [$agent_id];
+        }
+
+        $sql .=
+            /** @lang text */
+            "ORDER BY ca.name";
 
         $agents = DB::select($sql);
 
@@ -409,7 +423,7 @@ class AgentsController extends Controller
         if ($agent_code !== '') {
             $sql .=
                 /** @lang text */
-                "AND o.agent_code = ? ";
+                "AND LOWER(o.agent_code) = ? ";
 
             $params[] = $agent_code;
         }

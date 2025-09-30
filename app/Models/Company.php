@@ -17,7 +17,7 @@ class Company extends Model
 
     public function mailing_address()
     {
-        return $this->belongsTo(CompanyMailingAddress::class, 'mailing_address_id', 'id');
+        return $this->hasOne(CompanyMailingAddress::class, 'company_id', 'id');
     }
 
     public function employees() {
